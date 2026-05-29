@@ -13,15 +13,15 @@ app = FastAPI(
 # CORS配置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
 )
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """健康检查接口"""
     return {
         "message": "Feishu Project Manager API",
@@ -31,7 +31,7 @@ async def root():
 
 
 @app.get("/api/v1/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """API健康检查"""
     return {"status": "healthy"}
 

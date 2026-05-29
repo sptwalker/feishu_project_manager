@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import validator
 from functools import lru_cache
 
 
@@ -8,7 +9,7 @@ class Settings(BaseSettings):
     # 应用基础配置
     APP_NAME: str = "Feishu Project Manager"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # 数据库配置
     DATABASE_URL: str = "sqlite:///./data/feishu_pm.db"
@@ -27,10 +28,18 @@ class Settings(BaseSettings):
     # 系统配置
     TIMEZONE: str = "Asia/Shanghai"
     LOG_LEVEL: str = "INFO"
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost"]
 
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    @validator('JWT_SECRET_KEY')
+    def validate_jwt_secret(cls, v):
+        """验证JWT密钥强度"""
+        if len(v) < 32:
+            raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
+        return v
 
 
 @lru_cache()
