@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: feishu_pm_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - backend_data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - feishu_pm_network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: feishu_pm_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - feishu_pm_network
+
+volumes:
+  backend_data:
+
+networks:
+  feishu_pm_network:
+    driver: bridge
