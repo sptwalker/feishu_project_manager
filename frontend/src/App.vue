@@ -28,8 +28,9 @@ const testApi = async () => {
   try {
     const response = await axios.get('/api/v1/health')
     apiStatus.value = `API连接成功: ${JSON.stringify(response.data)}`
-  } catch (error) {
-    apiStatus.value = `API连接失败: ${error}`
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '未知错误'
+    apiStatus.value = `API连接失败: ${message}`
   }
 }
 </script>
