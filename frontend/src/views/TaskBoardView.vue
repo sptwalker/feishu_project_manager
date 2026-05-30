@@ -28,6 +28,12 @@
       </div>
     </div>
 
+    <!-- 任务 / 风险 切换 -->
+    <div class="tabrow">
+      <ProjectTabs :project-id="projectId" />
+      <span v-if="viewMode === 'kanban'" class="drag-hint muted">提示：拖拽卡片到其它列可改变状态</span>
+    </div>
+
     <!-- 工具栏：视图切换 + 筛选 -->
     <div class="toolbar">
       <el-radio-group v-model="viewMode" size="default">
@@ -44,7 +50,15 @@
 
     <!-- 看板视图 -->
     <div v-if="viewMode === 'kanban'" v-loading="loading" class="kanban">
-      <section v-for="col in TASK_STATUS_ORDER" :key="col" class="kcol">
+      <section
+        v-for="col in TASK_STATUS_ORDER"
+        :key="col"
+        class="kcol"
+        :class="{ 'drop-active': dragOverCol === col }"
+        @dragover.prevent="dragOverCol = col"
+        @dragleave="onDragLeave(col)"
+        @drop="onDrop(col)"
+      >
         <header class="kcol-head" :style="{ '--dot': statusColor(col) }">
           <span class="kdot" />
           <span class="kcol-title">{{ statusLabel(col) }}</span>
@@ -55,7 +69,11 @@
             v-for="t in grouped[col]"
             :key="t.id"
             class="tcard"
+            :class="{ dragging: draggedTask?.id === t.id }"
             :style="{ background: statusSoft(col) }"
+            draggable="true"
+            @dragstart="onDragStart(t)"
+            @dragend="onDragEnd"
             @click="openEdit(t)"
           >
             <div class="tcard-top">
@@ -149,6 +167,7 @@ import {
   taskStatusLabel, taskStatusColor, taskStatusSoft, priorityLabel,
   TASK_STATUS_ORDER, isOverdue,
 } from '@/utils/labels'
+import ProjectTabs from '@/components/ProjectTabs.vue'
 
 const props = defineProps<{ id: string }>()
 const projectId = computed(() => Number(props.id))
@@ -189,6 +208,40 @@ const grouped = computed<Record<TaskStatus, Task[]>>(() => {
 
 const overdueCount = computed(() => tasks.value.filter(overdue).length)
 const countBy = (s: TaskStatus) => tasks.value.filter((t) => t.status === s).length
+
+/* 看板拖拽改状态 */
+const draggedTask = ref<Task | null>(null)
+const dragOverCol = ref<TaskStatus | null>(null)
+
+function onDragStart(t: Task) {
+  draggedTask.value = t
+}
+function onDragEnd() {
+  draggedTask.value = null
+  dragOverCol.value = null
+}
+function onDragLeave(col: TaskStatus) {
+  if (dragOverCol.value === col) dragOverCol.value = null
+}
+
+async function onDrop(col: TaskStatus) {
+  const t = draggedTask.value
+  dragOverCol.value = null
+  draggedTask.value = null
+  if (!t || t.status === col) return
+
+  // 乐观更新：先本地切换，失败再回滚
+  const prev = t.status
+  const idx = tasks.value.findIndex((x) => x.id === t.id)
+  if (idx >= 0) tasks.value[idx] = { ...tasks.value[idx], status: col }
+  try {
+    await taskApi.update(t.id, { status: col })
+    ElMessage.success(`已移动到「${statusLabel(col)}」`)
+  } catch {
+    if (idx >= 0) tasks.value[idx] = { ...tasks.value[idx], status: prev }
+    ElMessage.error('状态更新失败（可能无权限）')
+  }
+}
 
 async function load() {
   loading.value = true
