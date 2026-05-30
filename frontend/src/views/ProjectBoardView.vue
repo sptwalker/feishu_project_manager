@@ -32,6 +32,18 @@
       </div>
     </div>
 
+    <!-- 可视化图表 -->
+    <div v-if="stats" class="charts">
+      <div class="chart-card">
+        <h3 class="chart-title">项目状态分布</h3>
+        <BaseChart :option="projectStatusOption" :height="220" />
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">任务状态分布</h3>
+        <BaseChart :option="taskStatusOption" :height="220" />
+      </div>
+    </div>
+
     <!-- 筛选 + 视图切换 -->
     <div class="toolbar">
       <div class="filters">
@@ -119,7 +131,11 @@ import { ElMessage } from 'element-plus'
 import { Plus, Search, Grid, List } from '@element-plus/icons-vue'
 import { projectApi, statsApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, DashboardStats } from '@/types'
-import { projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue } from '@/utils/labels'
+import {
+  projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue,
+  taskStatusLabel, taskStatusColor, TASK_STATUS_ORDER,
+} from '@/utils/labels'
+import BaseChart from '@/components/BaseChart.vue'
 
 const router = useRouter()
 
@@ -151,6 +167,64 @@ const overdue = (p: Project) => isOverdue(p.estimated_end_date, p.status)
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   return projects.value.filter((p) => !kw || p.name.toLowerCase().includes(kw))
+})
+
+// 解析 CSS 变量为实际色值（ECharts 不识别 var()）
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#999'
+}
+
+const projectStatusOption = computed(() => {
+  const by = stats.value?.projects.by_status ?? {}
+  const order: ProjectStatus[] = ['planned', 'in_progress', 'completed', 'cancelled']
+  const data = order
+    .map((s) => ({
+      name: projectStatusLabel[s],
+      value: by[s] ?? 0,
+      itemStyle: { color: cssVar(projectStatusColor[s].replace('var(', '').replace(')', '')) },
+    }))
+    .filter((d) => d.value > 0)
+  return {
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0, icon: 'circle', textStyle: { color: cssVar('--c-ink-2') } },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '70%'],
+      avoidLabelOverlap: true,
+      label: { show: false },
+      data: data.length ? data : [{ name: '暂无', value: 1, itemStyle: { color: cssVar('--c-border') } }],
+    }],
+  } as Record<string, unknown>
+})
+
+const taskStatusOption = computed(() => {
+  const by = stats.value?.tasks.by_status ?? {}
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: TASK_STATUS_ORDER.map((s) => taskStatusLabel[s]),
+      axisLine: { lineStyle: { color: cssVar('--c-border-strong') } },
+      axisLabel: { color: cssVar('--c-ink-2') },
+    },
+    yAxis: {
+      type: 'value', minInterval: 1,
+      splitLine: { lineStyle: { color: cssVar('--c-border') } },
+      axisLabel: { color: cssVar('--c-ink-3') },
+    },
+    series: [{
+      type: 'bar',
+      barWidth: '46%',
+      data: TASK_STATUS_ORDER.map((s) => ({
+        value: by[s] ?? 0,
+        itemStyle: {
+          color: cssVar(taskStatusColor[s].replace('var(', '').replace(')', '')),
+          borderRadius: [4, 4, 0, 0],
+        },
+      })),
+    }],
+  } as Record<string, unknown>
 })
 
 async function load() {
@@ -240,6 +314,22 @@ onMounted(() => {
 }
 .stat-label { color: var(--c-ink-3); font-size: 13px; font-weight: 500; }
 .stat-num { font-size: 30px; font-weight: 700; line-height: 1; }
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+@media (max-width: 720px) { .charts { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4) var(--sp-5);
+  box-shadow: var(--shadow-sm);
+}
+.chart-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); color: var(--c-ink-2); }
 
 .toolbar {
   display: flex;
