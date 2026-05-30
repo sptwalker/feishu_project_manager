@@ -1,5 +1,4 @@
 from sqlalchemy.orm import DeclarativeBase
-from typing import Any
 
 class Base(DeclarativeBase):
     """SQLAlchemy 声明式基类"""
