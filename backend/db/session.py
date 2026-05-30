@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from typing import Generator
 from backend.core.config import get_settings
 from backend.db.base import Base
 
@@ -15,7 +16,7 @@ engine = create_engine(
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     """获取数据库会话依赖"""
     db = SessionLocal()
     try:
