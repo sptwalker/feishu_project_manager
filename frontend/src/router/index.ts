@@ -28,6 +28,12 @@ const router = createRouter({
           component: () => import('@/views/TaskBoardView.vue'),
           props: true,
         },
+        {
+          path: 'projects/:id/risks',
+          name: 'project-risks',
+          component: () => import('@/views/RiskBoardView.vue'),
+          props: true,
+        },
       ],
     },
   ],
