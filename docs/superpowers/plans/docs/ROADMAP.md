@@ -176,19 +176,34 @@
 
 ---
 
-### 📋 Phase 6: 风险管理 API（计划中）
+### ✅ Phase 6: 风险管理 API（已完成）
 
-**状态**: 待规划  
-**预计任务数**: 5-6 tasks
+**状态**: 已完成
+**实现方式**: 参照 Phase 4/5 同构模式（schema → service → permissions → api → tests）
 
 **目标**:
-实现风险登记、跟踪和预警功能
+实现风险的登记、跟踪与状态流转
 
-**计划功能**:
-1. 风险 CRUD 接口
-2. 风险列表和筛选
-3. 风险状态更新
-4. 风险预警机制
+**完成功能**:
+1. ✅ 风险 CRUD 接口
+2. ✅ 风险列表（按状态/负责人过滤，分页）
+3. ✅ 风险状态流转（open / monitoring / resolved）
+4. ✅ 风险权限控制（管理员 / 风险负责人 / 所属项目所有者；负责人可空）
+5. ✅ 测试覆盖（schema/service/api/permissions，共 31 个用例）
+
+**API 端点**:
+- `GET /api/v1/projects/{project_id}/risks` - 获取风险列表
+- `POST /api/v1/projects/{project_id}/risks` - 创建风险
+- `GET /api/v1/risks/{id}` - 获取风险详情
+- `PUT /api/v1/risks/{id}` - 更新风险
+- `DELETE /api/v1/risks/{id}` - 删除风险
+
+**相关文件**:
+- `backend/schemas/risk.py`
+- `backend/services/risk_service.py`
+- `backend/api/v1/risks.py`
+- `backend/core/permissions.py`（新增风险权限方法）
+- `backend/tests/test_risk_*.py`
 
 ---
 
@@ -329,7 +344,7 @@
 | Phase 3: 认证系统 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 4: 项目管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 5: 任务管理 API | ✅ 已完成 | 100% | 2026-05-30 |
-| Phase 6: 风险管理 API | 📋 计划中 | 0% | 2026-06-05 |
+| Phase 6: 风险管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 7: 飞书集成 | 📋 计划中 | 0% | 2026-06-08 |
 | Phase 8: 定时任务 | 📋 计划中 | 0% | 2026-06-10 |
 | Phase 9: 报表导出 | 📋 计划中 | 0% | 2026-06-12 |
@@ -367,4 +382,4 @@
 ---
 
 **最后更新**: 2026-05-30  
-**当前版本**: v0.5.0-dev
+**当前版本**: v0.6.0-dev
