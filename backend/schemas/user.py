@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, HttpUrl
 from typing import Optional
 from datetime import datetime
-from models.user import UserRole
+from backend.models.user import UserRole
 
 class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

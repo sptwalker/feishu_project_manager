@@ -1,10 +1,10 @@
-from schemas.auth import (
+from backend.schemas.auth import (
     Token,
     TokenPayload,
     RefreshTokenRequest,
     FeishuCallbackParams,
 )
-from schemas.user import (
+from backend.schemas.user import (
     UserBase,
     UserCreate,
     UserInDB,

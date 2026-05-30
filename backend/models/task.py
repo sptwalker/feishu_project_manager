@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum, CheckConstraint
 from sqlalchemy.orm import relationship
 import enum
-from models.base import BaseModel
+from backend.models.base import BaseModel
 
 class TaskStatus(str, enum.Enum):
     """任务状态枚举"""

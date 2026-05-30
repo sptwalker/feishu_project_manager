@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
-from models.base import BaseModel
+from backend.models.base import BaseModel
 
 class EventType(str, enum.Enum):
     STATUS_CHANGE = "status_change"

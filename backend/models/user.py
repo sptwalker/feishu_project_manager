@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 import enum
-from models.base import BaseModel
+from backend.models.base import BaseModel
 
 class UserRole(str, enum.Enum):
     """用户角色枚举"""

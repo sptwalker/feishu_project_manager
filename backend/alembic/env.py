@@ -11,10 +11,10 @@ from pathlib import Path
 
 # Add backend directory to path
 backend_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(backend_dir))
+sys.path.insert(0, str(backend_dir.parent))
 
-from models.base import Base
-from models import User, Project, Task, Event, Risk
+from backend.models.base import Base
+from backend.models import User, Project, Task, Event, Risk
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

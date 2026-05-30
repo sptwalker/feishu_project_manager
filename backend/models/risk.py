@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 import enum
-from models.base import BaseModel
+from backend.models.base import BaseModel
 
 class RiskStatus(str, enum.Enum):
     OPEN = "open"
