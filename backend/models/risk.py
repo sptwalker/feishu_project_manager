@@ -11,10 +11,13 @@ class RiskStatus(str, enum.Enum):
 class Risk(BaseModel):
     __tablename__ = "risks"
 
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    title = Column(String(200), nullable=False)
-    description = Column(Text)
-    status = Column(SQLEnum(RiskStatus), default=RiskStatus.OPEN)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True, comment="项目ID")
+    title = Column(String(200), nullable=False, comment="风险标题")
+    description = Column(Text, comment="风险描述")
+    status = Column(SQLEnum(RiskStatus), default=RiskStatus.OPEN, nullable=False, index=True, comment="风险状态")
+    owner_id = Column(Integer, ForeignKey("users.id"), comment="负责人ID")
 
     project = relationship("Project", back_populates="risks")
+
+    def __repr__(self):
+        return f"<Risk(id={self.id}, title={self.title}, status={self.status})>"
