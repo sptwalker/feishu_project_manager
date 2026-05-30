@@ -1,14 +1,28 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import get_settings
+from backend.core.scheduler import start_scheduler, shutdown_scheduler
 from backend.api.v1 import auth, projects, tasks, risks, feishu_webhook, bitable
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期：启动/关闭定时任务调度器（受 SCHEDULER_ENABLED 控制）"""
+    start_scheduler()
+    try:
+        yield
+    finally:
+        shutdown_scheduler()
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    debug=settings.DEBUG
+    debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
 # CORS配置
