@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum, CheckConstraint
 from sqlalchemy.orm import relationship
 import enum
 from backend.models.base import BaseModel
@@ -21,7 +21,7 @@ class Task(BaseModel):
     __tablename__ = "tasks"
 
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True, comment="所属项目")
-    parent_task_id = Column(Integer, ForeignKey("tasks.id"), comment="父任务ID")
+    parent_task_id = Column(Integer, ForeignKey("tasks.id"), index=True, comment="父任务ID")
     name = Column(String(200), nullable=False, comment="任务名称")
     description = Column(Text, comment="描述")
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="负责人ID")
@@ -32,10 +32,14 @@ class Task(BaseModel):
     start_date = Column(Date, comment="开始时间")
     end_date = Column(Date, comment="完成时间")
 
+    __table_args__ = (
+        CheckConstraint('completion >= 0 AND completion <= 100', name='check_task_completion'),
+    )
+
     # 关系
     project = relationship("Project", back_populates="tasks")
     owner = relationship("User", back_populates="owned_tasks", foreign_keys=[owner_id])
-    parent_task = relationship("Task", remote_side=[BaseModel.id], backref="subtasks")
+    parent_task = relationship("Task", remote_side=[id], backref="subtasks")
 
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, name={self.name}, status={self.status})>"

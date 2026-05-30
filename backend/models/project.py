@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum, CheckConstraint
 from sqlalchemy.orm import relationship
 import enum
 from backend.models.base import BaseModel
@@ -31,6 +31,10 @@ class Project(BaseModel):
     completion = Column(Integer, default=0, comment="完成度(0-100)")
     estimated_end_date = Column(Date, comment="预计完成时间")
     actual_end_date = Column(Date, comment="实际完成时间")
+
+    __table_args__ = (
+        CheckConstraint('completion >= 0 AND completion <= 100', name='check_project_completion'),
+    )
 
     # 关系
     owner = relationship("User", back_populates="owned_projects", foreign_keys=[owner_id])
