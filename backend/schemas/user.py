@@ -24,3 +24,6 @@ class UserInDB(UserBase):
 
 class UserResponse(UserInDB):
     pass
+
+class UserRoleUpdate(BaseModel):
+    role: UserRole
