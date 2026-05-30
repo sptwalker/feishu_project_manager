@@ -24,7 +24,6 @@ class FeishuClient:
     def __init__(self):
         self.app_id = settings.FEISHU_APP_ID
         self.app_secret = settings.FEISHU_APP_SECRET
-        self._access_token: Optional[str] = None
         self._client: Optional[httpx.AsyncClient] = None
 
     def _get_client(self) -> httpx.AsyncClient:
@@ -32,6 +31,12 @@ class FeishuClient:
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=30.0)
         return self._client
+
+    async def close(self):
+        """关闭 HTTP 客户端"""
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     async def get_app_access_token(self) -> str:
         """获取应用 access token"""
