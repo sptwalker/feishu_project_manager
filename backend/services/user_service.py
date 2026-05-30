@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.models.user import User, UserRole
 from backend.schemas.user import UserCreate
 
@@ -26,17 +26,25 @@ class UserService:
             avatar_url=user_data.avatar_url,
             department=user_data.department,
             role=UserRole.MEMBER,
-            last_login_at=datetime.utcnow()
+            last_login_at=datetime.now(timezone.utc)
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            raise
         return user
 
     @staticmethod
     def update_last_login(db: Session, user: User) -> User:
         """更新最后登录时间"""
-        user.last_login_at = datetime.utcnow()
-        db.commit()
-        db.refresh(user)
+        user.last_login_at = datetime.now(timezone.utc)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            raise
         return user
