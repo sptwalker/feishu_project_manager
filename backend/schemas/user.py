@@ -4,7 +4,7 @@ from datetime import datetime
 from models.user import UserRole
 
 class UserBase(BaseModel):
-    name: str = Field(..., max_length=100)
+    name: str = Field(..., min_length=1, max_length=100)
     department: Optional[str] = Field(None, max_length=100)
 
 class UserCreate(UserBase):
