@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from backend.models.project import ProjectStatus, ProjectUrgency
 
@@ -35,7 +35,7 @@ class ProjectResponse(ProjectBase):
     """项目响应 Schema"""
     id: int
     actual_end_date: Optional[date] = None
-    created_at: date
-    updated_at: date
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
