@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.api.deps import get_db
@@ -9,6 +9,7 @@ from backend.models.task import TaskStatus, TaskPriority
 from backend.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 from backend.services.task_service import TaskService
 from backend.services.project_service import ProjectService
+from backend.services.notification_service import NotificationService
 from backend.core.permissions import PermissionChecker
 
 router = APIRouter()
@@ -148,6 +149,7 @@ def create_subtask(
 def update_task(
     task_id: int,
     task_data: TaskUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -161,6 +163,8 @@ def update_task(
     if task_data.parent_task_id is not None:
         _validate_parent_task(db, task.project_id, task_data.parent_task_id)
 
+    old_status = task.status.value if task.status else None
+
     try:
         task = TaskService.update(db, task_id, task_data)
     except IntegrityError:
@@ -173,6 +177,22 @@ def update_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
+
+    # 状态变更时，向任务负责人推送飞书通知（尽力而为，受开关控制）
+    new_status = task.status.value if task.status else None
+    if new_status and old_status and new_status != old_status:
+        owner = db.query(User).filter(User.id == task.owner_id).first()
+        receive_id = owner.feishu_user_id if owner else None
+        background_tasks.add_task(
+            NotificationService.notify_task_status_change,
+            receive_id,
+            task.name,
+            old_status,
+            new_status,
+            current_user.name,
+            project.name if project else "",
+        )
+
     return task
 
 

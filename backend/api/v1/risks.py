@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.api.deps import get_db
@@ -9,6 +9,7 @@ from backend.models.risk import RiskStatus
 from backend.schemas.risk import RiskCreate, RiskUpdate, RiskResponse
 from backend.services.risk_service import RiskService
 from backend.services.project_service import ProjectService
+from backend.services.notification_service import NotificationService
 from backend.core.permissions import PermissionChecker
 
 router = APIRouter()
@@ -94,6 +95,7 @@ def get_risk(
 def update_risk(
     risk_id: int,
     risk_data: RiskUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -103,6 +105,8 @@ def update_risk(
 
     # 权限检查
     PermissionChecker.require_risk_permission(current_user, risk, project, "modify")
+
+    old_status = risk.status.value if risk.status else None
 
     try:
         risk = RiskService.update(db, risk_id, risk_data)
@@ -116,6 +120,22 @@ def update_risk(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Risk not found"
         )
+
+    # 状态变更时，向风险负责人推送飞书通知（尽力而为，受开关控制）
+    new_status = risk.status.value if risk.status else None
+    if new_status and old_status and new_status != old_status:
+        owner = db.query(User).filter(User.id == risk.owner_id).first() if risk.owner_id else None
+        receive_id = owner.feishu_user_id if owner else None
+        background_tasks.add_task(
+            NotificationService.notify_risk_change,
+            receive_id,
+            risk.title,
+            old_status,
+            new_status,
+            current_user.name,
+            project.name if project else "",
+        )
+
     return risk
 
 
