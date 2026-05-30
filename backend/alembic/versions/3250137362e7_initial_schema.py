@@ -1,8 +1,8 @@
 """Initial schema
 
-Revision ID: ec7ded546e71
+Revision ID: 3250137362e7
 Revises: 
-Create Date: 2026-05-30 09:05:12.104889
+Create Date: 2026-05-30 09:11:08.820665
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ec7ded546e71'
+revision: str = '3250137362e7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=100), nullable=False, comment='姓名'),
     sa.Column('avatar_url', sa.String(length=500), nullable=True, comment='头像URL'),
     sa.Column('department', sa.String(length=100), nullable=True, comment='部门'),
-    sa.Column('role', sa.Enum('ADMIN', 'PROJECT_MANAGER', 'MEMBER', 'OBSERVER', name='userrole'), nullable=False, comment='角色'),
+    sa.Column('role', sa.Enum('admin', 'project_manager', 'member', 'observer', name='userrole'), nullable=False, comment='角色'),
     sa.Column('last_login_at', sa.DateTime(), nullable=True, comment='最后登录时间'),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -36,8 +36,8 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_feishu_user_id'), 'users', ['feishu_user_id'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_table('events',
-    sa.Column('event_type', sa.Enum('STATUS_CHANGE', 'ASSIGNEE_CHANGE', 'PROGRESS_UPDATE', 'DATE_ADJUST', 'RISK_EVENT', 'ASSOCIATION', 'SYSTEM_EVENT', name='eventtype'), nullable=False, comment='事件类型'),
-    sa.Column('entity_type', sa.Enum('PROJECT', 'TASK', 'MEETING', name='entitytype'), nullable=False, comment='实体类型'),
+    sa.Column('event_type', sa.Enum('status_change', 'assignee_change', 'progress_update', 'date_adjust', 'risk_event', 'association', 'system_event', name='eventtype'), nullable=False, comment='事件类型'),
+    sa.Column('entity_type', sa.Enum('project', 'task', 'meeting', name='entitytype'), nullable=False, comment='实体类型'),
     sa.Column('entity_id', sa.Integer(), nullable=False, comment='实体ID'),
     sa.Column('triggered_by', sa.Integer(), nullable=False, comment='触发用户ID'),
     sa.Column('occurred_at', sa.DateTime(), nullable=False, comment='发生时间'),
@@ -58,8 +58,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=200), nullable=False, comment='项目名称'),
     sa.Column('record_date', sa.Date(), nullable=False, comment='记录日期'),
     sa.Column('content', sa.Text(), nullable=True, comment='内容描述'),
-    sa.Column('status', sa.Enum('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', name='projectstatus'), nullable=False, comment='当前状态'),
-    sa.Column('urgency', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'URGENT', name='projecturgency'), nullable=False, comment='紧急程度'),
+    sa.Column('status', sa.Enum('planned', 'in_progress', 'completed', 'cancelled', name='projectstatus'), nullable=False, comment='当前状态'),
+    sa.Column('urgency', sa.Enum('low', 'medium', 'high', 'urgent', name='projecturgency'), nullable=False, comment='紧急程度'),
     sa.Column('department', sa.String(length=100), nullable=True, comment='负责部门'),
     sa.Column('owner_id', sa.Integer(), nullable=False, comment='负责人ID'),
     sa.Column('completion', sa.Integer(), nullable=True, comment='完成度(0-100)'),
@@ -77,7 +77,7 @@ def upgrade() -> None:
     sa.Column('project_id', sa.Integer(), nullable=False, comment='项目ID'),
     sa.Column('title', sa.String(length=200), nullable=False, comment='风险标题'),
     sa.Column('description', sa.Text(), nullable=True, comment='风险描述'),
-    sa.Column('status', sa.Enum('OPEN', 'MONITORING', 'RESOLVED', name='riskstatus'), nullable=False, comment='风险状态'),
+    sa.Column('status', sa.Enum('open', 'monitoring', 'resolved', name='riskstatus'), nullable=False, comment='风险状态'),
     sa.Column('owner_id', sa.Integer(), nullable=True, comment='负责人ID'),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -95,8 +95,8 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=200), nullable=False, comment='任务名称'),
     sa.Column('description', sa.Text(), nullable=True, comment='描述'),
     sa.Column('owner_id', sa.Integer(), nullable=False, comment='负责人ID'),
-    sa.Column('status', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'BLOCKED', name='taskstatus'), nullable=False, comment='当前状态'),
-    sa.Column('priority', sa.Enum('LOW', 'MEDIUM', 'HIGH', name='taskpriority'), nullable=False, comment='优先级'),
+    sa.Column('status', sa.Enum('pending', 'in_progress', 'completed', 'blocked', name='taskstatus'), nullable=False, comment='当前状态'),
+    sa.Column('priority', sa.Enum('low', 'medium', 'high', name='taskpriority'), nullable=False, comment='优先级'),
     sa.Column('completion', sa.Integer(), nullable=True, comment='完成度(0-100)'),
     sa.Column('due_date', sa.Date(), nullable=True, comment='截止日期'),
     sa.Column('start_date', sa.Date(), nullable=True, comment='开始时间'),
