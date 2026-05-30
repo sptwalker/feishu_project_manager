@@ -245,21 +245,39 @@
 
 ---
 
-### 📋 Phase 8: 定时任务系统（计划中）
+### ✅ Phase 8: 定时任务系统（已完成）
 
-**状态**: 待规划  
-**预计任务数**: 6-8 tasks
+**状态**: 已完成
+**实现方式**: APScheduler AsyncIOScheduler，集成于 FastAPI lifespan
 
 **目标**:
-实现 APScheduler 定时任务调度
+实现 APScheduler 定时任务调度，驱动提醒/跟催/周报
 
-**计划功能**:
-1. 定时任务调度器配置
-2. 逾期任务提醒
-3. 进度问询跟催
-4. 周报生成推送
-5. 里程碑到期提醒
-6. 飞书多维表格同步
+**完成功能**:
+1. ✅ 定时任务调度器配置（cron 触发，时区 TIMEZONE）
+2. ✅ 逾期任务提醒（每天，due_date 已过且未完成）
+3. ✅ 临期任务提醒（每天，N 天内到期）
+4. ✅ 进度问询跟催（每天，进行中且 N 天未更新）
+5. ✅ 里程碑到期提醒（每天，项目 estimated_end_date 已过）
+6. ✅ 周报生成推送（每周，系统范围统计 → 配置接收人）
+
+**安全设计**:
+- 调度线程受 `SCHEDULER_ENABLED` 控制，默认关闭；测试/开发不自启后台线程
+- 外发仍受 `FEISHU_NOTIFY_ENABLED` 控制（双层闸）
+- 作业内部捕获异常并记录日志，单次失败不影响调度器存活
+- 查询逻辑为纯函数，独立单测；编排部分 mock 通知
+
+**未纳入（带理由）**:
+- 飞书多维表格**定时**同步：当前模型未持久化 `feishu_record_id`，周期性同步会重复
+  创建记录。需先加字段+迁移方可正确实现。Phase 7 已提供手动同步端点，此项延后。
+
+**相关文件**:
+- `backend/core/scheduler.py`（调度器配置、start/shutdown）
+- `backend/services/reminder_service.py`、`backend/services/report_service.py`
+- `backend/services/scheduler_jobs.py`
+- `backend/core/config.py`（调度/提醒配置）、`backend/main.py`（lifespan）
+- `backend/tests/test_reminder_service.py`、`test_reminder_jobs.py`、`test_scheduler.py`
+- 测试覆盖：12 个用例（查询/编排/调度器闸/异常吞没）
 
 ---
 
@@ -365,7 +383,7 @@
 | Phase 5: 任务管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 6: 风险管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 7: 飞书集成 | ✅ 已完成 | 100% | 2026-05-30 |
-| Phase 8: 定时任务 | 📋 计划中 | 0% | 2026-06-10 |
+| Phase 8: 定时任务 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 9: 报表导出 | 📋 计划中 | 0% | 2026-06-12 |
 | Phase 10: 前端开发 | 📋 计划中 | 0% | 2026-06-20 |
 | Phase 11: 部署运维 | 📋 计划中 | 0% | 2026-06-22 |
@@ -401,4 +419,4 @@
 ---
 
 **最后更新**: 2026-05-30  
-**当前版本**: v0.7.0-dev
+**当前版本**: v0.8.0-dev
