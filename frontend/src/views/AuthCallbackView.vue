@@ -21,7 +21,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const error = ref('')
 
-onMounted(() => {
+onMounted(async () => {
   // 后端 OAuth 回调成功后重定向到此，携带 token（access_token / refresh_token）
   const access = route.query.access_token as string | undefined
   const refresh = route.query.refresh_token as string | undefined
@@ -29,6 +29,7 @@ onMounted(() => {
 
   if (access) {
     auth.setTokens(access, refresh)
+    await auth.fetchCurrentUser()
     router.replace(redirect)
   } else {
     error.value = (route.query.error as string) || '未获取到登录凭证'

@@ -11,9 +11,9 @@
         <RouterLink to="/board" class="nav-item" active-class="active">
           <el-icon><Grid /></el-icon><span>项目看板</span>
         </RouterLink>
-        <div class="nav-item disabled">
-          <el-icon><List /></el-icon><span>任务</span>
-        </div>
+        <RouterLink to="/users" class="nav-item" active-class="active">
+          <el-icon><User /></el-icon><span>用户管理</span>
+        </RouterLink>
         <div class="nav-item disabled">
           <el-icon><Warning /></el-icon><span>风险</span>
         </div>
@@ -23,9 +23,9 @@
       </nav>
 
       <div class="nav-foot">
-        <div class="nav-item disabled">
+        <RouterLink to="/settings" class="nav-item" active-class="active">
           <el-icon><Setting /></el-icon><span>设置</span>
-        </div>
+        </RouterLink>
       </div>
     </aside>
 
@@ -38,12 +38,14 @@
         <div class="top-actions">
           <el-dropdown trigger="click" @command="onCommand">
             <span class="user">
+              <span class="uname">{{ userName }}</span>
               <span class="avatar">{{ initial }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item command="settings">个人设置</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -58,21 +60,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
 
-const initial = computed(() => '我')
+const userName = computed(() => auth.currentUser?.name ?? '')
+const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
 
 function onCommand(cmd: string) {
   if (cmd === 'logout') {
     auth.logout()
     router.replace({ name: 'login' })
+  } else if (cmd === 'settings') {
+    router.push({ name: 'settings' })
   }
 }
+
+onMounted(() => {
+  if (!auth.currentUser) auth.fetchCurrentUser()
+})
 </script>
 
 <style scoped>
@@ -152,6 +161,7 @@ function onCommand(cmd: string) {
 }
 .crumb { font-family: var(--font-display); font-weight: 600; color: var(--c-ink-2); }
 .user { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; color: var(--c-ink-2); }
+.uname { font-weight: 600; font-size: 13px; color: var(--c-ink-2); }
 .avatar {
   width: 32px; height: 32px;
   display: grid; place-items: center;
