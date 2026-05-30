@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, DashboardStats } from '@/types'
+import type { Project, Task, Risk, User, DashboardStats } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -55,5 +55,17 @@ export const riskApi = {
   },
   remove(id: number) {
     return api.delete(`/risks/${id}`)
+  },
+}
+
+export const userApi = {
+  me() {
+    return api.get<User>('/users/me').then((r) => r.data)
+  },
+  list(params?: Record<string, unknown>) {
+    return api.get<User[]>('/users', { params }).then((r) => r.data)
+  },
+  updateRole(id: number, role: string) {
+    return api.patch<User>(`/users/${id}/role`, { role }).then((r) => r.data)
   },
 }

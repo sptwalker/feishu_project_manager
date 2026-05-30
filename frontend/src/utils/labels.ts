@@ -67,6 +67,20 @@ export const riskStatusSoft: Record<RiskStatus, string> = {
 
 export const RISK_STATUS_ORDER: RiskStatus[] = ['open', 'monitoring', 'resolved']
 
+export const roleLabel: Record<string, string> = {
+  admin: '管理员',
+  project_manager: '项目经理',
+  member: '成员',
+  observer: '观察者',
+}
+
+export const ROLE_OPTIONS = [
+  { value: 'admin', label: '管理员' },
+  { value: 'project_manager', label: '项目经理' },
+  { value: 'member', label: '成员' },
+  { value: 'observer', label: '观察者' },
+]
+
 export function isOverdue(dueDate?: string | null, status?: string): boolean {
   if (!dueDate) return false
   if (status === 'completed' || status === 'cancelled') return false

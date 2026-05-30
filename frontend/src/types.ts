@@ -13,6 +13,9 @@ export interface User {
   avatar_url?: string | null
   department?: string | null
   role: string
+  last_login_at?: string | null
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Project {
