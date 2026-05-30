@@ -84,11 +84,11 @@ server {
 ### 4. 数据备份
 
 ```bash
-# 备份SQLite数据库
-docker-compose exec backend cp /app/data/feishu_pm.db /app/data/backup_$(date +%Y%m%d).db
+# 备份SQLite数据库（数据卷挂载于容器 /data）
+docker compose exec backend cp /data/feishu_pm.db /data/backup_$(date +%Y%m%d).db
 
 # 复制到宿主机
-docker-compose cp backend:/app/data/backup_$(date +%Y%m%d).db ./
+docker compose cp backend:/data/backup_$(date +%Y%m%d).db ./
 ```
 
 ### 5. 更新部署

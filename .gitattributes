@@ -1,6 +1,9 @@
 # 统一文本文件使用 LF 行尾，避免跨平台 CRLF/LF 警告
 * text=auto eol=lf
 
+# Shell 脚本必须使用 LF（容器内为 Linux，CRLF 会导致执行失败）
+*.sh text eol=lf
+
 # 二进制文件不做行尾转换
 *.png binary
 *.jpg binary
