@@ -281,20 +281,34 @@
 
 ---
 
-### 📋 Phase 9: 报表和导入导出（计划中）
+### ✅ Phase 9: 报表和导入导出（已完成）
 
-**状态**: 待规划  
-**预计任务数**: 5-6 tasks
+**状态**: 已完成
+**实现方式**: openpyxl + 统计/导出/导入服务 + 报表 API
 
 **目标**:
-实现 Excel 导入导出和数据可视化
+实现 Excel 导入导出和看板统计数据
 
-**计划功能**:
-1. Excel 数据导入
-2. Excel 报表导出
-3. 看板统计数据
-4. 项目进度报表
-5. 周报/月报生成
+**完成功能**:
+1. ✅ Excel 任务导入（上传 xlsx，逐行校验，部分失败不影响其余）
+2. ✅ Excel 报表导出（项目 / 项目任务，附件下载）
+3. ✅ 看板统计数据（项目/任务/风险分布、逾期计数、平均完成度）
+4. ✅ 项目进度报表（任务状态分布、完成率）
+5. ✅ 周报生成（Phase 8 已实现 build_weekly_summary，统计服务复用同源数据）
+
+**API 端点**:
+- `GET /api/v1/statistics/dashboard` - 仪表盘统计
+- `GET /api/v1/statistics/projects/{project_id}/progress` - 项目进度统计
+- `GET /api/v1/reports/projects/export` - 导出全部项目为 Excel
+- `GET /api/v1/reports/projects/{project_id}/tasks/export` - 导出项目任务为 Excel
+- `POST /api/v1/reports/projects/{project_id}/tasks/import` - 从 Excel 导入任务
+
+**相关文件**:
+- `backend/utils/excel.py`（build_xlsx / parse_xlsx）
+- `backend/services/statistics_service.py`、`export_service.py`、`import_service.py`
+- `backend/schemas/statistics.py`、`backend/api/v1/reports.py`
+- `backend/tests/test_excel_utils.py`、`test_reports_service.py`、`test_reports_api.py`
+- 测试覆盖：23 个用例（excel/statistics/export/import/api）
 
 ---
 
@@ -384,7 +398,7 @@
 | Phase 6: 风险管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 7: 飞书集成 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 8: 定时任务 | ✅ 已完成 | 100% | 2026-05-30 |
-| Phase 9: 报表导出 | 📋 计划中 | 0% | 2026-06-12 |
+| Phase 9: 报表导出 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 10: 前端开发 | 📋 计划中 | 0% | 2026-06-20 |
 | Phase 11: 部署运维 | 📋 计划中 | 0% | 2026-06-22 |
 
@@ -419,4 +433,4 @@
 ---
 
 **最后更新**: 2026-05-30  
-**当前版本**: v0.8.0-dev
+**当前版本**: v0.9.0-dev
