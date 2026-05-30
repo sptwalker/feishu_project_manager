@@ -207,22 +207,41 @@
 
 ---
 
-### 📋 Phase 7: 飞书集成模块（计划中）
+### ✅ Phase 7: 飞书集成模块（已完成）
 
-**状态**: 待规划  
+**状态**: 已完成  
 **预计任务数**: 10-12 tasks
 
 **目标**:
 实现飞书机器人通知、多维表格同步、智能跟催
 
 **计划功能**:
-1. 飞书机器人消息推送
-2. 卡片消息设计和发送
-3. Webhook 事件接收
-4. 多维表格数据同步
-5. 智能问询跟催
-6. 里程碑到期提醒
-7. 任务逾期预警
+1. ✅ 飞书机器人消息推送（文本/卡片，tenant_access_token）
+2. ✅ 卡片消息构建（任务/风险/项目通知卡片）
+3. ✅ Webhook 事件接收（url_verification、token 校验、AES 解密、事件分发）
+4. ✅ 多维表格(Bitable)数据同步（项目/任务 upsert）
+5. ✅ 事件联动通知（任务/风险状态变更 → BackgroundTasks 推送负责人）
+
+> 说明：智能问询跟催、里程碑到期提醒、任务逾期预警本质由定时任务驱动，
+> 归入 Phase 8（定时任务系统）实现。
+
+**安全设计**:
+- 消息外发受配置开关 `FEISHU_NOTIFY_ENABLED` 控制，默认关闭；开发/测试期间不会真实外发
+- 通知为尽力而为（best-effort），失败不影响主流程
+- 全部测试 mock httpx/FeishuClient，无真实网络调用
+
+**API 端点**:
+- `POST /api/v1/feishu/webhook` - 接收飞书事件回调
+- `POST /api/v1/bitable/projects/{project_id}/sync` - 同步项目到多维表格
+- `POST /api/v1/bitable/tasks/{task_id}/sync` - 同步任务到多维表格
+
+**相关文件**:
+- `backend/core/feishu.py`（扩展：tenant token、send_text/send_card、bitable 记录操作）
+- `backend/utils/feishu_cards.py`、`backend/utils/feishu_crypto.py`
+- `backend/services/notification_service.py`、`backend/services/bitable_service.py`
+- `backend/api/v1/feishu_webhook.py`、`backend/api/v1/bitable.py`
+- `backend/tests/test_feishu_*.py`、`test_notification_service.py`、`test_bitable_service.py`
+- 测试覆盖：37 个用例（client/crypto/cards/notification/webhook/bitable/wiring）
 
 ---
 
@@ -345,7 +364,7 @@
 | Phase 4: 项目管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 5: 任务管理 API | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 6: 风险管理 API | ✅ 已完成 | 100% | 2026-05-30 |
-| Phase 7: 飞书集成 | 📋 计划中 | 0% | 2026-06-08 |
+| Phase 7: 飞书集成 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 8: 定时任务 | 📋 计划中 | 0% | 2026-06-10 |
 | Phase 9: 报表导出 | 📋 计划中 | 0% | 2026-06-12 |
 | Phase 10: 前端开发 | 📋 计划中 | 0% | 2026-06-20 |
@@ -382,4 +401,4 @@
 ---
 
 **最后更新**: 2026-05-30  
-**当前版本**: v0.6.0-dev
+**当前版本**: v0.7.0-dev
