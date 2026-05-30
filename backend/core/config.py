@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import validator
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -49,11 +49,14 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
-    @validator('SECRET_KEY')
-    def validate_jwt_secret(cls, v):
+    @field_validator('SECRET_KEY')
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
         """验证JWT密钥强度"""
         if len(v) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters")
+        if "your-secret-key" in v.lower() or "change-in-production" in v.lower():
+            raise ValueError("SECRET_KEY must be changed from default value in production")
         return v
 
 
