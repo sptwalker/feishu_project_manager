@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -20,30 +21,33 @@ async def feishu_login():
     oauth_url = feishu_client.get_oauth_url()
     return RedirectResponse(url=oauth_url)
 
-@router.get("/feishu/callback", response_model=Token)
+@router.get("/feishu/callback", response_class=RedirectResponse)
 async def feishu_callback(
     params: FeishuCallbackParams = Depends(),
     db: Session = Depends(get_db)
 ):
+    """飞书 OAuth 回调：换取 token 后重定向回前端并携带 token。
+
+    前端 /auth/callback 路由会从 query 读取 token 存入本地并清理 URL。
+    令牌经 query 传递，前端读取后立即 replace 清除历史；
+    更高安全级别可改用 httpOnly Cookie（后续硬化项）。
+    """
+    frontend = settings.FRONTEND_URL.rstrip("/")
     try:
         result = await AuthService.feishu_login(db, params.code)
-        return Token(
-            access_token=result["access_token"],
-            refresh_token=result["refresh_token"],
-            token_type=result["token_type"]
-        )
+        query = urlencode({
+            "access_token": result["access_token"],
+            "refresh_token": result["refresh_token"],
+        })
+        return RedirectResponse(url=f"{frontend}/auth/callback?{query}")
     except AuthenticationError as e:
         logger.error(f"Authentication failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed. Please try again."
-        )
+        query = urlencode({"error": "authentication_failed"})
+        return RedirectResponse(url=f"{frontend}/login?{query}")
     except Exception as e:
         logger.error(f"Unexpected error during authentication: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication failed. Please try again."
-        )
+        query = urlencode({"error": "server_error"})
+        return RedirectResponse(url=f"{frontend}/login?{query}")
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
