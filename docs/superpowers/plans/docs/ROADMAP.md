@@ -336,9 +336,9 @@
 
 **后端测试**: 184 passed（新增 7 个用户 API 用例）
 
-**已知集成点**: 后端 `/auth/feishu/callback` 当前返回 JSON Token；前端已预留
-`/auth/callback` 路由从 query 读取 token。完整 SPA 流程需后端回调改为「重定向
-到前端并带 token」。
+**登录闭环**: ✅ 已打通——后端 `/auth/feishu/callback` 成功后 302 重定向到
+`{FRONTEND_URL}/auth/callback?access_token=…&refresh_token=…`，前端读取并存入本地、
+清理 URL；失败重定向到 `/login?error=…`。覆盖 5 个回调测试。
 
 **构建验证**: `npm run build`（vue-tsc 2.x + vite）通过，exit 0。
 > 注：原 `vue-tsc@1.8` 与 TS 5.9 不兼容，已升级到 2.x。
