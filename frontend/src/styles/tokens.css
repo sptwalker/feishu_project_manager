@@ -1,0 +1,67 @@
+/* ============================================================
+   设计 Token —— 「冷静的编辑式生产力」
+   暖灰白画布 + 墨黑文字 + 深靛蓝强调色 + 状态语义色
+   ============================================================ */
+:root {
+  /* 画布与表面 */
+  --c-canvas: #f7f6f3;
+  --c-surface: #ffffff;
+  --c-surface-2: #fbfaf8;
+  --c-sidebar: #1c1d22;
+  --c-sidebar-hover: #2a2c33;
+
+  /* 文字 */
+  --c-ink: #1a1a1a;
+  --c-ink-2: #55555f;
+  --c-ink-3: #8a8a94;
+  --c-on-dark: #e8e8ec;
+  --c-on-dark-dim: #9a9ba6;
+
+  /* 强调色（深靛蓝） */
+  --c-accent: #3a5bd9;
+  --c-accent-hover: #2f4bc0;
+  --c-accent-soft: #e9edfb;
+
+  /* 状态语义色 */
+  --c-status-planned: #8a8a94;
+  --c-status-progress: #3a5bd9;
+  --c-status-done: #2f9e6f;
+  --c-status-overdue: #d94b3a;
+  --c-status-blocked: #e08a2f;
+  --c-status-progress-soft: #e9edfb;
+  --c-status-done-soft: #e3f3ec;
+  --c-status-overdue-soft: #fae8e6;
+  --c-status-blocked-soft: #fbf0e1;
+
+  /* 边框与分隔 */
+  --c-border: #e7e5e0;
+  --c-border-strong: #d8d6d0;
+
+  /* 阴影（极轻分层） */
+  --shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --shadow-md: 0 2px 8px rgba(26, 26, 26, 0.06);
+  --shadow-lg: 0 8px 28px rgba(26, 26, 26, 0.10);
+
+  /* 圆角 */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* 字体 */
+  --font-display: 'Sora', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Manrope', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Sora', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* 间距尺度 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* 布局 */
+  --sidebar-w: 232px;
+  --topbar-h: 60px;
+}
