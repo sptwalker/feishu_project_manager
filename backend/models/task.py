@@ -39,7 +39,7 @@ class Task(BaseModel):
     # 关系
     project = relationship("Project", back_populates="tasks")
     owner = relationship("User", back_populates="owned_tasks", foreign_keys=[owner_id])
-    parent_task = relationship("Task", remote_side=[id], backref="subtasks")
+    parent_task = relationship("Task", remote_side="Task.id", backref="subtasks")
 
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, name={self.name}, status={self.status})>"
