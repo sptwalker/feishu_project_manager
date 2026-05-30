@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, HttpUrl
 from typing import Optional
 from datetime import datetime
 from models.user import UserRole
@@ -8,20 +8,19 @@ class UserBase(BaseModel):
     department: Optional[str] = Field(None, max_length=100)
 
 class UserCreate(UserBase):
-    feishu_user_id: str = Field(..., max_length=100)
-    avatar_url: Optional[str] = Field(None, max_length=500)
+    feishu_user_id: str = Field(..., min_length=1, max_length=100)
+    avatar_url: Optional[HttpUrl] = Field(None)
 
 class UserInDB(UserBase):
     id: int
     feishu_user_id: str
-    avatar_url: Optional[str]
+    avatar_url: Optional[HttpUrl]
     role: UserRole
     last_login_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserResponse(UserInDB):
     pass

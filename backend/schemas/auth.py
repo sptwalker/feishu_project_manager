@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 
 class Token(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: Literal["bearer"] = "bearer"
 
 class TokenPayload(BaseModel):
     sub: Optional[int] = None
@@ -15,5 +15,5 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., description="Refresh token")
 
 class FeishuCallbackParams(BaseModel):
-    code: str = Field(..., description="Authorization code")
+    code: str = Field(..., min_length=1, description="Authorization code")
     state: Optional[str] = Field(None, description="State parameter")
