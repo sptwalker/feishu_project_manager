@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from backend.models.user import User, UserRole
 from backend.models.project import Project
 from backend.models.task import Task
+from backend.models.risk import Risk
 
 
 class PermissionChecker:
@@ -94,4 +95,41 @@ class PermissionChecker:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"You don't have permission to {action} this task"
+            )
+
+    @staticmethod
+    def can_mutate_risk(user: User, risk: Risk, project: Project) -> bool:
+        """检查用户是否可以修改/删除风险
+
+        Risk Permission Policy:
+        - ADMIN: Can mutate any risk
+        - Risk Owner: Can mutate their own risk (owner_id may be None)
+        - Parent Project Owner: Can mutate risks within their project
+        """
+        # 管理员可以操作任何风险
+        if user.role == UserRole.ADMIN:
+            return True
+        # 风险负责人可以操作自己负责的风险
+        if risk.owner_id is not None and risk.owner_id == user.id:
+            return True
+        # 所属项目的所有者可以操作项目内的风险
+        if project is not None and project.owner_id == user.id:
+            return True
+        return False
+
+    @staticmethod
+    def require_risk_permission(
+        user: User,
+        risk: Risk,
+        project: Project,
+        action: Literal["modify", "delete"] = "modify",
+    ):
+        """要求风险权限，否则抛出异常"""
+        if action not in ("modify", "delete"):
+            raise ValueError(f"Unknown action: {action}")
+
+        if not PermissionChecker.can_mutate_risk(user, risk, project):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You don't have permission to {action} this risk"
             )
