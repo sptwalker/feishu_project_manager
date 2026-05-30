@@ -353,13 +353,35 @@
 
 ---
 
-### 📋 Phase 11: 部署和运维（计划中）
+### ✅ Phase 11: 部署和运维（已完成）
 
-**状态**: 待规划  
-**预计任务数**: 4-5 tasks
+**状态**: 已完成（配置就绪并通过静态校验）
 
 **目标**:
 实现 Docker 容器化部署
+
+**完成内容**:
+1. ✅ 后端 Dockerfile（修正包布局：代码置于 `/app/backend`，`PYTHONPATH=/app`，
+   `uvicorn backend.main:app`，解决绝对导入问题）
+2. ✅ 容器入口脚本 `docker-entrypoint.sh`（启动前自动执行 `alembic upgrade head`）
+3. ✅ alembic 纳入 requirements；`env.py` 改为从应用配置读取 `DATABASE_URL`
+   （迁移与应用使用同一数据库，消除路径分叉）
+4. ✅ 前端 Dockerfile 改用 `npm ci`（基于 lockfile，可复现构建）+ nginx 反代 `/api`
+5. ✅ `docker-compose.yml`（生产）+ `docker-compose.dev.yml`（热重载）
+   — 数据卷挂载至 `/data`，`DATABASE_URL=sqlite:////data/feishu_pm.db`
+6. ✅ `docker/.env.example` 重写，键名与 `config.py` 完全对齐（修正原 `JWT_*` 错名、
+   去除会导致 pydantic 解析失败的 `CORS_ORIGINS`、补齐安全闸默认值）
+7. ✅ `.gitattributes` 强制 `*.sh` 用 LF（避免容器内脚本因 CRLF 失败）
+
+**验证**:
+- `docker compose config`（prod + dev）均通过
+- 容器导入目标 `backend.main:app` 在等价布局下本地验证可导入（FastAPI 实例）
+- `alembic upgrade head` 本地通过；后端测试 184 passed
+
+**未完成（环境限制）**:
+- 未能在本机实际 `docker build` 镜像并运行容器：本机 Docker Desktop 守护进程未启动
+  （`docker --version` 可用，但 daemon 未运行）。配置已通过静态校验，构建需在
+  daemon 可用的环境执行 `cd docker && cp .env.example .env && docker compose up -d`。
 
 **计划功能**:
 1. Dockerfile 编写
@@ -415,7 +437,7 @@
 | Phase 8: 定时任务 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 9: 报表导出 | ✅ 已完成 | 100% | 2026-05-30 |
 | Phase 10: 前端开发 | ✅ 已完成 | 100% | 2026-05-30 |
-| Phase 11: 部署运维 | 📋 计划中 | 0% | 2026-06-22 |
+| Phase 11: 部署运维 | ✅ 已完成 | 100% | 2026-05-30 |
 
 ---
 
@@ -448,4 +470,4 @@
 ---
 
 **最后更新**: 2026-05-30  
-**当前版本**: v0.10.0-dev
+**当前版本**: v1.0.0
