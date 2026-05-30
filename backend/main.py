@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import get_settings
-from backend.api.v1 import auth, projects, tasks, risks
+from backend.api.v1 import auth, projects, tasks, risks, feishu_webhook, bitable
 
 settings = get_settings()
 
@@ -36,6 +36,16 @@ app.include_router(
     risks.router,
     prefix="/api/v1",
     tags=["risks"]
+)
+app.include_router(
+    feishu_webhook.router,
+    prefix="/api/v1",
+    tags=["feishu"]
+)
+app.include_router(
+    bitable.router,
+    prefix="/api/v1",
+    tags=["bitable"]
 )
 
 
