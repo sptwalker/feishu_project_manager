@@ -48,6 +48,17 @@ export interface Task {
   updated_at: string
 }
 
+export interface Risk {
+  id: number
+  project_id: number
+  title: string
+  description?: string | null
+  status: RiskStatus
+  owner_id?: number | null
+  created_at: string
+  updated_at: string
+}
+
 export interface DashboardStats {
   projects: {
     total: number

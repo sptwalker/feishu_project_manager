@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, DashboardStats } from '@/types'
+import type { Project, Task, Risk, DashboardStats } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -40,5 +40,20 @@ export const taskApi = {
 export const statsApi = {
   dashboard() {
     return api.get<DashboardStats>('/statistics/dashboard').then((r) => r.data)
+  },
+}
+
+export const riskApi = {
+  listByProject(projectId: number, params?: Record<string, unknown>) {
+    return api.get<Risk[]>(`/projects/${projectId}/risks`, { params }).then((r) => r.data)
+  },
+  create(projectId: number, payload: Partial<Risk>) {
+    return api.post<Risk>(`/projects/${projectId}/risks`, payload).then((r) => r.data)
+  },
+  update(id: number, payload: Partial<Risk>) {
+    return api.put<Risk>(`/risks/${id}`, payload).then((r) => r.data)
+  },
+  remove(id: number) {
+    return api.delete(`/risks/${id}`)
   },
 }
