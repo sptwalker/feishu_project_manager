@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import get_settings
-from backend.api.v1 import auth, projects
+from backend.api.v1 import auth, projects, tasks
 
 settings = get_settings()
 
@@ -26,6 +26,11 @@ app.include_router(
     projects.router,
     prefix="/api/v1/projects",
     tags=["projects"]
+)
+app.include_router(
+    tasks.router,
+    prefix="/api/v1",
+    tags=["tasks"]
 )
 
 
