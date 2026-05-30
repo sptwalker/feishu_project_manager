@@ -6,6 +6,8 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: feishu_pm_backend
+    ports:
+      - "8000:8000"
     volumes:
       - backend_data:/app/data
     env_file:

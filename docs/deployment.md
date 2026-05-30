@@ -40,10 +40,17 @@ vim .env
 ```
 
 必须配置的变量:
-- `JWT_SECRET_KEY`: 生成随机密钥
+- `JWT_SECRET_KEY`: 生成随机密钥（至少32字符）
+  ```bash
+  # 使用openssl生成
+  openssl rand -hex 32
+  # 或使用Python生成
+  python -c "import secrets; print(secrets.token_hex(32))"
+  ```
 - `FEISHU_APP_ID`: 飞书应用ID
 - `FEISHU_APP_SECRET`: 飞书应用密钥
 - `FEISHU_VERIFICATION_TOKEN`: 飞书验证令牌
+- `FEISHU_ENCRYPT_KEY`: 飞书加密密钥（如果飞书应用启用了消息加密，则必须配置）
 
 #### 2.4 启动服务
 
@@ -78,10 +85,10 @@ server {
 
 ```bash
 # 备份SQLite数据库
-docker exec feishu_pm_backend cp /app/data/feishu_pm.db /app/data/backup_$(date +%Y%m%d).db
+docker-compose exec backend cp /app/data/feishu_pm.db /app/data/backup_$(date +%Y%m%d).db
 
 # 复制到宿主机
-docker cp feishu_pm_backend:/app/data/backup_$(date +%Y%m%d).db ./
+docker-compose cp backend:/app/data/backup_$(date +%Y%m%d).db ./
 ```
 
 ### 5. 更新部署
