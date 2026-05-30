@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
-from models.user import User, UserRole
-from schemas.user import UserCreate
+from backend.models.user import User, UserRole
+from backend.schemas.user import UserCreate
 
 class UserService:
     """用户服务"""
