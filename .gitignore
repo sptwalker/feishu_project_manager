@@ -37,6 +37,9 @@ env/
 *.swo
 *~
 
+# Claude / 本地工具
+.claude/
+
 # Database
 *.db
 *.sqlite
