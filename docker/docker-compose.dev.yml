@@ -1,38 +1,35 @@
-version: '3.8'
-
+# 开发模式：挂载源码，后端开启 --reload。
+# 用法：docker compose -f docker-compose.dev.yml up --build
 services:
   backend:
     build:
       context: ../backend
       dockerfile: Dockerfile
+    image: feishu_pm_backend
     container_name: feishu_pm_backend
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - "8000:8000"
     volumes:
-      - ../backend:/app
-      - backend_data:/app/data
+      # 挂载源码到 /app/backend 以支持热重载（与镜像内代码位置一致）
+      - ../backend:/app/backend
+      - backend_data:/data
     env_file:
       - .env
     restart: unless-stopped
     networks:
       - feishu_pm_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   frontend:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+    image: feishu_pm_frontend
     container_name: feishu_pm_frontend
     ports:
       - "80:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
     networks:
       - feishu_pm_network

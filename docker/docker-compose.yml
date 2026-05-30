@@ -1,15 +1,12 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ../backend
       dockerfile: Dockerfile
+    image: feishu_pm_backend
     container_name: feishu_pm_backend
-    ports:
-      - "8000:8000"
     volumes:
-      - backend_data:/app/data
+      - backend_data:/data
     env_file:
       - .env
     restart: unless-stopped
@@ -26,6 +23,7 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+    image: feishu_pm_frontend
     container_name: feishu_pm_frontend
     ports:
       - "80:80"
