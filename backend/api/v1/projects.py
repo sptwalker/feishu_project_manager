@@ -8,6 +8,7 @@ from backend.models.user import User
 from backend.models.project import ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
 from backend.services.project_service import ProjectService
+from backend.core.permissions import PermissionChecker
 
 router = APIRouter()
 
@@ -67,6 +68,16 @@ def update_project(
     current_user: User = Depends(get_current_user)
 ):
     """更新项目"""
+    project = ProjectService.get_by_id(db, project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    # 权限检查
+    PermissionChecker.require_project_permission(current_user, project, "modify")
+
     try:
         project = ProjectService.update(db, project_id, project_data)
     except IntegrityError:
@@ -88,9 +99,14 @@ def delete_project(
     current_user: User = Depends(get_current_user)
 ):
     """删除项目"""
-    success = ProjectService.delete(db, project_id)
-    if not success:
+    project = ProjectService.get_by_id(db, project_id)
+    if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
+
+    # 权限检查
+    PermissionChecker.require_project_permission(current_user, project, "delete")
+
+    ProjectService.delete(db, project_id)
