@@ -13,6 +13,16 @@ class Settings(BaseSettings):
 
     # 数据库配置
     DATABASE_URL: str = "sqlite:///./data/feishu_pm.db"
+    DATABASE_ECHO: bool = False  # SQL 日志
+
+    @property
+    def async_database_url(self) -> str:
+        """获取异步数据库 URL"""
+        if self.DATABASE_URL.startswith("sqlite"):
+            return self.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
+        elif self.DATABASE_URL.startswith("postgresql"):
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        return self.DATABASE_URL
 
     # JWT配置
     JWT_SECRET_KEY: str = "your-secret-key-change-in-production"
