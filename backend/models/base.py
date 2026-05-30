@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.sql import func
-from backend.db.base import Base
+from db.base import Base
 
 class TimestampMixin:
     """时间戳 Mixin"""
