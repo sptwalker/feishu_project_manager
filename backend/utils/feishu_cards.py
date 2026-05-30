@@ -74,3 +74,10 @@ def build_project_card(project_name: str, status: str, completion: int,
     if owner_name:
         lines.append(f"**负责人**：{owner_name}")
     return build_notification_card(title, lines, HEADER_BLUE)
+
+
+def build_reminder_card(title: str, lines: List[str],
+                        urgent: bool = False) -> Dict[str, Any]:
+    """提醒类卡片（逾期/临期/里程碑/跟催）。urgent 为真用红色，否则橙色。"""
+    template = HEADER_RED if urgent else HEADER_ORANGE
+    return build_notification_card(title, lines, template)

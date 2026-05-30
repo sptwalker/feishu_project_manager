@@ -67,3 +67,14 @@ class NotificationService:
             risk_title, old_status, new_status, operator_name, project_name
         )
         return await NotificationService._send_card(receive_id, card)
+
+    @staticmethod
+    async def notify_reminder(
+        receive_id: Optional[str],
+        title: str,
+        lines: list,
+        urgent: bool = False,
+    ) -> bool:
+        """通用提醒通知（逾期/临期/里程碑/进度跟催/周报）"""
+        card = feishu_cards.build_reminder_card(title, lines, urgent)
+        return await NotificationService._send_card(receive_id, card)
