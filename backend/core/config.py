@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     FEISHU_VERIFICATION_TOKEN: str = ""
     FEISHU_ENCRYPT_KEY: str = ""
 
+    # 飞书消息通知（安全闸：默认关闭，开启后才会真实外发消息）
+    FEISHU_NOTIFY_ENABLED: bool = False
+
+    # 飞书多维表格（Bitable）同步
+    FEISHU_BITABLE_APP_TOKEN: str = ""
+    FEISHU_BITABLE_PROJECT_TABLE_ID: str = ""
+    FEISHU_BITABLE_TASK_TABLE_ID: str = ""
+
     # 前端配置
     FRONTEND_URL: str = "http://localhost:3000"
 
