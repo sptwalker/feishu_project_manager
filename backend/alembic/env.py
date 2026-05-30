@@ -15,10 +15,14 @@ sys.path.insert(0, str(backend_dir.parent))
 
 from backend.models.base import Base
 from backend.models import User, Project, Task, Event, Risk
+from backend.core.config import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# 用应用配置中的 DATABASE_URL 覆盖 alembic.ini，确保迁移与应用使用同一数据库
+config.set_main_option("sqlalchemy.url", get_settings().DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
