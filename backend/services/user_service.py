@@ -23,7 +23,8 @@ class UserService:
         user = User(
             feishu_user_id=user_data.feishu_user_id,
             name=user_data.name,
-            avatar_url=user_data.avatar_url,
+            # HttpUrl 是 Pydantic 对象，需转为字符串才能写入数据库
+            avatar_url=str(user_data.avatar_url) if user_data.avatar_url else None,
             department=user_data.department,
             role=UserRole.MEMBER,
             last_login_at=datetime.now(timezone.utc)

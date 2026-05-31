@@ -58,3 +58,9 @@ docker/.env
 
 # Data
 data/
+
+# Dev scripts
+dev_seed.py
+smoke_*.py
+inspect_*.py
+diag_*.py
