@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from typing import Dict, Any
+import logging
 from backend.core.security import create_access_token, create_refresh_token, verify_token
 from backend.core.feishu import feishu_client
 from backend.services.user_service import UserService
 from backend.schemas.user import UserCreate
+
+logger = logging.getLogger(__name__)
 
 
 class AuthenticationError(Exception):
@@ -35,8 +38,18 @@ class AuthService:
 
             # 2. 获取用户信息
             user_info = await feishu_client.get_user_info(user_access_token)
-            feishu_user_id = user_info.get("user_id")
+            # 身份标识优先用 open_id（自建应用恒定返回），回退 user_id / union_id。
+            # user_id 仅在应用具备「获取用户 userID」权限时才有值。
+            feishu_user_id = (
+                user_info.get("open_id")
+                or user_info.get("user_id")
+                or user_info.get("union_id")
+            )
             if not feishu_user_id:
+                logger.error(
+                    "No usable user identity from Feishu; returned keys=%s",
+                    sorted(user_info.keys()),
+                )
                 raise AuthenticationError("Failed to get user ID from Feishu")
         except AuthenticationError:
             raise
@@ -56,9 +69,9 @@ class AuthService:
         else:
             user = UserService.update_last_login(db, user)
 
-        # 4. 生成 JWT tokens
-        access_token = create_access_token(data={"sub": user.id})
-        refresh_token = create_refresh_token(data={"sub": user.id})
+        # 4. 生成 JWT tokens（sub 必须为字符串，否则 JWT 校验会失败）
+        access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
 
         return {
             "access_token": access_token,
@@ -82,7 +95,7 @@ class AuthService:
         if not user:
             raise InvalidTokenError("User not found")
 
-        access_token = create_access_token(data={"sub": user.id})
+        access_token = create_access_token(data={"sub": str(user.id)})
 
         return {
             "access_token": access_token,

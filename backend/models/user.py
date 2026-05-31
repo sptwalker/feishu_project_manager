@@ -21,9 +21,5 @@ class User(BaseModel):
     role = Column(SQLEnum(UserRole), default=UserRole.MEMBER, nullable=False, comment="角色")
     last_login_at = Column(DateTime, comment="最后登录时间")
 
-    # 关系
-    owned_projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
-    owned_tasks = relationship("Task", back_populates="owner", foreign_keys="Task.owner_id")
-
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name={self.name}, role={self.role})>"

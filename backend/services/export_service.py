@@ -17,11 +17,11 @@ class ExportService:
     """导出服务"""
 
     PROJECT_HEADERS = [
-        "项目ID", "项目名称", "状态", "紧急程度", "完成度", "部门",
+        "项目ID", "项目名称", "状态", "紧急程度", "完成度", "部门", "负责人",
         "记录日期", "预计完成", "实际完成",
     ]
     TASK_HEADERS = [
-        "任务ID", "任务名称", "项目ID", "负责人ID", "状态", "优先级",
+        "任务ID", "任务名称", "项目ID", "负责人", "状态", "优先级",
         "完成度", "开始日期", "截止日期", "完成日期", "父任务ID",
     ]
 
@@ -36,6 +36,7 @@ class ExportService:
                 p.urgency.value if p.urgency else "",
                 p.completion or 0,
                 p.department or "",
+                p.owner_name or "",
                 _date_str(p.record_date),
                 _date_str(p.estimated_end_date),
                 _date_str(p.actual_end_date),
@@ -50,7 +51,7 @@ class ExportService:
         tasks: List[Task] = db.query(Task).filter(Task.project_id == project_id).all()
         rows = [
             [
-                t.id, t.name, t.project_id, t.owner_id,
+                t.id, t.name, t.project_id, t.owner_name or "",
                 t.status.value if t.status else "",
                 t.priority.value if t.priority else "",
                 t.completion or 0,

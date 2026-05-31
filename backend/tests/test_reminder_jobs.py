@@ -1,13 +1,12 @@
 import asyncio
 import pytest
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from unittest.mock import AsyncMock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from backend.models import User as _U, Project as _P, Task as _T, Event as _E, Risk as _R  # noqa: F401
 from backend.db.base import Base
-from backend.models.user import User, UserRole
 from backend.models.project import Project, ProjectStatus
 from backend.models.task import Task, TaskStatus
 from backend.models.risk import Risk, RiskStatus
@@ -15,6 +14,8 @@ from backend.core.config import get_settings
 from backend.services.reminder_service import ReminderService
 from backend.services.report_service import ReportService
 from backend.services import notification_service as ns
+
+RECEIVER = "report_receiver_open_id"
 
 
 @pytest.fixture
@@ -36,34 +37,33 @@ def db_session():
 
 @pytest.fixture
 def enable_notify():
+    """开启通知并配置接收人（提醒统一发给配置接收人，不再定向到负责人个人）"""
     s = get_settings()
-    old = s.FEISHU_NOTIFY_ENABLED
+    old_enabled, old_recv = s.FEISHU_NOTIFY_ENABLED, s.FEISHU_REPORT_RECEIVER_ID
     s.FEISHU_NOTIFY_ENABLED = True
+    s.FEISHU_REPORT_RECEIVER_ID = RECEIVER
     yield
-    s.FEISHU_NOTIFY_ENABLED = old
-
-
-@pytest.fixture
-def owner(db_session):
-    u = User(feishu_user_id="job_owner", name="负责人", role=UserRole.MEMBER)
-    db_session.add(u)
-    db_session.commit()
-    db_session.refresh(u)
-    return u
+    s.FEISHU_NOTIFY_ENABLED = old_enabled
+    s.FEISHU_REPORT_RECEIVER_ID = old_recv
 
 
 TODAY = date(2026, 6, 1)
 
 
-def test_send_overdue_reminders_sends_to_owner(db_session, owner, enable_notify, monkeypatch):
+def _project(db, **kw):
+    p = Project(name=kw.pop("name", "P"), record_date=date(2026, 5, 1), **kw)
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return p
+
+
+def test_send_overdue_reminders_sends_to_receiver(db_session, enable_notify, monkeypatch):
     mock = AsyncMock(return_value={"message_id": "m"})
     monkeypatch.setattr(ns.feishu_client, "send_card", mock)
 
-    project = Project(name="P", record_date=date(2026, 5, 1), owner_id=owner.id)
-    db_session.add(project)
-    db_session.commit()
-    db_session.refresh(project)
-    db_session.add(Task(project_id=project.id, name="逾期", owner_id=owner.id,
+    project = _project(db_session, owner_name="张三")
+    db_session.add(Task(project_id=project.id, name="逾期", owner_name="张三",
                         due_date=date(2026, 5, 20), status=TaskStatus.IN_PROGRESS))
     db_session.commit()
 
@@ -71,18 +71,15 @@ def test_send_overdue_reminders_sends_to_owner(db_session, owner, enable_notify,
     assert sent == 1
     mock.assert_awaited_once()
     args, _ = mock.call_args
-    assert args[0] == "job_owner"  # receive_id
+    assert args[0] == RECEIVER  # 统一发送给配置的接收人
 
 
-def test_send_overdue_reminders_disabled_sends_nothing(db_session, owner, monkeypatch):
+def test_send_overdue_reminders_disabled_sends_nothing(db_session, monkeypatch):
     mock = AsyncMock()
     monkeypatch.setattr(ns.feishu_client, "send_card", mock)
 
-    project = Project(name="P", record_date=date(2026, 5, 1), owner_id=owner.id)
-    db_session.add(project)
-    db_session.commit()
-    db_session.refresh(project)
-    db_session.add(Task(project_id=project.id, name="逾期", owner_id=owner.id,
+    project = _project(db_session, owner_name="张三")
+    db_session.add(Task(project_id=project.id, name="逾期", owner_name="张三",
                         due_date=date(2026, 5, 20), status=TaskStatus.IN_PROGRESS))
     db_session.commit()
 
@@ -92,14 +89,11 @@ def test_send_overdue_reminders_disabled_sends_nothing(db_session, owner, monkey
     mock.assert_not_called()
 
 
-def test_build_weekly_summary(db_session, owner):
-    p = Project(name="P", record_date=date(2026, 5, 1), owner_id=owner.id, status=ProjectStatus.IN_PROGRESS)
-    db_session.add(p)
-    db_session.commit()
-    db_session.refresh(p)
+def test_build_weekly_summary(db_session):
+    p = _project(db_session, owner_name="张三", status=ProjectStatus.IN_PROGRESS)
     db_session.add_all([
-        Task(project_id=p.id, name="t1", owner_id=owner.id, status=TaskStatus.PENDING),
-        Task(project_id=p.id, name="t2", owner_id=owner.id, status=TaskStatus.COMPLETED),
+        Task(project_id=p.id, name="t1", owner_name="张三", status=TaskStatus.PENDING),
+        Task(project_id=p.id, name="t2", owner_name="张三", status=TaskStatus.COMPLETED),
         Risk(project_id=p.id, title="r1", status=RiskStatus.OPEN),
     ])
     db_session.commit()

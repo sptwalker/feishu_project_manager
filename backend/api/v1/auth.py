@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from backend.api.deps import get_db
-from backend.services.auth_service import AuthService, AuthenticationError
+from backend.services.auth_service import AuthService, AuthenticationError, InvalidTokenError
 from backend.schemas.auth import Token, RefreshTokenRequest, FeishuCallbackParams
 from backend.core.feishu import feishu_client
 from backend.core.config import get_settings
@@ -61,7 +61,7 @@ async def refresh_token(
             refresh_token=request.refresh_token,
             token_type=result["token_type"]
         )
-    except ValueError as e:
+    except (ValueError, InvalidTokenError) as e:
         logger.error(f"Token refresh failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

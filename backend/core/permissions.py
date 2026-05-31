@@ -1,135 +1,65 @@
-from typing import Literal
+from typing import Literal, Optional
 from fastapi import HTTPException, status
 from backend.models.user import User, UserRole
 from backend.models.project import Project
 from backend.models.task import Task
 from backend.models.risk import Risk
 
+# 可管理项目数据（增删改）的角色
+MANAGER_ROLES = (UserRole.ADMIN, UserRole.PROJECT_MANAGER)
+
 
 class PermissionChecker:
-    """权限检查器
+    """权限检查器（基于角色，与项目数据解耦）
 
     Permission Policy:
-    - ADMIN: Can modify and delete any project
-    - Project Owner (any role): Can modify and delete their own project
-    - PROJECT_MANAGER, MEMBER, OBSERVER: Cannot modify or delete projects they don't own
+    - ADMIN / PROJECT_MANAGER: 可增删改任何项目 / 任务 / 风险
+    - MEMBER / OBSERVER: 只读
 
-    Note: PROJECT_MANAGER currently has no special privileges for project mutations.
-    This may change as the product evolves.
+    说明：项目数据不再绑定负责人用户账号，因此权限完全由角色决定；
+    增删用户、调整用户角色都不会影响已有的项目数据。
     """
 
     @staticmethod
-    def can_modify_project(user: User, project: Project) -> bool:
-        """检查用户是否可以修改项目"""
-        # 管理员可以修改任何项目
-        if user.role == UserRole.ADMIN:
-            return True
-        # 项目所有者可以修改自己的项目
-        if project.owner_id == user.id:
-            return True
-        return False
+    def can_manage(user: User) -> bool:
+        """是否具备管理（增删改）权限"""
+        return user.role in MANAGER_ROLES
 
     @staticmethod
-    def can_delete_project(user: User, project: Project) -> bool:
-        """检查用户是否可以删除项目"""
-        # 管理员可以删除任何项目
-        if user.role == UserRole.ADMIN:
-            return True
-        # 项目所有者可以删除自己的项目
-        if project.owner_id == user.id:
-            return True
-        return False
+    def _require(user: User, action: str, entity: str):
+        if action not in ("modify", "delete"):
+            raise ValueError(f"Unknown action: {action}")
+        if not PermissionChecker.can_manage(user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You don't have permission to {action} this {entity}",
+            )
 
     @staticmethod
     def require_project_permission(
         user: User,
-        project: Project,
+        project: Optional[Project] = None,
         action: Literal["modify", "delete"] = "modify",
     ):
-        """要求项目权限，否则抛出异常"""
-        if action == "delete":
-            has_permission = PermissionChecker.can_delete_project(user, project)
-        elif action == "modify":
-            has_permission = PermissionChecker.can_modify_project(user, project)
-        else:
-            raise ValueError(f"Unknown action: {action}")
-
-        if not has_permission:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"You don't have permission to {action} this project"
-            )
-
-    @staticmethod
-    def can_mutate_task(user: User, task: Task, project: Project) -> bool:
-        """检查用户是否可以修改/删除任务
-
-        Task Permission Policy:
-        - ADMIN: Can mutate any task
-        - Task Owner: Can mutate their own task
-        - Parent Project Owner: Can mutate tasks within their project
-        """
-        # 管理员可以操作任何任务
-        if user.role == UserRole.ADMIN:
-            return True
-        # 任务负责人可以操作自己的任务
-        if task.owner_id == user.id:
-            return True
-        # 所属项目的所有者可以操作项目内的任务
-        if project is not None and project.owner_id == user.id:
-            return True
-        return False
+        """要求项目管理权限（project 参数保留以兼容调用方，实际按角色判定）"""
+        PermissionChecker._require(user, action, "project")
 
     @staticmethod
     def require_task_permission(
         user: User,
-        task: Task,
-        project: Project,
+        task: Optional[Task] = None,
+        project: Optional[Project] = None,
         action: Literal["modify", "delete"] = "modify",
     ):
-        """要求任务权限，否则抛出异常"""
-        if action not in ("modify", "delete"):
-            raise ValueError(f"Unknown action: {action}")
-
-        if not PermissionChecker.can_mutate_task(user, task, project):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"You don't have permission to {action} this task"
-            )
-
-    @staticmethod
-    def can_mutate_risk(user: User, risk: Risk, project: Project) -> bool:
-        """检查用户是否可以修改/删除风险
-
-        Risk Permission Policy:
-        - ADMIN: Can mutate any risk
-        - Risk Owner: Can mutate their own risk (owner_id may be None)
-        - Parent Project Owner: Can mutate risks within their project
-        """
-        # 管理员可以操作任何风险
-        if user.role == UserRole.ADMIN:
-            return True
-        # 风险负责人可以操作自己负责的风险
-        if risk.owner_id is not None and risk.owner_id == user.id:
-            return True
-        # 所属项目的所有者可以操作项目内的风险
-        if project is not None and project.owner_id == user.id:
-            return True
-        return False
+        """要求任务管理权限"""
+        PermissionChecker._require(user, action, "task")
 
     @staticmethod
     def require_risk_permission(
         user: User,
-        risk: Risk,
-        project: Project,
+        risk: Optional[Risk] = None,
+        project: Optional[Project] = None,
         action: Literal["modify", "delete"] = "modify",
     ):
-        """要求风险权限，否则抛出异常"""
-        if action not in ("modify", "delete"):
-            raise ValueError(f"Unknown action: {action}")
-
-        if not PermissionChecker.can_mutate_risk(user, risk, project):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"You don't have permission to {action} this risk"
-            )
+        """要求风险管理权限"""
+        PermissionChecker._require(user, action, "risk")
