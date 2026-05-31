@@ -5,6 +5,7 @@ import type {
 export const projectStatusLabel: Record<ProjectStatus, string> = {
   planned: '待启动',
   in_progress: '进行中',
+  paused: '暂停',
   completed: '已完成',
   cancelled: '已取消',
 }
@@ -12,12 +13,30 @@ export const projectStatusLabel: Record<ProjectStatus, string> = {
 export const projectStatusColor: Record<ProjectStatus, string> = {
   planned: 'var(--c-status-planned)',
   in_progress: 'var(--c-status-progress)',
+  paused: 'var(--c-status-blocked)',
   completed: 'var(--c-status-done)',
   cancelled: 'var(--c-ink-3)',
 }
 
 export const urgencyLabel: Record<ProjectUrgency, string> = {
   low: '低', medium: '中', high: '高', urgent: '紧急',
+}
+
+// 项目状态排序顺序（用于默认/下拉）
+export const PROJECT_STATUS_ORDER: ProjectStatus[] = [
+  'planned', 'in_progress', 'paused', 'completed', 'cancelled',
+]
+
+// 紧急程度权重（数值越大越紧急，用于排序：紧急 > 高 > 中 > 低）
+export const urgencyWeight: Record<ProjectUrgency, number> = {
+  urgent: 4, high: 3, medium: 2, low: 1,
+}
+
+export const urgencyColor: Record<ProjectUrgency, string> = {
+  low: 'var(--c-ink-3)',
+  medium: 'var(--c-status-progress)',
+  high: 'var(--c-status-blocked)',
+  urgent: 'var(--c-status-overdue)',
 }
 
 export const taskStatusLabel: Record<TaskStatus, string> = {
@@ -85,4 +104,20 @@ export function isOverdue(dueDate?: string | null, status?: string): boolean {
   if (!dueDate) return false
   if (status === 'completed' || status === 'cancelled') return false
   return new Date(dueDate) < new Date(new Date().toDateString())
+}
+
+// 项目进展记录的「状况」选项与对应时间节点颜色
+export const PROGRESS_STATUSES = [
+  '正常', '延迟', '暂停', '阻塞', '等待', '待讨论', '待执行', '待确认',
+] as const
+
+export const progressStatusColor: Record<string, string> = {
+  正常: '#3DBE7B',   // 绿
+  延迟: '#E6B422',   // 黄
+  暂停: '#9AA0A6',   // 灰
+  阻塞: '#E5484D',   // 红
+  等待: '#7FB3E8',   // 淡蓝
+  待讨论: '#E8833A', // 橙
+  待执行: '#21C7C7', // 青
+  待确认: '#E87FB0', // 粉
 }

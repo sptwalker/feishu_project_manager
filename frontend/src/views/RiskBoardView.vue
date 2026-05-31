@@ -42,7 +42,7 @@
             <p v-if="r.description" class="rdesc">{{ r.description }}</p>
             <div class="rmeta muted">
               <span :style="{ color: statusColor(col) }">{{ statusLabel(col) }}</span>
-              <span v-if="r.owner_id">· 负责人 #{{ r.owner_id }}</span>
+              <span v-if="r.owner_name">· 负责人 {{ r.owner_name }}</span>
             </div>
           </article>
           <el-empty v-if="!loading && !(grouped[col]?.length)" :image-size="0" description="—" />
@@ -64,8 +64,8 @@
             <el-option v-for="s in RISK_STATUS_ORDER" :key="s" :label="statusLabel(s)" :value="s" />
           </el-select>
         </el-form-item>
-        <el-form-item label="负责人ID">
-          <el-input-number v-model="form.owner_id" :min="1" style="width: 100%" placeholder="可选" />
+        <el-form-item label="负责人">
+          <el-input v-model="form.owner_name" style="width: 100%" placeholder="负责人姓名（可选）" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -127,19 +127,19 @@ const dialogVisible = ref(false)
 const editing = ref<Risk | null>(null)
 const saving = ref(false)
 const form = reactive<Record<string, unknown>>({
-  title: '', description: '', status: 'open', owner_id: undefined,
+  title: '', description: '', status: 'open', owner_name: '',
 })
 
 function openCreate() {
   editing.value = null
-  Object.assign(form, { title: '', description: '', status: 'open', owner_id: undefined })
+  Object.assign(form, { title: '', description: '', status: 'open', owner_name: '' })
   dialogVisible.value = true
 }
 
 function openEdit(r: Risk) {
   editing.value = r
   Object.assign(form, {
-    title: r.title, description: r.description ?? '', status: r.status, owner_id: r.owner_id ?? undefined,
+    title: r.title, description: r.description ?? '', status: r.status, owner_name: r.owner_name ?? '',
   })
   dialogVisible.value = true
 }
@@ -153,7 +153,7 @@ async function submit() {
   try {
     const payload: Record<string, unknown> = { ...form }
     if (!payload.description) delete payload.description
-    if (!payload.owner_id) delete payload.owner_id
+    if (!payload.owner_name) delete payload.owner_name
     if (editing.value) {
       await riskApi.update(editing.value.id, payload as Partial<Risk>)
       ElMessage.success('风险已更新')

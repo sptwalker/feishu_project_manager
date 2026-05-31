@@ -1,6 +1,6 @@
 // 与后端 schema 对应的类型定义
 
-export type ProjectStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled'
+export type ProjectStatus = 'planned' | 'in_progress' | 'paused' | 'completed' | 'cancelled'
 export type ProjectUrgency = 'low' | 'medium' | 'high' | 'urgent'
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'blocked'
 export type TaskPriority = 'low' | 'medium' | 'high'
@@ -18,6 +18,12 @@ export interface User {
   updated_at?: string
 }
 
+export interface ProgressEntry {
+  time: string
+  content: string
+  status: string
+}
+
 export interface Project {
   id: number
   name: string
@@ -26,10 +32,12 @@ export interface Project {
   status: ProjectStatus
   urgency: ProjectUrgency
   department?: string | null
-  owner_id: number
+  owner_name?: string | null
+  related_name?: string | null
   completion: number
   estimated_end_date?: string | null
   actual_end_date?: string | null
+  progress_log?: ProgressEntry[] | null
   created_at: string
   updated_at: string
 }
@@ -40,7 +48,7 @@ export interface Task {
   parent_task_id?: number | null
   name: string
   description?: string | null
-  owner_id: number
+  owner_name?: string | null
   status: TaskStatus
   priority: TaskPriority
   completion: number
@@ -57,7 +65,7 @@ export interface Risk {
   title: string
   description?: string | null
   status: RiskStatus
-  owner_id?: number | null
+  owner_name?: string | null
   created_at: string
   updated_at: string
 }

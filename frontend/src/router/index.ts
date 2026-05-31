@@ -22,6 +22,7 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/board' },
         { path: 'board', name: 'board', component: () => import('@/views/ProjectBoardView.vue') },
+        { path: 'overview', name: 'overview', component: () => import('@/views/ProjectOverviewView.vue') },
         {
           path: 'projects/:id/tasks',
           name: 'project-tasks',

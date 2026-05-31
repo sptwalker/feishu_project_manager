@@ -128,8 +128,8 @@
         <el-form-item label="任务名称" required>
           <el-input v-model="form.name" placeholder="请输入任务名称" />
         </el-form-item>
-        <el-form-item label="负责人ID" required>
-          <el-input-number v-model="form.owner_id" :min="1" style="width: 100%" />
+        <el-form-item label="负责人">
+          <el-input v-model="form.owner_name" placeholder="负责人姓名（可选）" style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="form.status" style="width: 100%">
@@ -264,33 +264,34 @@ const dialogVisible = ref(false)
 const editing = ref<Task | null>(null)
 const saving = ref(false)
 const form = reactive<Record<string, unknown>>({
-  name: '', owner_id: 1, status: 'pending', priority: 'medium', completion: 0, due_date: null,
+  name: '', owner_name: '', status: 'pending', priority: 'medium', completion: 0, due_date: null,
 })
 
 function openCreate() {
   editing.value = null
-  Object.assign(form, { name: '', owner_id: 1, status: 'pending', priority: 'medium', completion: 0, due_date: null })
+  Object.assign(form, { name: '', owner_name: '', status: 'pending', priority: 'medium', completion: 0, due_date: null })
   dialogVisible.value = true
 }
 
 function openEdit(t: Task) {
   editing.value = t
   Object.assign(form, {
-    name: t.name, owner_id: t.owner_id, status: t.status,
+    name: t.name, owner_name: t.owner_name ?? '', status: t.status,
     priority: t.priority, completion: t.completion, due_date: t.due_date ?? null,
   })
   dialogVisible.value = true
 }
 
 async function submit() {
-  if (!form.name || !form.owner_id) {
-    ElMessage.warning('请填写任务名称与负责人ID')
+  if (!form.name) {
+    ElMessage.warning('请填写任务名称')
     return
   }
   saving.value = true
   try {
     const payload: Record<string, unknown> = { ...form }
     if (!payload.due_date) delete payload.due_date
+    if (!payload.owner_name) delete payload.owner_name
     if (editing.value) {
       await taskApi.update(editing.value.id, payload as Partial<Task>)
       ElMessage.success('任务已更新')
@@ -301,7 +302,7 @@ async function submit() {
     dialogVisible.value = false
     await load()
   } catch {
-    ElMessage.error('保存失败，请检查负责人ID是否存在或权限')
+    ElMessage.error('保存失败（需要管理员或项目经理权限）')
   } finally {
     saving.value = false
   }

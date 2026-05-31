@@ -11,6 +11,9 @@
         <RouterLink to="/board" class="nav-item" active-class="active">
           <el-icon><Grid /></el-icon><span>项目看板</span>
         </RouterLink>
+        <RouterLink to="/overview" class="nav-item" active-class="active">
+          <el-icon><Tickets /></el-icon><span>项目总览</span>
+        </RouterLink>
         <RouterLink to="/users" class="nav-item" active-class="active">
           <el-icon><User /></el-icon><span>用户管理</span>
         </RouterLink>

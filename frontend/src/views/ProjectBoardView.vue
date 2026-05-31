@@ -5,7 +5,11 @@
         <h1 class="page-title">项目看板</h1>
         <p class="muted">掌握所有项目的进度与风险</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreate">新建项目</el-button>
+      <div class="head-actions">
+        <el-button :icon="Upload" :loading="importing" @click="triggerImport">表格导入</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建项目</el-button>
+        <input ref="fileInput" type="file" accept=".xlsx" style="display:none" @change="onFileChosen" />
+      </div>
     </div>
 
     <!-- 统计卡片 -->
@@ -101,8 +105,8 @@
         <el-form-item label="记录日期" required>
           <el-date-picker v-model="form.record_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="负责人ID" required>
-          <el-input-number v-model="form.owner_id" :min="1" style="width: 100%" />
+        <el-form-item label="负责人">
+          <el-input v-model="form.owner_name" placeholder="负责人姓名（可选）" style="width: 100%" />
         </el-form-item>
         <el-form-item label="紧急程度">
           <el-select v-model="form.urgency" style="width: 100%">
@@ -128,7 +132,7 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Search, Grid, List } from '@element-plus/icons-vue'
+import { Plus, Search, Grid, List, Upload } from '@element-plus/icons-vue'
 import { projectApi, statsApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, DashboardStats } from '@/types'
 import {
@@ -149,6 +153,7 @@ const keyword = ref('')
 const statusOptions = [
   { value: 'planned', label: '待启动' },
   { value: 'in_progress', label: '进行中' },
+  { value: 'paused', label: '暂停' },
   { value: 'completed', label: '已完成' },
   { value: 'cancelled', label: '已取消' },
 ]
@@ -176,7 +181,7 @@ function cssVar(name: string): string {
 
 const projectStatusOption = computed(() => {
   const by = stats.value?.projects.by_status ?? {}
-  const order: ProjectStatus[] = ['planned', 'in_progress', 'completed', 'cancelled']
+  const order: ProjectStatus[] = ['planned', 'in_progress', 'paused', 'completed', 'cancelled']
   const data = order
     .map((s) => ({
       name: projectStatusLabel[s],
@@ -252,23 +257,53 @@ function goTasks(id: number) {
   router.push({ name: 'project-tasks', params: { id } })
 }
 
+/* 表格导入 */
+const fileInput = ref<HTMLInputElement | null>(null)
+const importing = ref(false)
+
+function triggerImport() {
+  fileInput.value?.click()
+}
+
+async function onFileChosen(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''  // 允许重复选择同一文件
+  if (!file) return
+  importing.value = true
+  try {
+    const res = await projectApi.importExcel(file)
+    if (res.error_count > 0) {
+      ElMessage.warning(`导入完成：成功 ${res.created} 条，失败 ${res.error_count} 条`)
+    } else {
+      ElMessage.success(`导入成功 ${res.created} 条项目`)
+    }
+    await Promise.all([load(), loadStats()])
+  } catch (err: unknown) {
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail ? `导入失败：${detail}` : '导入失败，请检查表格格式')
+  } finally {
+    importing.value = false
+  }
+}
+
 /* 新建项目 */
 const createVisible = ref(false)
 const saving = ref(false)
 const form = reactive<Record<string, unknown>>({
-  name: '', record_date: '', owner_id: 1, urgency: 'medium', department: '', estimated_end_date: null,
+  name: '', record_date: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
 })
 
 function openCreate() {
   Object.assign(form, {
     name: '', record_date: new Date().toISOString().slice(0, 10),
-    owner_id: 1, urgency: 'medium', department: '', estimated_end_date: null,
+    owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
   })
   createVisible.value = true
 }
 
 async function submitCreate() {
-  if (!form.name || !form.record_date || !form.owner_id) {
+  if (!form.name || !form.record_date) {
     ElMessage.warning('请填写必填项')
     return
   }
@@ -276,13 +311,14 @@ async function submitCreate() {
   try {
     const payload: Record<string, unknown> = { ...form }
     if (!payload.department) delete payload.department
+    if (!payload.owner_name) delete payload.owner_name
     if (!payload.estimated_end_date) delete payload.estimated_end_date
     await projectApi.create(payload as Partial<Project>)
     ElMessage.success('项目已创建')
     createVisible.value = false
     await Promise.all([load(), loadStats()])
   } catch {
-    ElMessage.error('创建失败，请检查负责人ID是否存在')
+    ElMessage.error('创建失败（需要管理员或项目经理权限）')
   } finally {
     saving.value = false
   }
@@ -295,6 +331,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.head-actions { display: flex; gap: var(--sp-2); align-items: center; }
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
