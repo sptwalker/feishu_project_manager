@@ -5,6 +5,8 @@ from backend.models.user import UserRole
 
 class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
+    name_en: Optional[str] = Field(None, max_length=100)
+    position: Optional[str] = Field(None, max_length=100)
     department: Optional[str] = Field(None, max_length=100)
 
 class UserCreate(UserBase):
@@ -27,3 +29,11 @@ class UserResponse(UserInDB):
 
 class UserRoleUpdate(BaseModel):
     role: UserRole
+
+class UserUpdate(BaseModel):
+    """管理员编辑用户：所有字段可选"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    name_en: Optional[str] = Field(None, max_length=100)
+    position: Optional[str] = Field(None, max_length=100)
+    department: Optional[str] = Field(None, max_length=100)
+    role: Optional[UserRole] = Field(None)

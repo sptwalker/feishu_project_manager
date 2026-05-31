@@ -14,8 +14,8 @@
         <RouterLink to="/overview" class="nav-item" active-class="active">
           <el-icon><Tickets /></el-icon><span>项目总览</span>
         </RouterLink>
-        <RouterLink to="/users" class="nav-item" active-class="active">
-          <el-icon><User /></el-icon><span>用户管理</span>
+        <RouterLink to="/settings" class="nav-item" active-class="active">
+          <el-icon><Setting /></el-icon><span>系统设置</span>
         </RouterLink>
         <div class="nav-item disabled">
           <el-icon><Warning /></el-icon><span>风险</span>
@@ -26,17 +26,34 @@
       </nav>
 
       <div class="nav-foot">
-        <RouterLink to="/settings" class="nav-item" active-class="active">
-          <el-icon><Setting /></el-icon><span>设置</span>
-        </RouterLink>
+        <div class="nav-item" @click="onCommand('profile')">
+          <el-icon><User /></el-icon><span>个人信息</span>
+        </div>
       </div>
     </aside>
 
     <!-- 右侧主区 -->
     <div class="main">
       <header class="topbar">
-        <div class="crumb">
-          <slot name="crumb">项目管理</slot>
+        <div class="topbar-left">
+          <div class="crumb">
+            <slot name="crumb">项目管理</slot>
+          </div>
+          <div class="meeting-switch" :class="{ 'is-on': meeting.active }">
+            <el-icon class="m-ico"><Calendar /></el-icon>
+            <span class="m-label">周例会</span>
+            <el-switch
+              v-if="isAdmin"
+              :model-value="meeting.active"
+              @change="onToggleMeeting"
+            />
+            <span v-else class="m-state" :class="{ on: meeting.active }">
+              {{ meeting.active ? '记录中' : '未开启' }}
+            </span>
+            <el-tooltip v-if="meeting.active" content="周会自动记录" placement="bottom">
+              <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
+            </el-tooltip>
+          </div>
         </div>
         <div class="top-actions">
           <el-dropdown trigger="click" @command="onCommand">
@@ -59,31 +76,55 @@
         <RouterView />
       </main>
     </div>
+
+    <MeetingRecordDialog v-model:visible="recordVisible" :session="meeting.currentCount" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Document } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useMeetingStore } from '@/stores/meeting'
+import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const meeting = useMeetingStore()
+const recordVisible = ref(false)
 
 const userName = computed(() => auth.currentUser?.name ?? '')
 const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
+const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 
 function onCommand(cmd: string) {
   if (cmd === 'logout') {
     auth.logout()
     router.replace({ name: 'login' })
-  } else if (cmd === 'settings') {
+  } else if (cmd === 'settings' || cmd === 'profile') {
     router.push({ name: 'settings' })
   }
 }
 
-onMounted(() => {
-  if (!auth.currentUser) auth.fetchCurrentUser()
+async function onToggleMeeting(val: string | number | boolean) {
+  const next = Boolean(val)
+  try {
+    await meeting.setActive(next)
+    if (next) ElMessage.success('现在进入公司管理周例会记录状态')
+    else ElMessage.info('已退出周例会记录状态')
+  } catch {
+    ElMessage.error('操作失败（需要管理员权限）')
+  }
+}
+
+onMounted(async () => {
+  if (!auth.currentUser) await auth.fetchCurrentUser()
+  await meeting.load()
+  if (meeting.active && isAdmin.value) {
+    ElMessage.info('现在系统在公司周例会记录状态')
+  }
 })
 </script>
 
@@ -163,6 +204,19 @@ onMounted(() => {
   padding: 0 var(--sp-6);
 }
 .crumb { font-family: var(--font-display); font-weight: 600; color: var(--c-ink-2); }
+.topbar-left { display: flex; align-items: center; gap: var(--sp-5); }
+.meeting-switch {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--c-surface-2); transition: background 0.2s;
+}
+.meeting-switch.is-on { background: #e8f0fe; }
+.m-ico { font-size: 16px; color: var(--c-ink-3); }
+.meeting-switch.is-on .m-ico { color: #1a73e8; }
+.m-label { font-size: 13px; font-weight: 600; color: var(--c-ink-2); }
+.meeting-switch.is-on .m-label { color: #1a73e8; }
+.m-state { font-size: 12px; font-weight: 600; color: var(--c-ink-3); }
+.m-state.on { color: #1a73e8; }
 .user { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; color: var(--c-ink-2); }
 .uname { font-weight: 600; font-size: 13px; color: var(--c-ink-2); }
 .avatar {

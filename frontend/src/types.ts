@@ -10,6 +10,8 @@ export interface User {
   id: number
   feishu_user_id: string
   name: string
+  name_en?: string | null
+  position?: string | null
   avatar_url?: string | null
   department?: string | null
   role: string
@@ -18,10 +20,34 @@ export interface User {
   updated_at?: string
 }
 
+export interface Department {
+  id: number
+  name: string
+  short_name?: string | null
+  leader?: string | null
+  responsibility?: string | null
+  color?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
 export interface ProgressEntry {
   time: string
   content: string
   status: string
+  meeting_session?: number | null
+}
+
+export interface MeetingState {
+  active: boolean
+  base_monday: string
+  base_count: number
+  this_week_monday: string
+  this_week_count: number
+  this_week_recorded: boolean
+  last_meeting: { date: string; count: number } | null
+  calibration_count: number
+  calibration_monday: string
 }
 
 export interface Project {

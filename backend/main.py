@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import get_settings
 from backend.core.scheduler import start_scheduler, shutdown_scheduler
-from backend.api.v1 import auth, projects, tasks, risks, feishu_webhook, bitable, reports, users
+from backend.api.v1 import auth, projects, tasks, risks, feishu_webhook, bitable, reports, users, departments
+from backend.api.v1 import settings as settings_api
 
 settings = get_settings()
 
@@ -70,6 +71,16 @@ app.include_router(
     users.router,
     prefix="/api/v1",
     tags=["users"]
+)
+app.include_router(
+    departments.router,
+    prefix="/api/v1/departments",
+    tags=["departments"]
+)
+app.include_router(
+    settings_api.router,
+    prefix="/api/v1",
+    tags=["settings"]
 )
 
 

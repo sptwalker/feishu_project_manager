@@ -9,6 +9,7 @@ class ProgressEntry(BaseModel):
     time: str = Field(..., description="更新时间")
     content: str = Field("", description="内容")
     status: str = Field("正常", description="状况")
+    meeting_session: Optional[int] = Field(None, description="周会次数（该条属于第几次周例会记录）")
 
 
 class ProjectBase(BaseModel):

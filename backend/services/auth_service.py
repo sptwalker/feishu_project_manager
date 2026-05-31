@@ -62,6 +62,7 @@ class AuthService:
             user_create = UserCreate(
                 feishu_user_id=feishu_user_id,
                 name=user_info.get("name", ""),
+                name_en=user_info.get("en_name"),
                 avatar_url=user_info.get("avatar_url"),
                 department=user_info.get("department_name")
             )

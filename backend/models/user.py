@@ -16,9 +16,11 @@ class User(BaseModel):
 
     feishu_user_id = Column(String(100), unique=True, nullable=False, index=True, comment="飞书用户ID")
     name = Column(String(100), nullable=False, comment="姓名")
+    name_en = Column(String(100), comment="英文姓名")
+    position = Column(String(100), comment="职位")
     avatar_url = Column(String(500), comment="头像URL")
     department = Column(String(100), comment="部门")
-    role = Column(SQLEnum(UserRole), default=UserRole.MEMBER, nullable=False, comment="角色")
+    role = Column(SQLEnum(UserRole, values_callable=lambda x: [e.value for e in x]), default=UserRole.MEMBER, nullable=False, comment="角色")
     last_login_at = Column(DateTime, comment="最后登录时间")
 
     def __repr__(self) -> str:

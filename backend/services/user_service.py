@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime, timezone
 from backend.models.user import User, UserRole
-from backend.schemas.user import UserCreate
+from backend.schemas.user import UserCreate, UserUpdate
 
 class UserService:
     """用户服务"""
@@ -23,6 +23,7 @@ class UserService:
         user = User(
             feishu_user_id=user_data.feishu_user_id,
             name=user_data.name,
+            name_en=user_data.name_en,
             # HttpUrl 是 Pydantic 对象，需转为字符串才能写入数据库
             avatar_url=str(user_data.avatar_url) if user_data.avatar_url else None,
             department=user_data.department,
@@ -73,6 +74,23 @@ class UserService:
         if not user:
             return None
         user.role = role
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            raise
+        return user
+
+    @staticmethod
+    def update(db: Session, user_id: int, data: UserUpdate) -> Optional[User]:
+        """管理员编辑用户：仅更新传入的字段（name/name_en/position/department/role）"""
+        user = UserService.get_by_id(db, user_id)
+        if not user:
+            return None
+        update_data = data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(user, field, value)
         try:
             db.commit()
             db.refresh(user)

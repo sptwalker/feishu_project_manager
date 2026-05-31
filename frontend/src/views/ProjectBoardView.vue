@@ -37,14 +37,14 @@
     </div>
 
     <!-- 可视化图表 -->
-    <div v-if="stats" class="charts">
+    <div v-if="allProjects.length" class="charts">
       <div class="chart-card">
-        <h3 class="chart-title">项目状态分布</h3>
-        <BaseChart :option="projectStatusOption" :height="220" />
+        <h3 class="chart-title">部门项目数量</h3>
+        <BaseChart :option="deptOption" :height="220" />
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">任务状态分布</h3>
-        <BaseChart :option="taskStatusOption" :height="220" />
+        <h3 class="chart-title">负责人项目数量</h3>
+        <BaseChart :option="ownerOption" :height="220" />
       </div>
     </div>
 
@@ -137,13 +137,13 @@ import { projectApi, statsApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, DashboardStats } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue,
-  taskStatusLabel, taskStatusColor, TASK_STATUS_ORDER,
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
 
 const router = useRouter()
 
 const projects = ref<Project[]>([])
+const allProjects = ref<Project[]>([])
 const stats = ref<DashboardStats | null>(null)
 const loading = ref(false)
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -179,19 +179,18 @@ function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#999'
 }
 
-const projectStatusOption = computed(() => {
-  const by = stats.value?.projects.by_status ?? {}
-  const order: ProjectStatus[] = ['planned', 'in_progress', 'paused', 'completed', 'cancelled']
-  const data = order
-    .map((s) => ({
-      name: projectStatusLabel[s],
-      value: by[s] ?? 0,
-      itemStyle: { color: cssVar(projectStatusColor[s].replace('var(', '').replace(')', '')) },
-    }))
-    .filter((d) => d.value > 0)
+const deptOption = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const p of allProjects.value) {
+    const key = p.department || '未分配'
+    counts[key] = (counts[key] || 0) + 1
+  }
+  const data = Object.entries(counts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
   return {
-    tooltip: { trigger: 'item' },
-    legend: { bottom: 0, icon: 'circle', textStyle: { color: cssVar('--c-ink-2') } },
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0, icon: 'circle', type: 'scroll', textStyle: { color: cssVar('--c-ink-2') } },
     series: [{
       type: 'pie',
       radius: ['45%', '70%'],
@@ -202,16 +201,21 @@ const projectStatusOption = computed(() => {
   } as Record<string, unknown>
 })
 
-const taskStatusOption = computed(() => {
-  const by = stats.value?.tasks.by_status ?? {}
+const ownerOption = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const p of allProjects.value) {
+    const key = p.owner_name || '未分配'
+    counts[key] = (counts[key] || 0) + 1
+  }
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category',
-      data: TASK_STATUS_ORDER.map((s) => taskStatusLabel[s]),
+      data: entries.map(([name]) => name),
       axisLine: { lineStyle: { color: cssVar('--c-border-strong') } },
-      axisLabel: { color: cssVar('--c-ink-2') },
+      axisLabel: { color: cssVar('--c-ink-2'), interval: 0, rotate: entries.length > 6 ? 35 : 0 },
     },
     yAxis: {
       type: 'value', minInterval: 1,
@@ -221,12 +225,9 @@ const taskStatusOption = computed(() => {
     series: [{
       type: 'bar',
       barWidth: '46%',
-      data: TASK_STATUS_ORDER.map((s) => ({
-        value: by[s] ?? 0,
-        itemStyle: {
-          color: cssVar(taskStatusColor[s].replace('var(', '').replace(')', '')),
-          borderRadius: [4, 4, 0, 0],
-        },
+      data: entries.map(([, value]) => ({
+        value,
+        itemStyle: { color: cssVar('--c-accent'), borderRadius: [4, 4, 0, 0] },
       })),
     }],
   } as Record<string, unknown>
@@ -250,6 +251,14 @@ async function loadStats() {
     stats.value = await statsApi.dashboard()
   } catch {
     /* 统计失败不阻塞页面 */
+  }
+}
+
+async function loadCharts() {
+  try {
+    allProjects.value = await projectApi.list({ limit: 500 })
+  } catch {
+    /* 图表统计失败不阻塞页面 */
   }
 }
 
@@ -278,7 +287,7 @@ async function onFileChosen(e: Event) {
     } else {
       ElMessage.success(`导入成功 ${res.created} 条项目`)
     }
-    await Promise.all([load(), loadStats()])
+    await Promise.all([load(), loadStats(), loadCharts()])
   } catch (err: unknown) {
     const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail ? `导入失败：${detail}` : '导入失败，请检查表格格式')
@@ -316,7 +325,7 @@ async function submitCreate() {
     await projectApi.create(payload as Partial<Project>)
     ElMessage.success('项目已创建')
     createVisible.value = false
-    await Promise.all([load(), loadStats()])
+    await Promise.all([load(), loadStats(), loadCharts()])
   } catch {
     ElMessage.error('创建失败（需要管理员或项目经理权限）')
   } finally {
@@ -327,6 +336,7 @@ async function submitCreate() {
 onMounted(() => {
   load()
   loadStats()
+  loadCharts()
 })
 </script>
 

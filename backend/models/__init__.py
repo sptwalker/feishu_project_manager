@@ -3,5 +3,7 @@ from backend.models.project import Project
 from backend.models.task import Task
 from backend.models.event import Event
 from backend.models.risk import Risk
+from backend.models.department import Department
+from backend.models.system_setting import SystemSetting
 
-__all__ = ["User", "Project", "Task", "Event", "Risk"]
+__all__ = ["User", "Project", "Task", "Event", "Risk", "Department", "SystemSetting"]

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # 数据库配置
-    DATABASE_URL: str = "sqlite:///./data/feishu_pm.db"
+    DATABASE_URL: str = "sqlite:///./backend/data/feishu_pm.db"
     DATABASE_ECHO: bool = False  # SQL 日志
 
     @property

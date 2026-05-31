@@ -1,20 +1,19 @@
 <template>
   <div class="page">
     <div class="page-head">
-      <div>
-        <h1 class="page-title">项目总览</h1>
-        <p class="muted">以表格形式查看全部项目（默认按 部门 › 负责人 › 优先级 排序）</p>
-      </div>
+      <h1 class="page-title">项目总览</h1>
+    </div>
+
+    <div class="head-toolbar">
+      <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消/暂停），其中重要项目 {{ importantCount }} 个</p>
       <div class="head-actions">
         <el-input
           v-model="keyword" placeholder="搜索项目名称" clearable
           :prefix-icon="Search" style="width: 220px"
         />
-        <span class="action-icons">
-          <el-button text :icon="View" :disabled="!currentRow" @click="detailSelected">详情</el-button>
-          <el-button text type="danger" :icon="Delete" :disabled="!currentRow" @click="removeSelected">删除</el-button>
-        </span>
-        <el-button type="primary" :icon="Plus" @click="openCreate">新增项目</el-button>
+        <el-button text :icon="View" :disabled="!currentRow" @click="detailSelected">详情</el-button>
+        <el-button text type="danger" :icon="Delete" :disabled="!currentRow" @click="removeSelected">删除</el-button>
+        <el-button text :icon="Plus" @click="openCreate">新增项目</el-button>
       </div>
     </div>
 
@@ -37,13 +36,18 @@
         sortable :sort-method="sortDept"
         :filters="deptFilters" :filter-method="filterDept"
       >
-        <template #default="{ row }">{{ row.department || '—' }}</template>
+        <template #default="{ row }">
+          <span :style="{ color: row._deptColor, fontWeight: row._deptShort ? 600 : 400 }">
+            {{ row._deptShort || '—' }}
+          </span>
+        </template>
       </el-table-column>
 
       <el-table-column
         prop="status" label="完成情况" width="130"
         sortable :sort-method="cmpStatus"
         :filters="statusFilters" :filter-method="filterStatus"
+        :filtered-value="defaultStatusFiltered"
       >
         <template #default="{ row }">
           <span class="badge" :style="{ color: statusColor(row.status), background: 'var(--c-surface-2)' }">
@@ -58,11 +62,25 @@
         </template>
       </el-table-column>
 
-      <el-table-column
-        prop="content" label="说明" min-width="320"
-        :show-overflow-tooltip="descTooltip"
-      >
-        <template #default="{ row }">{{ row.content || '—' }}</template>
+      <el-table-column label="项目进展" min-width="320">
+        <template #default="{ row }">
+          <el-tooltip
+            v-if="row._recentProgress.length"
+            placement="bottom" effect="light" popper-class="progress-tip"
+          >
+            <template #content>
+              <div class="ptip">
+                <div v-if="row._hasMore" class="ptip-more">……</div>
+                <div v-for="(e, i) in row._recentProgress" :key="i" class="ptip-item">
+                  <span class="ptip-time">{{ e.time || '—' }}</span>
+                  <span class="ptip-text"><span v-if="e.meeting_session" class="ptip-meeting">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content }}</span>
+                </div>
+              </div>
+            </template>
+            <span class="progress-cell"><span v-if="row._lastStatus" class="prog-status" :style="{ color: progressColor(row._lastStatus) }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
+          </el-tooltip>
+          <span v-else>—</span>
+        </template>
       </el-table-column>
 
       <el-table-column
@@ -111,48 +129,11 @@
       共 {{ rows.length }} 个项目 · {{ currentRow ? '已选中：' + currentRow.name : '单击选中行，双击查看详情' }}
     </div>
 
-    <!-- 新增项目对话框 -->
-    <el-dialog v-model="createVisible" title="新增项目" width="480px">
-      <el-form :model="form" label-width="92px" label-position="left">
-        <el-form-item label="项目名称" required>
-          <el-input v-model="form.name" placeholder="请输入项目名称" />
-        </el-form-item>
-        <el-form-item label="记录日期" required>
-          <el-date-picker v-model="form.record_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="负责人">
-          <el-input v-model="form.owner_name" placeholder="负责人姓名（可选）" />
-        </el-form-item>
-        <el-form-item label="部门">
-          <el-input v-model="form.department" placeholder="可选" />
-        </el-form-item>
-        <el-form-item label="完成情况">
-          <el-select v-model="form.status" style="width: 100%">
-            <el-option v-for="s in PROJECT_STATUS_ORDER" :key="s" :label="statusLabel(s)" :value="s" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="优先级">
-          <el-select v-model="form.urgency" style="width: 100%">
-            <el-option v-for="u in urgencyOptions" :key="u.value" :label="u.label" :value="u.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="进度">
-          <el-input-number v-model="form.completion" :min="0" :max="100" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="截止日期">
-          <el-date-picker v-model="form.estimated_end_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitCreate">创建</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 详情抽屉 -->
+    <!-- 详情抽屉（兼新建项目） -->
     <ProjectDetailDrawer
       v-model:visible="detailVisible"
       :project="detailProject"
+      :create-mode="createMode"
       :departments="deptValues"
       :owners="ownerValues"
       @updated="load"
@@ -161,18 +142,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, View, Delete } from '@element-plus/icons-vue'
-import { projectApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency } from '@/types'
+import { projectApi, departmentApi } from '@/api/resources'
+import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
-  urgencyWeight, PROJECT_STATUS_ORDER, isOverdue,
+  urgencyWeight, PROJECT_STATUS_ORDER, isOverdue, progressStatusColor,
 } from '@/utils/labels'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
 const projects = ref<Project[]>([])
+const departments = ref<Department[]>([])
 const loading = ref(false)
 const keyword = ref('')
 
@@ -181,17 +163,39 @@ const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 const urgText = (u: ProjectUrgency) => urgencyLabel[u]
 const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const urgWeight = (u: ProjectUrgency) => urgencyWeight[u] ?? 0
+const progressColor = (s?: string) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
+
+/* 按全称或简称匹配部门记录（项目的 department 字段历史上混存了全称/简称/变体） */
+function findDepartment(deptName?: string | null) {
+  if (!deptName) return undefined
+  const key = deptName.trim()
+  return departments.value.find(d => d.name === key || d.short_name === key)
+}
+
+/* 获取部门颜色 */
+function getDepartmentColor(deptName?: string | null) {
+  return findDepartment(deptName)?.color || undefined
+}
+
+/* 获取部门简称（映射为部门表中的简称；无对应部门则暂空） */
+function getDepartmentShortName(deptName?: string | null) {
+  return findDepartment(deptName)?.short_name || ''
+}
 
 /* 表头：文字居中 + 黑色 */
 const headerCellStyle = { textAlign: 'center' as const, color: 'var(--c-ink)', fontWeight: 600 }
 
-/* 「说明」列 tooltip：显示在下方、浅棕背景黑字、合适尺寸 */
-const descTooltip = { placement: 'bottom' as const, effect: 'light' as const, popperClass: 'desc-tip' }
+/* 计算跟踪项目数量（排除已完成/取消/暂停） */
+const trackingCount = computed(() => {
+  return projects.value.filter(p => !['completed', 'cancelled', 'paused'].includes(p.status)).length
+})
 
-const urgencyOptions = [
-  { value: 'low', label: '低' }, { value: 'medium', label: '中' },
-  { value: 'high', label: '高' }, { value: 'urgent', label: '紧急' },
-]
+/* 计算重要项目数量（优先级为 urgent） */
+const importantCount = computed(() => {
+  return projects.value.filter(p =>
+    p.urgency === 'urgent' && !['completed', 'cancelled', 'paused'].includes(p.status)
+  ).length
+})
 
 /* 排序/比较工具 */
 const collator = new Intl.Collator('zh-Hans-CN')
@@ -203,25 +207,39 @@ function cmpStatus(a: Project, b: Project) {
 }
 
 /* 表头排序方法（el-table sort-method） */
-const sortDept = (a: Project, b: Project) => cmpStr(a.department, b.department)
+const sortDept = (a: Project, b: Project) => cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
 const sortOwner = (a: Project, b: Project) => cmpStr(a.owner_name, b.owner_name)
 const sortUrgency = (a: Project, b: Project) => urgWeight(b.urgency) - urgWeight(a.urgency)
 
-/* 表头筛选方法（el-table filter-method） */
-const filterDept = (value: string, row: Project) => (row.department || '') === value
+/* 表头筛选方法（el-table filter-method）：按部门简称匹配 */
+const filterDept = (value: string, row: Project) => getDepartmentShortName(row.department) === value
 const filterOwner = (value: string, row: Project) => (row.owner_name || '') === value
 const filterStatus = (value: string, row: Project) => row.status === value
 const filterUrgency = (value: string, row: Project) => row.urgency === value
 
-/* 默认排序：部门 › 负责人 › 优先级(紧急在前)，再叠加关键词过滤 */
+/* 默认排序：部门简称 › 负责人 › 优先级(重要在前)，再叠加关键词过滤。
+   预计算 _deptShort/_deptColor 并生成新对象，确保部门数据异步到达后 el-table 重渲染。 */
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   const list = projects.value.filter((p) => !kw || p.name.toLowerCase().includes(kw))
-  return [...list].sort((a, b) =>
-    cmpStr(a.department, b.department)
-    || cmpStr(a.owner_name, b.owner_name)
-    || (urgWeight(b.urgency) - urgWeight(a.urgency)),
-  )
+  return [...list]
+    .sort((a, b) =>
+      cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
+      || cmpStr(a.owner_name, b.owner_name)
+      || (urgWeight(b.urgency) - urgWeight(a.urgency)),
+    )
+    .map((p) => {
+      const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      return {
+        ...p,
+        _deptShort: getDepartmentShortName(p.department),
+        _deptColor: getDepartmentColor(p.department),
+        _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
+        _lastStatus: log.length ? (log[log.length - 1].status || '') : '',
+        _recentProgress: [...log].slice(-8),
+        _hasMore: log.length > 8,
+      }
+    })
 })
 
 /* 表头筛选项 */
@@ -230,11 +248,22 @@ function uniqueFilters(values: (string | null | undefined)[]) {
   return [...set].filter((v) => v !== '').sort((a, b) => collator.compare(a, b))
     .map((v) => ({ text: v, value: v }))
 }
-const deptFilters = computed(() => uniqueFilters(projects.value.map((p) => p.department)))
+/* 部门筛选项：按简称去重，每个部门只出现一次（无对应简称的变体值不进入筛选） */
+const deptFilters = computed(() => {
+  const shortNames = new Set<string>()
+  for (const p of projects.value) {
+    const sn = getDepartmentShortName(p.department)
+    if (sn) shortNames.add(sn)
+  }
+  return [...shortNames].sort((a, b) => collator.compare(a, b))
+    .map((sn) => ({ text: sn, value: sn }))
+})
 const ownerFilters = computed(() => uniqueFilters(projects.value.map((p) => p.owner_name)))
 const deptValues = computed(() => deptFilters.value.map((f) => f.value))
 const ownerValues = computed(() => ownerFilters.value.map((f) => f.value))
 const statusFilters = PROJECT_STATUS_ORDER.map((s) => ({ text: projectStatusLabel[s], value: s }))
+/* 默认筛选：隐藏已完成/已取消（用户可在筛选框勾选查看） */
+const defaultStatusFiltered = PROJECT_STATUS_ORDER.filter((s) => s !== 'completed' && s !== 'cancelled')
 const urgencyFilters = (['urgent', 'high', 'medium', 'low'] as ProjectUrgency[])
   .map((u) => ({ text: urgencyLabel[u], value: u }))
 
@@ -250,16 +279,26 @@ async function load() {
   }
 }
 
+async function loadDepartments() {
+  try {
+    departments.value = await departmentApi.list({ limit: 100 })
+  } catch {
+    // 静默失败，部门颜色为可选功能
+  }
+}
+
 /* 当前选中行（单击选中，供右上角操作图标使用） */
 const currentRow = ref<Project | null>(null)
 function onCurrentChange(row: Project | null) {
   currentRow.value = row
 }
 
-/* 详情抽屉 */
+/* 详情抽屉（兼新建） */
 const detailVisible = ref(false)
 const detailProject = ref<Project | null>(null)
+const createMode = ref(false)
 function openDetail(row: Project) {
+  createMode.value = false
   detailProject.value = row
   detailVisible.value = true
 }
@@ -288,52 +327,38 @@ async function remove(row: Project) {
   }
 }
 
-/* 新增 */
-const createVisible = ref(false)
-const saving = ref(false)
-const form = reactive<Record<string, unknown>>({
-  name: '', record_date: '', owner_name: '', department: '',
-  status: 'planned', urgency: 'medium', completion: 0, estimated_end_date: null,
-})
+/* 新增：复用详情抽屉的新建模式 */
 function openCreate() {
-  Object.assign(form, {
-    name: '', record_date: new Date().toISOString().slice(0, 10), owner_name: '', department: '',
-    status: 'planned', urgency: 'medium', completion: 0, estimated_end_date: null,
-  })
-  createVisible.value = true
-}
-async function submitCreate() {
-  if (!form.name || !form.record_date) {
-    ElMessage.warning('请填写必填项')
-    return
-  }
-  saving.value = true
-  try {
-    const payload: Record<string, unknown> = { ...form }
-    if (!payload.owner_name) delete payload.owner_name
-    if (!payload.department) delete payload.department
-    if (!payload.estimated_end_date) delete payload.estimated_end_date
-    await projectApi.create(payload as Partial<Project>)
-    ElMessage.success('项目已创建')
-    createVisible.value = false
-    await load()
-  } catch {
-    ElMessage.error('创建失败（需要管理员或项目经理权限）')
-  } finally {
-    saving.value = false
-  }
+  createMode.value = true
+  detailProject.value = null
+  detailVisible.value = true
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadDepartments()
+})
 </script>
 
 <style scoped>
-.head-actions { display: flex; gap: var(--sp-3); align-items: center; }
-.action-icons { display: inline-flex; gap: var(--sp-1); }
+.head-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.head-actions {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: center;
+}
 .badge { font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: var(--r-sm); }
 .urg { font-weight: 600; }
 .link { color: var(--c-accent); cursor: pointer; font-weight: 500; }
 .link:hover { text-decoration: underline; }
+.progress-cell { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-status { font-weight: 600; }
 
 .tbar { display: inline-block; width: 70px; height: 6px; background: var(--c-canvas); border-radius: 999px; overflow: hidden; vertical-align: middle; }
 .tbar-fill { height: 100%; border-radius: 999px; }
@@ -357,6 +382,30 @@ onMounted(load)
   word-break: break-word;
 }
 .el-popper.desc-tip.is-light .el-popper__arrow::before {
+  background: #f5ecd9;
+  border-color: #e0d3b8;
+}
+
+/* 「项目进展」列 tooltip：最近 8 条进展记录 */
+.el-popper.progress-tip.is-light {
+  max-width: 480px;
+  background: #f5ecd9;
+  color: #1a1a1a;
+  border-color: #e0d3b8;
+  padding: 8px 12px;
+}
+.el-popper.progress-tip .ptip-more {
+  text-align: center; color: #8a7a55; font-weight: 700; line-height: 1; margin-bottom: 6px;
+}
+.el-popper.progress-tip .ptip-item {
+  display: flex; gap: 10px; padding: 4px 0; line-height: 1.5;
+  border-top: 1px dashed #e0d3b8;
+}
+.el-popper.progress-tip .ptip-item:first-of-type { border-top: none; }
+.el-popper.progress-tip .ptip-time { color: #8a7a55; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+.el-popper.progress-tip .ptip-text { word-break: break-word; white-space: normal; }
+.el-popper.progress-tip .ptip-meeting { color: #1a73e8; font-weight: 700; }
+.el-popper.progress-tip .el-popper__arrow::before {
   background: #f5ecd9;
   border-color: #e0d3b8;
 }

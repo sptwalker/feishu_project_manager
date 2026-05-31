@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_db
 from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User, UserRole
-from backend.schemas.user import UserResponse, UserRoleUpdate
+from backend.schemas.user import UserResponse, UserRoleUpdate, UserUpdate
 from backend.services.user_service import UserService
 
 router = APIRouter()
@@ -43,6 +43,20 @@ def update_user_role(
 ):
     """修改用户角色（仅管理员）"""
     user = UserService.update_role(db, user_id, payload.role)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
+
+@router.put("/users/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """编辑用户资料与权限（仅管理员）：角色/职位/中英文名/部门"""
+    user = UserService.update(db, user_id, payload)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user

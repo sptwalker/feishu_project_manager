@@ -35,7 +35,6 @@ const router = createRouter({
           component: () => import('@/views/RiskBoardView.vue'),
           props: true,
         },
-        { path: 'users', name: 'users', component: () => import('@/views/UsersView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
       ],
     },

@@ -19,7 +19,7 @@ export const projectStatusColor: Record<ProjectStatus, string> = {
 }
 
 export const urgencyLabel: Record<ProjectUrgency, string> = {
-  low: '低', medium: '中', high: '高', urgent: '紧急',
+  low: '低', medium: '中', high: '高', urgent: '重要',
 }
 
 // 项目状态排序顺序（用于默认/下拉）

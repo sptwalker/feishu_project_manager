@@ -6,14 +6,20 @@
     @update:model-value="onVisible"
   >
     <div v-if="local" class="detail">
-      <!-- 标题 + 编辑图标 -->
+      <el-button
+        v-if="!createMode"
+        class="edit-btn"
+        :type="editing ? 'warning' : 'primary'"
+        :icon="editing ? Close : EditPen"
+        size="large"
+        @click="toggleEdit"
+      >{{ editing ? '取消编辑' : '项目编辑' }}</el-button>
+      <!-- 标题 -->
       <div class="d-head" :style="{ '--bar': statusColor(local.status) }">
         <div class="d-title-row">
           <span v-if="!editing" class="d-title">{{ local.name }}</span>
-          <el-input v-else v-model="form.name" size="large" class="d-title-input" />
-          <el-tooltip :content="editing ? '取消编辑' : '编辑项目'" placement="top">
-            <el-icon class="edit-ico" @click="toggleEdit"><component :is="editing ? Close : EditPen" /></el-icon>
-          </el-tooltip>
+          <el-input v-else v-model="form.name" size="large" class="d-title-input" placeholder="请输入项目名称" />
+          <span v-if="meeting.active" class="meeting-banner">第{{ meeting.currentCount }}次周会记录中……</span>
         </div>
         <div v-if="!editing" class="d-badges">
           <span class="badge" :style="{ color: statusColor(local.status), background: 'var(--c-surface-2)' }">
@@ -46,14 +52,18 @@
       <!-- 字段网格 -->
       <dl class="d-fields">
         <div class="f">
-          <dt>部门</dt>
-          <dd v-if="!editing">{{ local.department || '—' }}</dd>
+          <dt>部门<span v-if="createMode" class="req">*</span></dt>
+          <dd v-if="!editing" :style="{ color: getDepartmentColor(local.department), fontWeight: local.department ? 600 : 400 }">
+            {{ local.department || '—' }}
+          </dd>
           <el-select v-else v-model="form.department" filterable allow-create default-first-option clearable placeholder="选择/输入" size="small">
-            <el-option v-for="d in deptOptions" :key="d" :label="d" :value="d" />
+            <el-option v-for="dept in departmentList" :key="dept.name" :label="dept.name" :value="dept.name">
+              <span :style="{ color: dept.color || 'inherit', fontWeight: 600 }">{{ dept.name }}</span>
+            </el-option>
           </el-select>
         </div>
         <div class="f">
-          <dt>负责人</dt>
+          <dt>负责人<span v-if="createMode" class="req">*</span></dt>
           <dd v-if="!editing">{{ local.owner_name || '—' }}</dd>
           <el-select v-else v-model="form.owner_name" filterable allow-create default-first-option clearable placeholder="选择/输入" size="small">
             <el-option v-for="o in ownerOptions" :key="o" :label="o" :value="o" />
@@ -72,7 +82,7 @@
           </el-select>
         </div>
         <div class="f">
-          <dt>优先级</dt>
+          <dt>优先级<span v-if="createMode" class="req">*</span></dt>
           <dd v-if="!editing">{{ urgText(local.urgency) }}</dd>
           <el-select v-else v-model="form.urgency" size="small">
             <el-option v-for="u in urgencyOptions" :key="u.value" :label="u.label" :value="u.value" />
@@ -91,15 +101,15 @@
       </dl>
 
       <div v-if="editing" class="edit-actions">
-        <el-button @click="cancelEdit">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveFields">保存</el-button>
+        <el-button @click="onCancel">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="onSave">{{ createMode ? '创建项目' : '保存' }}</el-button>
       </div>
 
       <!-- 项目进展详情 -->
       <div ref="progressWrap" class="progress-block">
         <div class="prog-title">
           <span class="mini-label">项目进展详情</span>
-          <span class="hint muted">{{ editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑' }}</span>
+          <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑' }}</span>
         </div>
 
         <!-- 编辑态：可编辑表格 -->
@@ -111,7 +121,12 @@
             <tbody>
               <tr v-for="(e, i) in progressDraft" :key="i">
                 <td><el-date-picker v-model="e.time" type="datetime" value-format="YYYY-MM-DD HH:mm" size="small" style="width: 100%" /></td>
-                <td><el-input v-model="e.content" size="small" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }" placeholder="进展内容" /></td>
+                <td>
+                  <div class="content-cell">
+                    <span v-if="meeting.active && i === progressDraft.length - 1" class="meeting-tag">周会记录：</span>
+                    <el-input v-model="e.content" size="small" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }" placeholder="进展内容" />
+                  </div>
+                </td>
                 <td>
                   <el-select v-model="e.status" size="small">
                     <el-option v-for="s in PROGRESS_STATUSES" :key="s" :label="s" :value="s">
@@ -139,7 +154,7 @@
                   <span class="tl-time num">{{ e.time || '—' }}</span>
                   <span class="tl-status" :style="{ color: progressColor(e.status) }">{{ e.status }}</span>
                 </div>
-                <div class="tl-content">{{ e.content || '（无内容）' }}</div>
+                <div class="tl-content"><span v-if="e.meeting_session" class="meeting-prefix">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content || '（无内容）' }}</div>
               </div>
             </div>
           </div>
@@ -148,7 +163,7 @@
       </div>
 
       <!-- 快捷入口 -->
-      <div class="d-links">
+      <div v-if="!createMode" class="d-links">
         <el-button text type="primary" @click="goTasks">查看任务 →</el-button>
         <el-button text type="primary" @click="goRisks">查看风险 →</el-button>
       </div>
@@ -159,10 +174,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useMeetingStore } from '@/stores/meeting'
 import { ElMessage } from 'element-plus'
 import { EditPen, Close, Delete, Plus } from '@element-plus/icons-vue'
-import { projectApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry } from '@/types'
+import { projectApi, departmentApi } from '@/api/resources'
+import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, progressStatusColor, isOverdue,
@@ -173,7 +189,8 @@ const props = withDefaults(defineProps<{
   project: Project | null
   departments?: string[]
   owners?: string[]
-}>(), { departments: () => [], owners: () => [] })
+  createMode?: boolean
+}>(), { departments: () => [], owners: () => [], createMode: false })
 
 const emit = defineEmits<{
   (e: 'update:visible', v: boolean): void
@@ -181,6 +198,8 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const meeting = useMeetingStore()
+const departmentList = ref<Department[]>([])
 
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
@@ -188,9 +207,15 @@ const urgText = (u: ProjectUrgency) => urgencyLabel[u]
 const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const progressColor = (s: string) => progressStatusColor[s] || 'var(--c-ink-3)'
 
+function getDepartmentColor(deptName?: string | null) {
+  if (!deptName) return undefined
+  const dept = departmentList.value.find(d => d.name === deptName)
+  return dept?.color || undefined
+}
+
 const urgencyOptions = [
   { value: 'low', label: '低' }, { value: 'medium', label: '中' },
-  { value: 'high', label: '高' }, { value: 'urgent', label: '紧急' },
+  { value: 'high', label: '高' }, { value: 'urgent', label: '重要' },
 ]
 
 /* 本地快照（编辑保存后用接口返回刷新，避免依赖父组件刷新） */
@@ -220,6 +245,18 @@ function resetForm() {
 }
 
 function sync() {
+  if (props.createMode) {
+    local.value = blankProject()
+    Object.assign(form, {
+      name: '', content: '', department: '', owner_name: '', related_name: '',
+      status: 'planned', urgency: 'medium', completion: 0,
+      record_date: todayStr(), estimated_end_date: null,
+    })
+    progressDraft.value = [{ time: nowStr(), content: '', status: '正常' }]
+    editing.value = true
+    editingProgress.value = true
+    return
+  }
   local.value = props.project ? { ...props.project } : null
   resetForm()
   progressDraft.value = (local.value?.progress_log ?? []).map((e) => ({ ...e }))
@@ -232,7 +269,6 @@ watch(() => props.visible, (v) => { if (v) sync() })
 
 const overdue = computed(() => !!local.value && isOverdue(local.value.estimated_end_date, local.value.status))
 
-const deptOptions = computed(() => uniq([...(props.departments || []), form.department as string, local.value?.department || '']))
 const ownerOptions = computed(() => uniq([...(props.owners || []), form.owner_name as string, local.value?.owner_name || '']))
 function uniq(arr: (string | undefined | null)[]): string[] {
   return [...new Set(arr.map((x) => (x || '').trim()).filter(Boolean))]
@@ -279,6 +315,52 @@ async function saveFields() {
   }
 }
 
+async function saveCreate() {
+  if (!String(form.name).trim()) { ElMessage.warning('请输入项目名称'); return }
+  if (!String(form.department).trim()) { ElMessage.warning('请选择或输入部门'); return }
+  if (!String(form.owner_name).trim()) { ElMessage.warning('请选择或输入负责人'); return }
+  if (!form.urgency) { ElMessage.warning('请选择优先级'); return }
+  const firstProgress = progressDraft.value.filter((e) => (e.content || '').trim())
+  if (!firstProgress.length) { ElMessage.warning('请填写首次进展记录'); return }
+  saving.value = true
+  try {
+    const progress_log = firstProgress.map((e) => {
+      const base = { time: e.time || nowStr(), content: e.content || '', status: e.status || '正常' }
+      return e.meeting_session != null ? { ...base, meeting_session: e.meeting_session } : base
+    })
+    const payload: Record<string, unknown> = {
+      name: form.name,
+      content: form.content || null,
+      department: form.department,
+      owner_name: form.owner_name,
+      related_name: form.related_name || null,
+      status: form.status,
+      urgency: form.urgency,
+      completion: form.completion,
+      record_date: form.record_date,
+      estimated_end_date: form.estimated_end_date || null,
+      progress_log,
+    }
+    await projectApi.create(payload as Partial<Project>)
+    emit('updated')
+    emit('update:visible', false)
+    ElMessage.success('项目已创建')
+  } catch {
+    ElMessage.error('创建失败（需要管理员或项目经理权限）')
+  } finally {
+    saving.value = false
+  }
+}
+
+function onCancel() {
+  if (props.createMode) emit('update:visible', false)
+  else cancelEdit()
+}
+function onSave() {
+  if (props.createMode) saveCreate()
+  else saveFields()
+}
+
 /* ---------- 项目进展详情：表格 ↔ 时间线 ---------- */
 const editingProgress = ref(false)
 const progressDraft = ref<ProgressEntry[]>([])
@@ -295,24 +377,44 @@ function nowStr(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
+function todayStr(): string {
+  return nowStr().slice(0, 10)
+}
+
+function blankProject(): Project {
+  return {
+    id: 0, name: '', record_date: todayStr(), content: null,
+    status: 'planned' as ProjectStatus, urgency: 'medium' as ProjectUrgency,
+    department: null, owner_name: null, related_name: null, completion: 0,
+    estimated_end_date: null, actual_end_date: null, progress_log: null,
+    created_at: '', updated_at: '',
+  }
+}
+
 function enterProgressEdit() {
   if (!local.value) return
   progressDraft.value = (local.value.progress_log ?? []).map((e) => ({ ...e }))
   editingProgress.value = true
 }
 function addRow() {
-  progressDraft.value.push({ time: nowStr(), content: '', status: '正常' })
+  const entry: ProgressEntry = { time: nowStr(), content: '', status: '正常' }
+  if (meeting.active) entry.meeting_session = meeting.currentCount
+  progressDraft.value.push(entry)
 }
 function removeRow(i: number) {
   progressDraft.value.splice(i, 1)
 }
 
 async function commitProgress() {
+  if (props.createMode) return
   if (!editingProgress.value || !local.value) return
   editingProgress.value = false
   const cleaned = progressDraft.value
-    .filter((e) => (e.content || '').trim() || (e.time || '').trim())
-    .map((e) => ({ time: e.time || nowStr(), content: e.content || '', status: e.status || '正常' }))
+    .filter((e) => (e.content || '').trim())
+    .map((e) => {
+      const base = { time: e.time || nowStr(), content: e.content || '', status: e.status || '正常' }
+      return e.meeting_session != null ? { ...base, meeting_session: e.meeting_session } : base
+    })
   // 无变化则不请求
   if (JSON.stringify(cleaned) === JSON.stringify(local.value.progress_log ?? [])) return
   try {
@@ -332,11 +434,23 @@ function onDocClick(e: MouseEvent) {
   if (t.closest('.el-popper, .el-select-dropdown, .el-picker-panel, .el-picker__popper')) return
   commitProgress()
 }
-onMounted(() => document.addEventListener('click', onDocClick, true))
+
+async function loadDepartments() {
+  try {
+    departmentList.value = await departmentApi.list({ limit: 100 })
+  } catch {
+    // 静默失败，部门颜色为可选功能
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', onDocClick, true)
+  loadDepartments()
+})
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick, true))
 
 function onVisible(v: boolean) {
-  if (!v && editingProgress.value) commitProgress()
+  if (!v && !props.createMode && editingProgress.value) commitProgress()
   emit('update:visible', v)
 }
 
@@ -349,11 +463,13 @@ function goRisks() {
 </script>
 
 <style scoped>
-.detail { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-2) 0; }
+.detail { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-2) 0; position: relative; }
+.edit-btn { position: absolute; top: 42px; right: 0; z-index: 2; font-size: 16px; }
 .mini-label { font-size: 12px; color: var(--c-ink-3); margin-bottom: 4px; }
 
-.d-head { border-left: 3px solid var(--bar); padding-left: var(--sp-3); }
+.d-head { border-left: 3px solid var(--bar); padding-left: var(--sp-3); padding-right: 124px; }
 .d-title-row { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.req { color: var(--c-status-overdue); margin-left: 2px; }
 .d-title { font-family: var(--font-display); font-size: 21px; font-weight: 700; }
 .d-title-input { max-width: 420px; }
 .edit-ico { cursor: pointer; color: var(--c-ink-3); font-size: 18px; }
@@ -411,6 +527,10 @@ function goRisks() {
 .tl-time { font-size: 12px; color: var(--c-ink-3); }
 .tl-status { font-size: 12px; font-weight: 600; }
 .tl-content { font-size: 14px; color: var(--c-ink); line-height: 1.5; white-space: pre-wrap; }
+.meeting-banner { margin-left: auto; color: #1a73e8; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+.content-cell { display: flex; align-items: flex-start; gap: 4px; }
+.meeting-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }
+.meeting-prefix { color: #1a73e8; font-weight: 700; }
 
 .d-links { display: flex; gap: var(--sp-4); border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
 </style>

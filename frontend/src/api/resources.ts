@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, DashboardStats } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -73,7 +73,37 @@ export const userApi = {
   list(params?: Record<string, unknown>) {
     return api.get<User[]>('/users', { params }).then((r) => r.data)
   },
+  update(id: number, payload: Partial<User>) {
+    return api.put<User>(`/users/${id}`, payload).then((r) => r.data)
+  },
   updateRole(id: number, role: string) {
     return api.patch<User>(`/users/${id}/role`, { role }).then((r) => r.data)
+  },
+}
+
+export const departmentApi = {
+  list(params?: Record<string, unknown>) {
+    return api.get<Department[]>('/departments/', { params }).then((r) => r.data)
+  },
+  create(payload: Partial<Department>) {
+    return api.post<Department>('/departments/', payload).then((r) => r.data)
+  },
+  update(id: number, payload: Partial<Department>) {
+    return api.put<Department>(`/departments/${id}`, payload).then((r) => r.data)
+  },
+  remove(id: number) {
+    return api.delete(`/departments/${id}`)
+  },
+}
+
+export const settingsApi = {
+  getMeeting() {
+    return api.get<MeetingState>('/settings/meeting').then((r) => r.data)
+  },
+  setMeetingActive(active: boolean) {
+    return api.put<MeetingState>('/settings/meeting/active', { active }).then((r) => r.data)
+  },
+  setMeetingCount(count: number) {
+    return api.put<MeetingState>('/settings/meeting/count', { count }).then((r) => r.data)
   },
 }
