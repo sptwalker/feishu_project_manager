@@ -42,7 +42,7 @@ def owner(db_session):
 
 @pytest.fixture
 def project(db_session, owner):
-    proj = Project(name="任务测试项目", record_date=date(2026, 5, 30), owner_id=owner.id)
+    proj = Project(name="任务测试项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(proj)
     db_session.commit()
     db_session.refresh(proj)
@@ -53,7 +53,7 @@ def test_create_task(db_session, project, owner):
     """创建任务"""
     task = TaskService.create(
         db_session, project.id,
-        TaskCreate(name="任务1", owner_id=owner.id)
+        TaskCreate(name="任务1", owner_name="负责人")
     )
     assert task.id is not None
     assert task.project_id == project.id
@@ -63,7 +63,7 @@ def test_create_task(db_session, project, owner):
 def test_get_by_id(db_session, project, owner):
     """根据ID获取任务"""
     created = TaskService.create(
-        db_session, project.id, TaskCreate(name="任务2", owner_id=owner.id)
+        db_session, project.id, TaskCreate(name="任务2", owner_name="负责人")
     )
     fetched = TaskService.get_by_id(db_session, created.id)
     assert fetched is not None
@@ -77,13 +77,13 @@ def test_get_by_id_not_found(db_session):
 
 def test_get_list_scoped_to_project(db_session, project, owner):
     """列表仅返回所属项目的任务"""
-    other_project = Project(name="其他项目", record_date=date(2026, 5, 30), owner_id=owner.id)
+    other_project = Project(name="其他项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(other_project)
     db_session.commit()
     db_session.refresh(other_project)
 
-    TaskService.create(db_session, project.id, TaskCreate(name="A", owner_id=owner.id))
-    TaskService.create(db_session, other_project.id, TaskCreate(name="B", owner_id=owner.id))
+    TaskService.create(db_session, project.id, TaskCreate(name="A", owner_name="负责人"))
+    TaskService.create(db_session, other_project.id, TaskCreate(name="B", owner_name="负责人"))
 
     tasks = TaskService.get_list(db_session, project_id=project.id)
     assert len(tasks) == 1
@@ -92,8 +92,8 @@ def test_get_list_scoped_to_project(db_session, project, owner):
 
 def test_get_list_filter_by_status(db_session, project, owner):
     """按状态过滤任务列表"""
-    TaskService.create(db_session, project.id, TaskCreate(name="进行中", owner_id=owner.id, status=TaskStatus.IN_PROGRESS))
-    TaskService.create(db_session, project.id, TaskCreate(name="已完成", owner_id=owner.id, status=TaskStatus.COMPLETED))
+    TaskService.create(db_session, project.id, TaskCreate(name="进行中", owner_name="负责人", status=TaskStatus.IN_PROGRESS))
+    TaskService.create(db_session, project.id, TaskCreate(name="已完成", owner_name="负责人", status=TaskStatus.COMPLETED))
 
     tasks = TaskService.get_list(db_session, project_id=project.id, status=TaskStatus.COMPLETED)
     assert len(tasks) == 1
@@ -102,8 +102,8 @@ def test_get_list_filter_by_status(db_session, project, owner):
 
 def test_get_list_filter_by_priority(db_session, project, owner):
     """按优先级过滤"""
-    TaskService.create(db_session, project.id, TaskCreate(name="高", owner_id=owner.id, priority=TaskPriority.HIGH))
-    TaskService.create(db_session, project.id, TaskCreate(name="低", owner_id=owner.id, priority=TaskPriority.LOW))
+    TaskService.create(db_session, project.id, TaskCreate(name="高", owner_name="负责人", priority=TaskPriority.HIGH))
+    TaskService.create(db_session, project.id, TaskCreate(name="低", owner_name="负责人", priority=TaskPriority.LOW))
 
     tasks = TaskService.get_list(db_session, project_id=project.id, priority=TaskPriority.HIGH)
     assert len(tasks) == 1
@@ -118,9 +118,9 @@ def test_get_list_negative_pagination_raises(db_session, project):
 
 def test_subtasks(db_session, project, owner):
     """子任务创建与查询"""
-    parent = TaskService.create(db_session, project.id, TaskCreate(name="父任务", owner_id=owner.id))
-    TaskService.create(db_session, project.id, TaskCreate(name="子1", owner_id=owner.id, parent_task_id=parent.id))
-    TaskService.create(db_session, project.id, TaskCreate(name="子2", owner_id=owner.id, parent_task_id=parent.id))
+    parent = TaskService.create(db_session, project.id, TaskCreate(name="父任务", owner_name="负责人"))
+    TaskService.create(db_session, project.id, TaskCreate(name="子1", owner_name="负责人", parent_task_id=parent.id))
+    TaskService.create(db_session, project.id, TaskCreate(name="子2", owner_name="负责人", parent_task_id=parent.id))
 
     subtasks = TaskService.get_subtasks(db_session, parent.id)
     assert len(subtasks) == 2
@@ -129,7 +129,7 @@ def test_subtasks(db_session, project, owner):
 
 def test_update_task(db_session, project, owner):
     """更新任务"""
-    task = TaskService.create(db_session, project.id, TaskCreate(name="原名", owner_id=owner.id))
+    task = TaskService.create(db_session, project.id, TaskCreate(name="原名", owner_name="负责人"))
     updated = TaskService.update(db_session, task.id, TaskUpdate(name="新名", completion=60))
     assert updated.name == "新名"
     assert updated.completion == 60
@@ -142,7 +142,7 @@ def test_update_task_not_found(db_session):
 
 def test_delete_task(db_session, project, owner):
     """删除任务"""
-    task = TaskService.create(db_session, project.id, TaskCreate(name="待删", owner_id=owner.id))
+    task = TaskService.create(db_session, project.id, TaskCreate(name="待删", owner_name="负责人"))
     assert TaskService.delete(db_session, task.id) is True
     assert TaskService.get_by_id(db_session, task.id) is None
 

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.api.deps import get_db
@@ -9,7 +9,6 @@ from backend.models.task import TaskStatus, TaskPriority
 from backend.schemas.task import TaskCreate, TaskUpdate, TaskResponse
 from backend.services.task_service import TaskService
 from backend.services.project_service import ProjectService
-from backend.services.notification_service import NotificationService
 from backend.core.permissions import PermissionChecker
 
 router = APIRouter()
@@ -59,6 +58,7 @@ def create_task(
     current_user: User = Depends(get_current_user)
 ):
     """在项目下创建任务"""
+    PermissionChecker.require_task_permission(current_user, action="modify")
     _get_project_or_404(db, project_id)
 
     if task_data.parent_task_id is not None:
@@ -70,7 +70,7 @@ def create_task(
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reference (e.g., owner_id does not exist)"
+            detail="Invalid task data"
         )
 
 
@@ -84,7 +84,7 @@ def get_tasks(
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[TaskStatus] = Query(None, alias="status"),
     priority: Optional[TaskPriority] = None,
-    owner_id: Optional[int] = None,
+    owner_name: Optional[str] = None,
     parent_task_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -94,7 +94,7 @@ def get_tasks(
     return TaskService.get_list(
         db, project_id=project_id, skip=skip, limit=limit,
         status=status_filter, priority=priority,
-        owner_id=owner_id, parent_task_id=parent_task_id,
+        owner_name=owner_name, parent_task_id=parent_task_id,
     )
 
 
@@ -131,6 +131,7 @@ def create_subtask(
     current_user: User = Depends(get_current_user)
 ):
     """在指定任务下创建子任务（继承父任务所属项目）"""
+    PermissionChecker.require_task_permission(current_user, action="modify")
     parent = _get_task_or_404(db, task_id)
 
     # 子任务强制归属父任务及其项目
@@ -141,7 +142,7 @@ def create_subtask(
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reference (e.g., owner_id does not exist)"
+            detail="Invalid task data"
         )
 
 
@@ -149,50 +150,30 @@ def create_subtask(
 def update_task(
     task_id: int,
     task_data: TaskUpdate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """更新任务"""
     task = _get_task_or_404(db, task_id)
-    project = ProjectService.get_by_id(db, task.project_id)
 
-    # 权限检查
-    PermissionChecker.require_task_permission(current_user, task, project, "modify")
+    # 权限检查（基于角色）
+    PermissionChecker.require_task_permission(current_user, task, action="modify")
 
     if task_data.parent_task_id is not None:
         _validate_parent_task(db, task.project_id, task_data.parent_task_id)
-
-    old_status = task.status.value if task.status else None
 
     try:
         task = TaskService.update(db, task_id, task_data)
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reference (e.g., owner_id does not exist)"
+            detail="Invalid task data"
         )
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-
-    # 状态变更时，向任务负责人推送飞书通知（尽力而为，受开关控制）
-    new_status = task.status.value if task.status else None
-    if new_status and old_status and new_status != old_status:
-        owner = db.query(User).filter(User.id == task.owner_id).first()
-        receive_id = owner.feishu_user_id if owner else None
-        background_tasks.add_task(
-            NotificationService.notify_task_status_change,
-            receive_id,
-            task.name,
-            old_status,
-            new_status,
-            current_user.name,
-            project.name if project else "",
-        )
-
     return task
 
 
@@ -204,9 +185,8 @@ def delete_task(
 ):
     """删除任务"""
     task = _get_task_or_404(db, task_id)
-    project = ProjectService.get_by_id(db, task.project_id)
 
-    # 权限检查
-    PermissionChecker.require_task_permission(current_user, task, project, "delete")
+    # 权限检查（基于角色）
+    PermissionChecker.require_task_permission(current_user, task, action="delete")
 
     TaskService.delete(db, task_id)

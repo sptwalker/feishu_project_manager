@@ -32,7 +32,7 @@ class TaskService:
         limit: int = 20,
         status: Optional[TaskStatus] = None,
         priority: Optional[TaskPriority] = None,
-        owner_id: Optional[int] = None,
+        owner_name: Optional[str] = None,
         parent_task_id: Optional[int] = None,
     ) -> List[Task]:
         """获取任务列表（支持过滤）"""
@@ -45,8 +45,8 @@ class TaskService:
             query = query.filter(Task.status == status)
         if priority:
             query = query.filter(Task.priority == priority)
-        if owner_id:
-            query = query.filter(Task.owner_id == owner_id)
+        if owner_name:
+            query = query.filter(Task.owner_name == owner_name)
         if parent_task_id is not None:
             query = query.filter(Task.parent_task_id == parent_task_id)
 

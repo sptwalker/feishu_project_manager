@@ -31,7 +31,7 @@ class RiskService:
         skip: int = 0,
         limit: int = 20,
         status: Optional[RiskStatus] = None,
-        owner_id: Optional[int] = None,
+        owner_name: Optional[str] = None,
     ) -> List[Risk]:
         """获取风险列表（支持过滤）"""
         if skip < 0 or limit < 0:
@@ -41,8 +41,8 @@ class RiskService:
 
         if status:
             query = query.filter(Risk.status == status)
-        if owner_id:
-            query = query.filter(Risk.owner_id == owner_id)
+        if owner_name:
+            query = query.filter(Risk.owner_name == owner_name)
 
         return query.offset(skip).limit(limit).all()
 

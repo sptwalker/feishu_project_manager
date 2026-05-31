@@ -43,7 +43,7 @@ def test_user(db_session):
 
 @pytest.fixture
 def test_project(db_session, test_user):
-    proj = Project(name="风险API项目", record_date=date(2026, 5, 30), owner_id=test_user.id)
+    proj = Project(name="风险API项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(proj)
     db_session.commit()
     db_session.refresh(proj)

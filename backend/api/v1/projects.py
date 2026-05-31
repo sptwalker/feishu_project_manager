@@ -19,21 +19,22 @@ def create_project(
     current_user: User = Depends(get_current_user)
 ):
     """创建项目"""
+    PermissionChecker.require_project_permission(current_user, action="modify")
     try:
         project = ProjectService.create(db, project_data)
         return project
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reference (e.g., owner_id does not exist)"
+            detail="Invalid project data"
         )
 
 @router.get("/", response_model=List[ProjectResponse])
 def get_projects(
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=500),
     status_filter: Optional[ProjectStatus] = Query(None, alias="status"),
-    owner_id: Optional[int] = None,
+    owner_name: Optional[str] = None,
     department: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -41,7 +42,7 @@ def get_projects(
     """获取项目列表"""
     projects = ProjectService.get_list(
         db, skip=skip, limit=limit,
-        status=status_filter, owner_id=owner_id, department=department
+        status=status_filter, owner_name=owner_name, department=department
     )
     return projects
 
@@ -83,7 +84,7 @@ def update_project(
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid reference (e.g., owner_id does not exist)"
+            detail="Invalid project data"
         )
     if not project:
         raise HTTPException(

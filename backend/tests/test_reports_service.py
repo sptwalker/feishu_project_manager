@@ -43,7 +43,7 @@ def owner(db_session):
 
 @pytest.fixture
 def project(db_session, owner):
-    p = Project(name="统计项目", record_date=date(2026, 5, 30), owner_id=owner.id,
+    p = Project(name="统计项目", record_date=date(2026, 5, 30), owner_name="负责人",
                 status=ProjectStatus.IN_PROGRESS, completion=40)
     db_session.add(p)
     db_session.commit()
@@ -56,9 +56,9 @@ TODAY = date(2026, 6, 1)
 
 def test_dashboard(db_session, owner, project):
     db_session.add_all([
-        Task(project_id=project.id, name="t1", owner_id=owner.id, status=TaskStatus.PENDING),
-        Task(project_id=project.id, name="t2", owner_id=owner.id, status=TaskStatus.COMPLETED),
-        Task(project_id=project.id, name="逾期", owner_id=owner.id, status=TaskStatus.IN_PROGRESS,
+        Task(project_id=project.id, name="t1", owner_name="负责人", status=TaskStatus.PENDING),
+        Task(project_id=project.id, name="t2", owner_name="负责人", status=TaskStatus.COMPLETED),
+        Task(project_id=project.id, name="逾期", owner_name="负责人", status=TaskStatus.IN_PROGRESS,
              due_date=date(2026, 5, 1)),
         Risk(project_id=project.id, title="r1", status=RiskStatus.OPEN),
     ])
@@ -76,8 +76,8 @@ def test_dashboard(db_session, owner, project):
 
 def test_project_progress(db_session, owner, project):
     db_session.add_all([
-        Task(project_id=project.id, name="t1", owner_id=owner.id, status=TaskStatus.COMPLETED),
-        Task(project_id=project.id, name="t2", owner_id=owner.id, status=TaskStatus.PENDING),
+        Task(project_id=project.id, name="t1", owner_name="负责人", status=TaskStatus.COMPLETED),
+        Task(project_id=project.id, name="t2", owner_name="负责人", status=TaskStatus.PENDING),
     ])
     db_session.commit()
 
@@ -99,7 +99,7 @@ def test_export_projects(db_session, owner, project):
 
 
 def test_export_tasks(db_session, owner, project):
-    db_session.add(Task(project_id=project.id, name="导出任务", owner_id=owner.id))
+    db_session.add(Task(project_id=project.id, name="导出任务", owner_name="负责人"))
     db_session.commit()
     data = ExportService.export_tasks(db_session, project.id)
     parsed = parse_xlsx(data)
@@ -109,7 +109,7 @@ def test_export_tasks(db_session, owner, project):
 
 def test_import_tasks_success(db_session, owner, project):
     data = build_xlsx(
-        ["任务名称", "负责人ID", "状态", "完成度"],
+        ["任务名称", "负责人", "状态", "完成度"],
         [["导入1", owner.id, "pending", 0], ["导入2", owner.id, "in_progress", 30]],
     )
     result = ImportService.import_tasks(db_session, project.id, data)
@@ -120,10 +120,10 @@ def test_import_tasks_success(db_session, owner, project):
 
 
 def test_import_tasks_partial_errors(db_session, owner, project):
-    # 第二行 owner_id 缺失 -> 校验失败，但第一行成功
+    # 第二行 任务名称 为空 -> 校验失败，但第一行成功
     data = build_xlsx(
-        ["任务名称", "负责人ID"],
-        [["有效", owner.id], ["无负责人", None]],
+        ["任务名称", "负责人"],
+        [["有效", "张三"], ["", "李四"]],
     )
     result = ImportService.import_tasks(db_session, project.id, data)
     assert result.created == 1
@@ -133,7 +133,7 @@ def test_import_tasks_partial_errors(db_session, owner, project):
 
 def test_import_tasks_with_dates(db_session, owner, project):
     data = build_xlsx(
-        ["任务名称", "负责人ID", "截止日期"],
+        ["任务名称", "负责人", "截止日期"],
         [["带日期", owner.id, "2026-07-01"]],
     )
     result = ImportService.import_tasks(db_session, project.id, data)

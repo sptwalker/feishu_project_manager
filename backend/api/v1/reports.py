@@ -101,3 +101,18 @@ async def import_project_tasks(
     except ExcelParseError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return result.to_dict()
+
+
+@router.post("/reports/projects/import", response_model=ImportResultResponse)
+async def import_projects(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """从 Excel（周会跟进清单格式）批量导入项目"""
+    data = await file.read()
+    try:
+        result = ImportService.import_projects(db, data)
+    except ExcelParseError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return result.to_dict()

@@ -24,7 +24,7 @@ class Task(BaseModel):
     parent_task_id = Column(Integer, ForeignKey("tasks.id"), index=True, comment="父任务ID")
     name = Column(String(200), nullable=False, comment="任务名称")
     description = Column(Text, comment="描述")
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="负责人ID")
+    owner_name = Column(String(100), comment="负责人姓名（与用户账号解耦）")
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.PENDING, nullable=False, comment="当前状态")
     priority = Column(SQLEnum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False, comment="优先级")
     completion = Column(Integer, default=0, comment="完成度(0-100)")
@@ -38,7 +38,6 @@ class Task(BaseModel):
 
     # 关系
     project = relationship("Project", back_populates="tasks")
-    owner = relationship("User", back_populates="owned_tasks", foreign_keys=[owner_id])
     parent_task = relationship("Task", remote_side="Task.id", backref="subtasks")
 
     def __repr__(self) -> str:

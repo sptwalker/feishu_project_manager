@@ -80,7 +80,7 @@ def test_create_project_api(client, auth_headers, test_user):
             "name": "API测试项目",
             "record_date": "2026-05-30",
             "content": "通过API创建",
-            "owner_id": test_user.id
+            "owner_name": "负责人"
         },
         headers=auth_headers
     )
@@ -101,7 +101,7 @@ def _create_project(client, auth_headers, test_user, name="项目X", status_valu
         "name": name,
         "record_date": "2026-05-30",
         "content": "测试内容",
-        "owner_id": test_user.id,
+        "owner_name": "负责人",
     }
     if status_value is not None:
         payload["status"] = status_value

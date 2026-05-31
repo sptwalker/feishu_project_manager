@@ -42,19 +42,19 @@ def test_create_project(db_session, test_user):
         name="新项目",
         record_date=date.today(),
         content="项目描述",
-        owner_id=test_user.id
+        owner_name="负责人"
     )
     project = ProjectService.create(db_session, project_data)
     assert project.id is not None
     assert project.name == "新项目"
-    assert project.owner_id == test_user.id
+    assert project.owner_name == "负责人"
 
 def test_get_project_by_id(db_session, test_user):
     """测试根据ID获取项目"""
     project_data = ProjectCreate(
         name="测试项目",
         record_date=date.today(),
-        owner_id=test_user.id
+        owner_name="负责人"
     )
     created = ProjectService.create(db_session, project_data)
     fetched = ProjectService.get_by_id(db_session, created.id)
@@ -73,7 +73,7 @@ def test_get_project_list(db_session, test_user):
         project_data = ProjectCreate(
             name=f"项目{i}",
             record_date=date.today(),
-            owner_id=test_user.id
+            owner_name="负责人"
         )
         ProjectService.create(db_session, project_data)
 
@@ -86,7 +86,7 @@ def test_get_project_list_with_filters(db_session, test_user):
     project1 = ProjectCreate(
         name="计划中项目",
         record_date=date.today(),
-        owner_id=test_user.id,
+        owner_name="负责人",
         status=ProjectStatus.PLANNED,
         department="技术部"
     )
@@ -95,7 +95,7 @@ def test_get_project_list_with_filters(db_session, test_user):
     project2 = ProjectCreate(
         name="进行中项目",
         record_date=date.today(),
-        owner_id=test_user.id,
+        owner_name="负责人",
         status=ProjectStatus.IN_PROGRESS,
         department="产品部"
     )
@@ -116,7 +116,7 @@ def test_update_project(db_session, test_user):
     project_data = ProjectCreate(
         name="原始项目",
         record_date=date.today(),
-        owner_id=test_user.id,
+        owner_name="负责人",
         completion=0
     )
     created = ProjectService.create(db_session, project_data)
@@ -145,7 +145,7 @@ def test_delete_project(db_session, test_user):
     project_data = ProjectCreate(
         name="待删除项目",
         record_date=date.today(),
-        owner_id=test_user.id
+        owner_name="负责人"
     )
     created = ProjectService.create(db_session, project_data)
 

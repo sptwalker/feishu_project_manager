@@ -8,7 +8,7 @@ class RiskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="风险标题")
     description: Optional[str] = Field(None, description="风险描述")
     status: RiskStatus = Field(default=RiskStatus.OPEN, description="风险状态")
-    owner_id: Optional[int] = Field(None, gt=0, description="负责人ID")
+    owner_name: Optional[str] = Field(None, max_length=100, description="负责人姓名")
 
 class RiskCreate(RiskBase):
     """创建风险 Schema"""
@@ -19,7 +19,7 @@ class RiskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
     status: Optional[RiskStatus] = None
-    owner_id: Optional[int] = Field(None, gt=0)
+    owner_name: Optional[str] = Field(None, max_length=100)
 
 class RiskResponse(RiskBase):
     """风险响应 Schema"""

@@ -15,7 +15,7 @@ class Risk(BaseModel):
     title = Column(String(200), nullable=False, comment="风险标题")
     description = Column(Text, comment="风险描述")
     status = Column(SQLEnum(RiskStatus), default=RiskStatus.OPEN, nullable=False, index=True, comment="风险状态")
-    owner_id = Column(Integer, ForeignKey("users.id"), comment="负责人ID")
+    owner_name = Column(String(100), comment="负责人姓名（与用户账号解耦）")
 
     project = relationship("Project", back_populates="risks")
 

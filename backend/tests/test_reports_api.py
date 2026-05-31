@@ -46,7 +46,7 @@ def test_user(db_session):
 
 @pytest.fixture
 def test_project(db_session, test_user):
-    p = Project(name="报表项目", record_date=date(2026, 5, 30), owner_id=test_user.id)
+    p = Project(name="报表项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(p)
     db_session.commit()
     db_session.refresh(p)
@@ -100,7 +100,7 @@ def test_export_projects_api(client, test_project):
 
 
 def test_export_tasks_api(client, test_project, db_session, test_user):
-    db_session.add(Task(project_id=test_project.id, name="导出任务", owner_id=test_user.id))
+    db_session.add(Task(project_id=test_project.id, name="导出任务", owner_name="负责人"))
     db_session.commit()
     r = client.get(f"/api/v1/reports/projects/{test_project.id}/tasks/export")
     assert r.status_code == 200
@@ -115,7 +115,7 @@ def test_export_tasks_api_project_404(client):
 
 def test_import_tasks_api(client, test_project, test_user):
     data = build_xlsx(
-        ["任务名称", "负责人ID", "状态"],
+        ["任务名称", "负责人", "状态"],
         [["上传任务1", test_user.id, "pending"], ["上传任务2", test_user.id, "in_progress"]],
     )
     files = {"file": ("tasks.xlsx", io.BytesIO(data), XLSX_MEDIA_TYPE)}
@@ -133,7 +133,7 @@ def test_import_tasks_api_bad_file(client, test_project):
 
 
 def test_import_tasks_api_project_404(client, test_user):
-    data = build_xlsx(["任务名称", "负责人ID"], [["t", test_user.id]])
+    data = build_xlsx(["任务名称", "负责人"], [["t", test_user.id]])
     files = {"file": ("tasks.xlsx", io.BytesIO(data), XLSX_MEDIA_TYPE)}
     r = client.post("/api/v1/reports/projects/99999/tasks/import", files=files)
     assert r.status_code == 404

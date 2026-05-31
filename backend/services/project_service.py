@@ -31,7 +31,7 @@ class ProjectService:
         skip: int = 0,
         limit: int = 20,
         status: Optional[ProjectStatus] = None,
-        owner_id: Optional[int] = None,
+        owner_name: Optional[str] = None,
         department: Optional[str] = None
     ) -> List[Project]:
         """获取项目列表（支持过滤）"""
@@ -42,8 +42,8 @@ class ProjectService:
 
         if status:
             query = query.filter(Project.status == status)
-        if owner_id:
-            query = query.filter(Project.owner_id == owner_id)
+        if owner_name:
+            query = query.filter(Project.owner_name == owner_name)
         if department:
             query = query.filter(Project.department == department)
 

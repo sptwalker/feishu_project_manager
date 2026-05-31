@@ -43,7 +43,7 @@ def test_user(db_session):
 
 @pytest.fixture
 def test_project(db_session, test_user):
-    proj = Project(name="任务API项目", record_date=date(2026, 5, 30), owner_id=test_user.id)
+    proj = Project(name="任务API项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(proj)
     db_session.commit()
     db_session.refresh(proj)
@@ -89,7 +89,7 @@ def test_create_task_api(client, auth_headers, test_project, test_user):
     """创建任务 API"""
     response = client.post(
         f"/api/v1/projects/{test_project.id}/tasks",
-        json={"name": "API任务", "owner_id": test_user.id},
+        json={"name": "API任务", "owner_name": "负责人"},
         headers=auth_headers,
     )
     assert response.status_code == 201
@@ -103,7 +103,7 @@ def test_create_task_project_not_found(client, auth_headers, test_user):
     """在不存在的项目下创建任务返回 404"""
     response = client.post(
         "/api/v1/projects/99999/tasks",
-        json={"name": "孤儿任务", "owner_id": test_user.id},
+        json={"name": "孤儿任务", "owner_name": "负责人"},
         headers=auth_headers,
     )
     assert response.status_code == 404
@@ -113,7 +113,7 @@ def test_create_task_invalid_parent(client, auth_headers, test_project, test_use
     """parent_task_id 无效返回 400"""
     response = client.post(
         f"/api/v1/projects/{test_project.id}/tasks",
-        json={"name": "任务", "owner_id": test_user.id, "parent_task_id": 99999},
+        json={"name": "任务", "owner_name": "负责人", "parent_task_id": 99999},
         headers=auth_headers,
     )
     assert response.status_code == 400
@@ -179,7 +179,7 @@ def test_create_subtask_api(client, auth_headers, test_project, test_user):
     parent = _create_task(client, auth_headers, test_project.id, test_user.id, name="父")
     response = client.post(
         f"/api/v1/tasks/{parent['id']}/subtasks",
-        json={"name": "子", "owner_id": test_user.id},
+        json={"name": "子", "owner_name": "负责人"},
         headers=auth_headers,
     )
     assert response.status_code == 201
@@ -193,7 +193,7 @@ def test_get_subtasks_api(client, auth_headers, test_project, test_user):
     parent = _create_task(client, auth_headers, test_project.id, test_user.id, name="父2")
     client.post(
         f"/api/v1/tasks/{parent['id']}/subtasks",
-        json={"name": "子A", "owner_id": test_user.id},
+        json={"name": "子A", "owner_name": "负责人"},
         headers=auth_headers,
     )
     response = client.get(f"/api/v1/tasks/{parent['id']}/subtasks", headers=auth_headers)

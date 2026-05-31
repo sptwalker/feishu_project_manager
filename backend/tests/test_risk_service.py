@@ -41,7 +41,7 @@ def owner(db_session):
 
 @pytest.fixture
 def project(db_session, owner):
-    proj = Project(name="风险测试项目", record_date=date(2026, 5, 30), owner_id=owner.id)
+    proj = Project(name="风险测试项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(proj)
     db_session.commit()
     db_session.refresh(proj)
@@ -51,7 +51,7 @@ def project(db_session, owner):
 def test_create_risk(db_session, project, owner):
     """创建风险"""
     risk = RiskService.create(
-        db_session, project.id, RiskCreate(title="风险1", owner_id=owner.id)
+        db_session, project.id, RiskCreate(title="风险1", owner_name="负责人")
     )
     assert risk.id is not None
     assert risk.project_id == project.id
@@ -62,7 +62,7 @@ def test_create_risk_without_owner(db_session, project):
     """无负责人也可创建风险"""
     risk = RiskService.create(db_session, project.id, RiskCreate(title="无主风险"))
     assert risk.id is not None
-    assert risk.owner_id is None
+    assert risk.owner_name is None
 
 
 def test_get_by_id(db_session, project):
@@ -80,7 +80,7 @@ def test_get_by_id_not_found(db_session):
 
 def test_get_list_scoped_to_project(db_session, project, owner):
     """列表仅返回所属项目的风险"""
-    other = Project(name="其他项目", record_date=date(2026, 5, 30), owner_id=owner.id)
+    other = Project(name="其他项目", record_date=date(2026, 5, 30), owner_name="负责人")
     db_session.add(other)
     db_session.commit()
     db_session.refresh(other)

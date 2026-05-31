@@ -7,7 +7,7 @@ class TaskBase(BaseModel):
     """任务基础 Schema"""
     name: str = Field(..., min_length=1, max_length=200, description="任务名称")
     description: Optional[str] = Field(None, description="描述")
-    owner_id: int = Field(..., gt=0, description="负责人ID")
+    owner_name: Optional[str] = Field(None, max_length=100, description="负责人姓名")
     status: TaskStatus = Field(default=TaskStatus.PENDING, description="当前状态")
     priority: TaskPriority = Field(default=TaskPriority.MEDIUM, description="优先级")
     completion: int = Field(default=0, ge=0, le=100, description="完成度")
@@ -24,7 +24,7 @@ class TaskUpdate(BaseModel):
     """更新任务 Schema"""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    owner_id: Optional[int] = Field(None, gt=0)
+    owner_name: Optional[str] = Field(None, max_length=100)
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     completion: Optional[int] = Field(None, ge=0, le=100)
