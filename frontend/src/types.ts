@@ -36,6 +36,8 @@ export interface ProgressEntry {
   content: string
   status: string
   meeting_session?: number | null
+  id?: string | null
+  reply_to?: string | null
 }
 
 export interface MeetingState {
@@ -61,6 +63,7 @@ export interface Project {
   owner_name?: string | null
   related_name?: string | null
   completion: number
+  is_long_term?: boolean
   estimated_end_date?: string | null
   actual_end_date?: string | null
   progress_log?: ProgressEntry[] | null

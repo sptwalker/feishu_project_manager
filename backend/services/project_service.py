@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from backend.models.project import Project, ProjectStatus
@@ -9,8 +10,11 @@ class ProjectService:
 
     @staticmethod
     def create(db: Session, project_data: ProjectCreate) -> Project:
-        """创建项目"""
-        project = Project(**project_data.model_dump())
+        """创建项目（记录日期自动取创建当天）"""
+        data = project_data.model_dump()
+        if not data.get("record_date"):
+            data["record_date"] = date.today()
+        project = Project(**data)
         db.add(project)
         try:
             db.commit()

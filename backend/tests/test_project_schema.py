@@ -29,10 +29,16 @@ def test_project_name_required():
         ProjectCreate(record_date=date(2026, 5, 30), owner_name="负责人")
 
 
-def test_project_record_date_required():
-    """缺少 record_date 应校验失败"""
-    with pytest.raises(ValidationError):
-        ProjectCreate(name="测试", owner_name="负责人")
+def test_project_record_date_optional_on_create():
+    """记录日期改为自动记录：创建时可不传 record_date（后端服务填创建当天）"""
+    project = ProjectCreate(name="测试", owner_name="负责人")
+    assert project.record_date is None
+
+
+def test_project_is_long_term_default_false():
+    """长期项目标记默认 False"""
+    project = ProjectCreate(name="测试")
+    assert project.is_long_term is False
 
 
 def test_project_completion_range():

@@ -10,6 +10,8 @@ class ProgressEntry(BaseModel):
     content: str = Field("", description="内容")
     status: str = Field("正常", description="状况")
     meeting_session: Optional[int] = Field(None, description="周会次数（该条属于第几次周例会记录）")
+    id: Optional[str] = Field(None, description="条目唯一标识")
+    reply_to: Optional[str] = Field(None, description="反馈事件指向的原事件 id")
 
 
 class ProjectBase(BaseModel):
@@ -23,12 +25,13 @@ class ProjectBase(BaseModel):
     owner_name: Optional[str] = Field(None, max_length=100, description="负责人姓名")
     related_name: Optional[str] = Field(None, max_length=200, description="相关人")
     completion: int = Field(default=0, ge=0, le=100, description="完成度")
+    is_long_term: bool = Field(default=False, description="长期项目（不显示完成度）")
     estimated_end_date: Optional[date] = Field(None, description="预计完成时间")
     progress_log: Optional[List[ProgressEntry]] = Field(default=None, description="项目进展记录")
 
 class ProjectCreate(ProjectBase):
-    """创建项目 Schema"""
-    pass
+    """创建项目 Schema（记录日期由后端自动记录为创建当天）"""
+    record_date: Optional[date] = Field(None, description="记录日期（留空自动取今天）")
 
 class ProjectUpdate(BaseModel):
     """更新项目 Schema"""
@@ -40,6 +43,7 @@ class ProjectUpdate(BaseModel):
     owner_name: Optional[str] = Field(None, max_length=100)
     related_name: Optional[str] = Field(None, max_length=200)
     completion: Optional[int] = Field(None, ge=0, le=100)
+    is_long_term: Optional[bool] = None
     estimated_end_date: Optional[date] = None
     actual_end_date: Optional[date] = None
     progress_log: Optional[List[ProgressEntry]] = None

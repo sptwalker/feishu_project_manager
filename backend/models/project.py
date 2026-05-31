@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Enum as SQLEnum, CheckConstraint, JSON
+from sqlalchemy import Column, Integer, String, Text, Date, Boolean, ForeignKey, Enum as SQLEnum, CheckConstraint, JSON
 from sqlalchemy.orm import relationship
 import enum
 from backend.models.base import BaseModel
@@ -31,6 +31,7 @@ class Project(BaseModel):
     owner_name = Column(String(100), comment="负责人姓名（与用户账号解耦）")
     related_name = Column(String(200), comment="相关人")
     completion = Column(Integer, default=0, comment="完成度(0-100)")
+    is_long_term = Column(Boolean, default=False, nullable=False, comment="长期项目（不显示完成度）")
     estimated_end_date = Column(Date, comment="预计完成时间")
     actual_end_date = Column(Date, comment="实际完成时间")
     # 项目进展记录：[{time, content, status}] 列表

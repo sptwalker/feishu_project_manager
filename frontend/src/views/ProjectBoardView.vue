@@ -39,61 +39,72 @@
     <!-- 可视化图表 -->
     <div v-if="allProjects.length" class="charts">
       <div class="chart-card">
-        <h3 class="chart-title">部门项目数量</h3>
+        <h3 class="chart-title">各部门项目数量</h3>
         <BaseChart :option="deptOption" :height="220" />
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">负责人项目数量</h3>
+        <h3 class="chart-title">各负责人项目数量</h3>
         <BaseChart :option="ownerOption" :height="220" />
       </div>
     </div>
 
-    <!-- 筛选 + 视图切换 -->
-    <div class="toolbar">
-      <div class="filters">
-        <el-select v-model="filterStatus" placeholder="全部状态" clearable size="default" style="width: 140px" @change="load">
-          <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
-        </el-select>
-        <el-input v-model="keyword" placeholder="搜索项目名称" clearable :prefix-icon="Search" style="width: 220px" />
-      </div>
-      <el-radio-group v-model="viewMode" size="default">
-        <el-radio-button value="grid"><el-icon><Grid /></el-icon></el-radio-button>
-        <el-radio-button value="list"><el-icon><List /></el-icon></el-radio-button>
-      </el-radio-group>
-    </div>
-
-    <!-- 列表/网格 -->
-    <div v-loading="loading">
-      <el-empty v-if="!loading && filtered.length === 0" description="暂无项目" />
-
-      <div v-else :class="viewMode === 'grid' ? 'grid' : 'list'">
-        <article
-          v-for="p in filtered"
-          :key="p.id"
-          class="project-card"
-          :style="{ '--bar': statusColor(p.status) }"
-          @click="goTasks(p.id)"
-        >
-          <div class="pc-top">
-            <h3 class="pc-name">{{ p.name }}</h3>
-            <span v-if="overdue(p)" class="overdue-tag">逾期</span>
-          </div>
-          <div class="pc-meta">
-            <span class="badge" :style="{ color: statusColor(p.status), background: 'var(--c-surface-2)' }">
-              {{ statusLabel(p.status) }}
-            </span>
-            <span class="muted">· {{ urgencyText(p.urgency) }}</span>
-            <span v-if="p.department" class="muted">· {{ p.department }}</span>
-          </div>
-          <div class="pc-progress">
-            <div class="bar"><div class="bar-fill" :style="{ width: p.completion + '%', background: statusColor(p.status) }" /></div>
-            <span class="num pc-pct">{{ p.completion }}%</span>
-          </div>
-          <div class="pc-foot muted">
-            <span>预计 {{ p.estimated_end_date || '—' }}</span>
-          </div>
-        </article>
-      </div>
+    <div v-loading="loading" class="zones">
+      <section v-for="z in zones" :key="z.key" class="zone">
+        <div class="zone-head">
+          <h3 class="zone-title">{{ z.title }}<span class="zone-count">{{ z.items.length }}</span></h3>
+          <span class="zone-desc muted">{{ z.desc }}</span>
+          <el-radio-group v-if="z.key === 'key'" v-model="viewMode" class="zone-switch" size="small">
+            <el-radio-button value="grid"><el-icon><Grid /></el-icon></el-radio-button>
+            <el-radio-button value="list"><el-icon><List /></el-icon></el-radio-button>
+          </el-radio-group>
+        </div>
+        <div v-if="z.items.length" :class="viewMode === 'grid' ? 'grid' : 'list'">
+          <el-tooltip
+            v-for="p in z.items"
+            :key="p.id"
+            placement="right" effect="light" popper-class="progress-tip"
+            :disabled="!p._recent.length"
+          >
+            <template #content>
+              <div class="ptip">
+                <div v-if="p._hasMore" class="ptip-more">……</div>
+                <div v-for="(e, i) in p._recent" :key="i" class="ptip-item">
+                  <span class="ptip-time">{{ e.time || '—' }}</span>
+                  <span class="ptip-text"><span v-if="e.meeting_session" class="ptip-meeting">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content }}</span>
+                </div>
+              </div>
+            </template>
+            <article
+              class="project-card"
+              :style="{ '--bar': z.barColor(p) }"
+              @click="openDetail(p)"
+            >
+              <div class="pc-top">
+                <h3 class="pc-name">{{ p.name }}</h3>
+                <span class="pc-top-tags">
+                  <span v-if="p._latest" class="pc-status" :style="{ color: progressColor(p._latest?.status) }">【{{ p._latest?.status }}】</span>
+                  <span v-if="overdue(p)" class="overdue-tag">逾期</span>
+                </span>
+              </div>
+              <div class="pc-meta">
+                <span class="badge" :style="{ color: statusColor(p.status), background: 'var(--c-surface-2)' }">
+                  {{ statusLabel(p.status) }}
+                </span>
+                <span class="muted">· {{ urgencyText(p.urgency) }}</span>
+                <span v-if="p.department" class="muted">· {{ p.department }}</span>
+              </div>
+              <div class="pc-progress">
+                <span v-if="p.is_long_term" class="pc-longterm">长期项目</span>
+                <template v-else>
+                  <div class="bar"><div class="bar-fill" :style="{ width: p.completion + '%', background: statusColor(p.status) }" /></div>
+                  <span class="num pc-pct">{{ p.completion }}%</span>
+                </template>
+              </div>
+            </article>
+          </el-tooltip>
+        </div>
+        <el-empty v-else :description="`暂无${z.title}`" :image-size="50" />
+      </section>
     </div>
 
     <!-- 新建项目对话框 -->
@@ -101,9 +112,6 @@
       <el-form :model="form" label-width="92px" label-position="left">
         <el-form-item label="项目名称" required>
           <el-input v-model="form.name" placeholder="请输入项目名称" />
-        </el-form-item>
-        <el-form-item label="记录日期" required>
-          <el-date-picker v-model="form.record_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
         </el-form-item>
         <el-form-item label="负责人">
           <el-input v-model="form.owner_name" placeholder="负责人姓名（可选）" style="width: 100%" />
@@ -125,53 +133,84 @@
         <el-button type="primary" :loading="saving" @click="submitCreate">创建</el-button>
       </template>
     </el-dialog>
+
+    <!-- 项目详情抽屉 -->
+    <ProjectDetailDrawer
+      v-model:visible="detailVisible"
+      :project="detailProject"
+      @updated="onDetailUpdated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Search, Grid, List, Upload } from '@element-plus/icons-vue'
+import { Plus, Upload, Grid, List } from '@element-plus/icons-vue'
 import { projectApi, statsApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, DashboardStats } from '@/types'
 import {
-  projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue,
+  projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue, progressStatusColor,
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
+import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
-const router = useRouter()
-
-const projects = ref<Project[]>([])
 const allProjects = ref<Project[]>([])
 const stats = ref<DashboardStats | null>(null)
 const loading = ref(false)
 const viewMode = ref<'grid' | 'list'>('grid')
-const filterStatus = ref<ProjectStatus | ''>('')
-const keyword = ref('')
 
-const statusOptions = [
-  { value: 'planned', label: '待启动' },
-  { value: 'in_progress', label: '进行中' },
-  { value: 'paused', label: '暂停' },
-  { value: 'completed', label: '已完成' },
-  { value: 'cancelled', label: '已取消' },
-]
+/* 详情抽屉 */
+const detailVisible = ref(false)
+const detailProject = ref<Project | null>(null)
+function openDetail(row: Project) {
+  detailProject.value = row
+  detailVisible.value = true
+}
+function onDetailUpdated() {
+  loadStats()
+  loadProjects()
+}
+
 const urgencyOptions = [
   { value: 'low', label: '低' },
   { value: 'medium', label: '中' },
   { value: 'high', label: '高' },
-  { value: 'urgent', label: '紧急' },
+  { value: 'urgent', label: '重要' },
 ]
 
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 const urgencyText = (u: ProjectUrgency) => urgencyLabel[u]
 const overdue = (p: Project) => isOverdue(p.estimated_end_date, p.status)
+const progressColor = (s?: string | null) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
 
-const filtered = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  return projects.value.filter((p) => !kw || p.name.toLowerCase().includes(kw))
+/* 三个关注分区（仅展示进行中项目；项目可同时出现在多个区）。
+   边缘色：重点-重要=红、重点-高=暗红，等待=蓝，延迟=橙 */
+const zones = computed(() => {
+  const active = allProjects.value
+    .filter((p) => p.status === 'in_progress')
+    .map((p) => {
+      const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      return {
+        ...p,
+        _latest: log.length ? log[log.length - 1] : null,
+        _recent: log.slice(-8),
+        _hasMore: log.length > 8,
+      }
+    })
+  // 重点项目：重要(urgent) 在前，高(high) 在后
+  const key = [
+    ...active.filter((p) => p.urgency === 'urgent'),
+    ...active.filter((p) => p.urgency === 'high'),
+  ]
+  const wait = active.filter((p) => ['待讨论', '待确认', '待执行'].includes(p._latest?.status || ''))
+  const delay = active.filter((p) => (p._latest?.status || '') === '延迟')
+  return [
+    { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => (p.urgency === 'urgent' ? '#E5484D' : '#A12D2D') },
+    { key: 'wait', title: '等待关注', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: () => '#1A73E8' },
+    { key: 'delay', title: '延迟关注', desc: '最新进展：延迟', items: delay, barColor: () => '#FA8C16' },
+  ]
 })
 
 // 解析 CSS 变量为实际色值（ECharts 不识别 var()）
@@ -190,12 +229,12 @@ const deptOption = computed(() => {
     .sort((a, b) => b.value - a.value)
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: 0, icon: 'circle', type: 'scroll', textStyle: { color: cssVar('--c-ink-2') } },
     series: [{
       type: 'pie',
-      radius: ['45%', '70%'],
+      radius: ['40%', '62%'],
       avoidLabelOverlap: true,
-      label: { show: false },
+      label: { show: true, formatter: '{b}: {c}', color: cssVar('--c-ink-2'), fontSize: 12 },
+      labelLine: { show: true, length: 10, length2: 12 },
       data: data.length ? data : [{ name: '暂无', value: 1, itemStyle: { color: cssVar('--c-border') } }],
     }],
   } as Record<string, unknown>
@@ -233,19 +272,6 @@ const ownerOption = computed(() => {
   } as Record<string, unknown>
 })
 
-async function load() {
-  loading.value = true
-  try {
-    const params: Record<string, unknown> = { limit: 100 }
-    if (filterStatus.value) params.status = filterStatus.value
-    projects.value = await projectApi.list(params)
-  } catch {
-    ElMessage.error('加载项目失败')
-  } finally {
-    loading.value = false
-  }
-}
-
 async function loadStats() {
   try {
     stats.value = await statsApi.dashboard()
@@ -254,16 +280,15 @@ async function loadStats() {
   }
 }
 
-async function loadCharts() {
+async function loadProjects() {
+  loading.value = true
   try {
     allProjects.value = await projectApi.list({ limit: 500 })
   } catch {
-    /* 图表统计失败不阻塞页面 */
+    ElMessage.error('加载项目失败')
+  } finally {
+    loading.value = false
   }
-}
-
-function goTasks(id: number) {
-  router.push({ name: 'project-tasks', params: { id } })
 }
 
 /* 表格导入 */
@@ -287,7 +312,7 @@ async function onFileChosen(e: Event) {
     } else {
       ElMessage.success(`导入成功 ${res.created} 条项目`)
     }
-    await Promise.all([load(), loadStats(), loadCharts()])
+    await Promise.all([loadStats(), loadProjects()])
   } catch (err: unknown) {
     const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail ? `导入失败：${detail}` : '导入失败，请检查表格格式')
@@ -296,24 +321,23 @@ async function onFileChosen(e: Event) {
   }
 }
 
-/* 新建项目 */
+/* 新建项目（记录日期由后端自动记录为创建当天） */
 const createVisible = ref(false)
 const saving = ref(false)
 const form = reactive<Record<string, unknown>>({
-  name: '', record_date: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
+  name: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
 })
 
 function openCreate() {
   Object.assign(form, {
-    name: '', record_date: new Date().toISOString().slice(0, 10),
-    owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
+    name: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
   })
   createVisible.value = true
 }
 
 async function submitCreate() {
-  if (!form.name || !form.record_date) {
-    ElMessage.warning('请填写必填项')
+  if (!form.name) {
+    ElMessage.warning('请填写项目名称')
     return
   }
   saving.value = true
@@ -325,7 +349,7 @@ async function submitCreate() {
     await projectApi.create(payload as Partial<Project>)
     ElMessage.success('项目已创建')
     createVisible.value = false
-    await Promise.all([load(), loadStats(), loadCharts()])
+    await Promise.all([loadStats(), loadProjects()])
   } catch {
     ElMessage.error('创建失败（需要管理员或项目经理权限）')
   } finally {
@@ -334,9 +358,8 @@ async function submitCreate() {
 }
 
 onMounted(() => {
-  load()
   loadStats()
-  loadCharts()
+  loadProjects()
 })
 </script>
 
@@ -378,6 +401,23 @@ onMounted(() => {
 }
 .chart-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); color: var(--c-ink-2); }
 
+/* 关注分区 */
+.zones { display: flex; flex-direction: column; gap: var(--sp-5); }
+.zone { border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
+.zone-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.zone-switch { margin-left: auto; }
+.zone-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: var(--sp-2); }
+.zone-count {
+  font-size: 13px; font-weight: 600; color: var(--c-accent);
+  background: var(--c-accent-soft); padding: 1px 9px; border-radius: 999px;
+}
+.zone-desc { font-size: 12px; }
+.pc-latest {
+  font-size: 13px; color: var(--c-ink-2); line-height: 1.5; margin-top: var(--sp-2);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pc-latest-status { font-weight: 600; }
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -390,18 +430,18 @@ onMounted(() => {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--sp-3);
 }
-.list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.list { display: flex; flex-direction: column; gap: var(--sp-2); }
 
 .project-card {
   position: relative;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-left: 3px solid var(--bar);
+  border-left: 4px solid var(--bar);
   border-radius: var(--r-md);
-  padding: var(--sp-4) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
   cursor: pointer;
   transition: box-shadow 0.15s, transform 0.1s, border-color 0.15s;
 }
@@ -409,24 +449,44 @@ onMounted(() => {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-.list .project-card { display: grid; grid-template-columns: 2fr 1.2fr 1.4fr 1fr; align-items: center; gap: var(--sp-4); }
-.list .pc-progress { margin: 0; }
-.list .pc-foot { margin: 0; }
+.list .project-card { display: grid; grid-template-columns: 1.5fr 1.2fr 1fr 2fr; align-items: center; gap: var(--sp-4); }
+.list .pc-top, .list .pc-meta, .list .pc-progress, .list .pc-latest { margin: 0; }
+.list .pc-latest { -webkit-line-clamp: 2; }
 
-.pc-top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
-.pc-name { font-size: 16px; }
+.pc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.pc-name { font-size: 15px; flex: 1; min-width: 0; }
+.pc-top-tags { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+.pc-status { font-weight: 600; font-size: 12px; white-space: nowrap; }
 .overdue-tag {
   font-size: 11px; font-weight: 600;
   color: var(--c-status-overdue);
   background: var(--c-status-overdue-soft);
   padding: 2px 8px; border-radius: 999px;
 }
-.pc-meta { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; font-size: 13px; margin-bottom: var(--sp-4); }
+.pc-meta { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; font-size: 13px; margin-bottom: var(--sp-3); }
 .badge { font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: var(--r-sm); }
 
-.pc-progress { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.pc-progress { display: flex; align-items: center; gap: var(--sp-3); }
 .bar { flex: 1; height: 6px; background: var(--c-canvas); border-radius: 999px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s; }
 .pc-pct { font-size: 13px; font-weight: 600; color: var(--c-ink-2); min-width: 38px; text-align: right; }
-.pc-foot { font-size: 12px; }
+.pc-longterm { font-size: 13px; font-weight: 700; color: var(--c-accent); }
+</style>
+
+<!-- 「项目进展」tooltip 样式（teleport 到 body，需全局） -->
+<style>
+.el-popper.progress-tip.is-light {
+  max-width: 480px;
+  background: #f5ecd9;
+  color: #1a1a1a;
+  border-color: #e0d3b8;
+  padding: 8px 12px;
+}
+.el-popper.progress-tip .ptip-more { text-align: center; color: #8a7a55; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+.el-popper.progress-tip .ptip-item { display: flex; gap: 10px; padding: 4px 0; line-height: 1.5; border-top: 1px dashed #e0d3b8; }
+.el-popper.progress-tip .ptip-item:first-of-type { border-top: none; }
+.el-popper.progress-tip .ptip-time { color: #8a7a55; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+.el-popper.progress-tip .ptip-text { word-break: break-word; white-space: normal; }
+.el-popper.progress-tip .ptip-meeting { color: #1a73e8; font-weight: 700; }
+.el-popper.progress-tip .el-popper__arrow::before { background: #f5ecd9; border-color: #e0d3b8; }
 </style>

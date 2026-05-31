@@ -56,13 +56,23 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="name" label="待办事项 / 项目名称" min-width="240" show-overflow-tooltip>
+      <el-table-column prop="name" label="待办事项 / 项目名称" min-width="240">
         <template #default="{ row }">
-          <span class="link" @click="openDetail(row)">{{ row.name }}</span>
+          <el-tooltip
+            v-if="row.content"
+            :content="row.content"
+            placement="top" effect="light" popper-class="desc-tip"
+          >
+            <span class="link" @click="openDetail(row)">{{ row.name }}</span>
+          </el-tooltip>
+          <span v-else class="link" @click="openDetail(row)">{{ row.name }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column label="项目进展" min-width="320">
+      <el-table-column
+        label="项目进展" min-width="320"
+        :filters="progressFilters" :filter-method="filterProgress"
+      >
         <template #default="{ row }">
           <el-tooltip
             v-if="row._recentProgress.length"
@@ -103,8 +113,11 @@
 
       <el-table-column prop="completion" label="进度" width="150" sortable>
         <template #default="{ row }">
-          <div class="tbar"><div class="tbar-fill" :style="{ width: row.completion + '%', background: statusColor(row.status) }" /></div>
-          <span class="num tpct">{{ row.completion }}%</span>
+          <span v-if="row.is_long_term" class="long-term-text">长期项目</span>
+          <template v-else>
+            <div class="tbar"><div class="tbar-fill" :style="{ width: row.completion + '%', background: statusColor(row.status) }" /></div>
+            <span class="num tpct">{{ row.completion }}%</span>
+          </template>
         </template>
       </el-table-column>
 
@@ -149,7 +162,7 @@ import { projectApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
-  urgencyWeight, PROJECT_STATUS_ORDER, isOverdue, progressStatusColor,
+  urgencyWeight, PROJECT_STATUS_ORDER, PROGRESS_STATUSES, isOverdue, progressStatusColor,
 } from '@/utils/labels'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
@@ -206,6 +219,13 @@ function cmpStatus(a: Project, b: Project) {
   return PROJECT_STATUS_ORDER.indexOf(a.status) - PROJECT_STATUS_ORDER.indexOf(b.status)
 }
 
+/* 最新进展状态（用于"项目进展"列筛选） */
+function latestStatusOf(p: Project): string {
+  const log = p.progress_log ?? []
+  if (!log.length) return ''
+  return [...log].sort((a, b) => (a.time || '').localeCompare(b.time || ''))[log.length - 1].status || ''
+}
+
 /* 表头排序方法（el-table sort-method） */
 const sortDept = (a: Project, b: Project) => cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
 const sortOwner = (a: Project, b: Project) => cmpStr(a.owner_name, b.owner_name)
@@ -216,6 +236,8 @@ const filterDept = (value: string, row: Project) => getDepartmentShortName(row.d
 const filterOwner = (value: string, row: Project) => (row.owner_name || '') === value
 const filterStatus = (value: string, row: Project) => row.status === value
 const filterUrgency = (value: string, row: Project) => row.urgency === value
+/* 项目进展：按最新进展状态筛选（无进展用空串） */
+const filterProgress = (value: string, row: Project) => latestStatusOf(row) === value
 
 /* 默认排序：部门简称 › 负责人 › 优先级(重要在前)，再叠加关键词过滤。
    预计算 _deptShort/_deptColor 并生成新对象，确保部门数据异步到达后 el-table 重渲染。 */
@@ -266,6 +288,15 @@ const statusFilters = PROJECT_STATUS_ORDER.map((s) => ({ text: projectStatusLabe
 const defaultStatusFiltered = PROJECT_STATUS_ORDER.filter((s) => s !== 'completed' && s !== 'cancelled')
 const urgencyFilters = (['urgent', 'high', 'medium', 'low'] as ProjectUrgency[])
   .map((u) => ({ text: urgencyLabel[u], value: u }))
+/* 项目进展筛选项：数据中实际出现的最新进展状态（按预设顺序），含"无进展" */
+const progressFilters = computed(() => {
+  const present = new Set(projects.value.map((p) => latestStatusOf(p)))
+  const items: { text: string; value: string }[] = PROGRESS_STATUSES
+    .filter((s) => present.has(s))
+    .map((s) => ({ text: s, value: s }))
+  if (present.has('')) items.push({ text: '无进展', value: '' })
+  return items
+})
 
 async function load() {
   loading.value = true
@@ -363,6 +394,7 @@ onMounted(() => {
 .tbar { display: inline-block; width: 70px; height: 6px; background: var(--c-canvas); border-radius: 999px; overflow: hidden; vertical-align: middle; }
 .tbar-fill { height: 100%; border-radius: 999px; }
 .tpct { margin-left: var(--sp-2); font-size: 12px; color: var(--c-ink-2); }
+.long-term-text { font-weight: 700; color: var(--c-accent); font-size: 13px; }
 .overdue { color: var(--c-status-overdue); font-weight: 600; }
 
 .footer-bar { margin-top: var(--sp-3); font-size: 13px; }

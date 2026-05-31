@@ -111,6 +111,9 @@ export const PROGRESS_STATUSES = [
   '正常', '延迟', '暂停', '阻塞', '等待', '待讨论', '待执行', '待确认',
 ] as const
 
+// 未结束事件状态（时间线空心闪烁圆点 + 可反馈）
+export const PENDING_STATUSES = ['待讨论', '待确认', '待执行'] as const
+
 export const progressStatusColor: Record<string, string> = {
   正常: '#3DBE7B',   // 绿
   延迟: '#E6B422',   // 黄

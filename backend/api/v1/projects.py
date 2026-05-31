@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from backend.api.deps import get_db
-from backend.core.dependencies import get_current_user
+from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
 from backend.models.project import ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
@@ -97,9 +97,9 @@ def update_project(
 def delete_project(
     project_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_admin)
 ):
-    """删除项目"""
+    """删除项目（仅管理员）"""
     project = ProjectService.get_by_id(db, project_id)
     if not project:
         raise HTTPException(
