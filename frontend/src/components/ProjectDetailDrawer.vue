@@ -185,7 +185,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="tl-empty muted">暂无进展记录，点击此处添加</div>
+          <div v-else class="stalled-banner">--- 暂无进展记录，点击此处添加 ---</div>
         </div>
 
         <div v-if="stalled" class="stalled-banner">

@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
-from backend.utils.excel import parse_xlsx, ExcelParseError
+from backend.utils.excel import parse_xlsx
 from backend.schemas.task import TaskCreate
 from backend.schemas.project import ProjectCreate
 from backend.services.task_service import TaskService

@@ -1,7 +1,6 @@
 from typing import List, Optional
 from datetime import date
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
 from backend.models.project import Project, ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate
 

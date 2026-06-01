@@ -16,23 +16,26 @@
     <div class="stats">
       <div class="stat-card">
         <span class="stat-label">项目总数</span>
-        <span class="stat-num num">{{ stats?.projects.total ?? '–' }}</span>
+        <span class="stat-num num">{{ boardStats.total }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-label">进行中</span>
-        <span class="stat-num num" style="color: var(--c-status-progress)">
-          {{ stats?.projects.by_status?.in_progress ?? '–' }}
-        </span>
+        <span class="stat-num num" style="color: var(--c-status-progress)">{{ boardStats.inProgress }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">逾期</span>
-        <span class="stat-num num" style="color: var(--c-status-overdue)">
-          {{ stats?.projects.overdue ?? '–' }}
-        </span>
+        <span class="stat-label">已完成</span>
+        <span class="stat-num num" style="color: var(--c-status-done)">{{ boardStats.completed }}</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">平均完成度</span>
-        <span class="stat-num num">{{ stats ? stats.projects.avg_completion + '%' : '–' }}</span>
+        <span class="stat-label">待确认项目</span>
+        <span class="stat-num num" style="color: #E6A23C">{{ boardStats.pending }}</span>
+      </div>
+      <div class="stat-card gauge-card">
+        <div class="gauge-left">
+          <span class="stat-label">反馈及时度</span>
+          <span class="stat-num num" :style="{ color: timelinessColor }">{{ boardStats.timeliness }}%</span>
+        </div>
+        <div class="gauge-box"><BaseChart :option="timelinessGauge" :height="52" /></div>
       </div>
     </div>
 
@@ -147,16 +150,16 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Upload, Grid, List } from '@element-plus/icons-vue'
-import { projectApi, statsApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, DashboardStats } from '@/types'
+import { projectApi } from '@/api/resources'
+import type { Project, ProjectStatus, ProjectUrgency } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue, progressStatusColor,
+  PENDING_STATUSES,
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
 const allProjects = ref<Project[]>([])
-const stats = ref<DashboardStats | null>(null)
 const loading = ref(false)
 const viewMode = ref<'grid' | 'list'>('grid')
 
@@ -168,7 +171,6 @@ function openDetail(row: Project) {
   detailVisible.value = true
 }
 function onDetailUpdated() {
-  loadStats()
   loadProjects()
 }
 
@@ -184,6 +186,64 @@ const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 const urgencyText = (u: ProjectUrgency) => urgencyLabel[u]
 const overdue = (p: Project) => isOverdue(p.estimated_end_date, p.status)
 const progressColor = (s?: string | null) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
+
+/* 项目是否存在「未闭合」的待讨论/待确认/待执行进展
+   （pending 状态、非反馈本身、且其 id 未被任何 reply_to 引用） */
+function hasUnclosedPending(p: Project): boolean {
+  const log = p.progress_log ?? []
+  const replied = new Set(log.filter((e) => e.reply_to).map((e) => e.reply_to))
+  return log.some((e) =>
+    (PENDING_STATUSES as readonly string[]).includes(e.status)
+    && !e.reply_to
+    && !(e.id && replied.has(e.id)),
+  )
+}
+
+/* 信息看板统计（全部基于 allProjects 计算） */
+const boardStats = computed(() => {
+  const ps = allProjects.value
+  const inProgressList = ps.filter((p) => p.status === 'in_progress')
+  // 待执行项目：非已完成/取消，且存在未闭合的待讨论/待确认/待执行
+  const pending = ps
+    .filter((p) => !['completed', 'cancelled'].includes(p.status))
+    .filter(hasUnclosedPending).length
+  // 反馈及时度：进行中且无未闭合 pending 的项目 / 进行中项目
+  const timely = inProgressList.filter((p) => !hasUnclosedPending(p)).length
+  const timeliness = inProgressList.length ? Math.round((timely / inProgressList.length) * 100) : 0
+  return {
+    total: ps.length,
+    inProgress: inProgressList.length,
+    completed: ps.filter((p) => p.status === 'completed').length,
+    pending,
+    timeliness,
+  }
+})
+
+const timelinessColor = computed(() => {
+  const v = boardStats.value.timeliness
+  return v >= 80 ? '#3DBE7B' : v >= 50 ? '#E6A23C' : '#E5484D'
+})
+
+const timelinessGauge = computed(() => ({
+  series: [{
+    type: 'gauge',
+    radius: '135%',
+    center: ['50%', '85%'],
+    startAngle: 200,
+    endAngle: -20,
+    min: 0,
+    max: 100,
+    splitNumber: 5,
+    axisLine: { lineStyle: { width: 4, color: [[0.5, '#E5484D'], [0.8, '#E6A23C'], [1, '#3DBE7B']] } },
+    axisTick: { distance: -4, length: 3, lineStyle: { color: '#fff', width: 1 } },
+    splitLine: { distance: -4, length: 6, lineStyle: { color: '#fff', width: 1.5 } },
+    axisLabel: { show: false },
+    pointer: { show: true, length: '62%', width: 3, itemStyle: { color: timelinessColor.value } },
+    anchor: { show: true, size: 6, itemStyle: { color: timelinessColor.value } },
+    detail: { show: false },
+    data: [{ value: boardStats.value.timeliness }],
+  }],
+} as Record<string, unknown>))
 
 /* 三个关注分区（仅展示进行中项目；项目可同时出现在多个区）。
    边缘色：重点-重要=红、重点-高=暗红，等待=蓝，延迟=橙 */
@@ -247,6 +307,8 @@ const ownerOption = computed(() => {
     counts[key] = (counts[key] || 0) + 1
   }
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  // 统一冷色系调色板（蓝/青/靛/青绿），按柱循环
+  const coolPalette = ['#1A73E8', '#2F8FE0', '#13C2C2', '#3B6FE0', '#5AB1BB', '#2F54EB', '#41B0D8', '#6979F8']
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
@@ -264,21 +326,13 @@ const ownerOption = computed(() => {
     series: [{
       type: 'bar',
       barWidth: '46%',
-      data: entries.map(([, value]) => ({
+      data: entries.map(([, value], i) => ({
         value,
-        itemStyle: { color: cssVar('--c-accent'), borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: coolPalette[i % coolPalette.length], borderRadius: [4, 4, 0, 0] },
       })),
     }],
   } as Record<string, unknown>
 })
-
-async function loadStats() {
-  try {
-    stats.value = await statsApi.dashboard()
-  } catch {
-    /* 统计失败不阻塞页面 */
-  }
-}
 
 async function loadProjects() {
   loading.value = true
@@ -312,7 +366,7 @@ async function onFileChosen(e: Event) {
     } else {
       ElMessage.success(`导入成功 ${res.created} 条项目`)
     }
-    await Promise.all([loadStats(), loadProjects()])
+    await loadProjects()
   } catch (err: unknown) {
     const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
     ElMessage.error(detail ? `导入失败：${detail}` : '导入失败，请检查表格格式')
@@ -349,7 +403,7 @@ async function submitCreate() {
     await projectApi.create(payload as Partial<Project>)
     ElMessage.success('项目已创建')
     createVisible.value = false
-    await Promise.all([loadStats(), loadProjects()])
+    await loadProjects()
   } catch {
     ElMessage.error('创建失败（需要管理员或项目经理权限）')
   } finally {
@@ -358,7 +412,6 @@ async function submitCreate() {
 }
 
 onMounted(() => {
-  loadStats()
   loadProjects()
 })
 </script>
@@ -367,11 +420,11 @@ onMounted(() => {
 .head-actions { display: flex; gap: var(--sp-2); align-items: center; }
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--sp-4);
   margin-bottom: var(--sp-5);
 }
-@media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 .stat-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -384,6 +437,10 @@ onMounted(() => {
 }
 .stat-label { color: var(--c-ink-3); font-size: 13px; font-weight: 500; }
 .stat-num { font-size: 30px; font-weight: 700; line-height: 1; }
+/* 反馈及时度卡片：左侧标签+数字（决定卡片高度，与其他卡一致），右侧紧凑环形仪表盘 */
+.gauge-card { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.gauge-left { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.gauge-box { width: 76px; flex-shrink: 0; }
 
 .charts {
   display: grid;

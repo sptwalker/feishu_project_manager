@@ -90,6 +90,10 @@
             </template>
             <span class="progress-cell">
               <span class="prog-main"><span v-if="row._lastStatus" class="prog-status" :style="{ color: progressColor(row._lastStatus) }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
+              <span
+                v-for="m in row._pendingMarks" :key="m.status"
+                class="pending-mark" :style="{ color: m.color }" :title="m.status + '（未反馈）'"
+              >?</span>
               <span v-if="row._stalledColor" class="stalled" :style="{ color: row._stalledColor, fontWeight: row._stalledBold ? 700 : 400 }">⏱{{ row._stalledDays }}</span>
             </span>
           </el-tooltip>
@@ -166,7 +170,7 @@ import { projectApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
-  urgencyWeight, PROJECT_STATUS_ORDER, PROGRESS_STATUSES, isOverdue, progressStatusColor,
+  urgencyWeight, PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, isOverdue, progressStatusColor,
 } from '@/utils/labels'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
@@ -281,6 +285,18 @@ const rows = computed(() => {
       const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       const lastTime = log.length ? (log[log.length - 1].time || '') : ''
       const stalled = lastTime ? stalledMetaOf(lastTime) : null
+      // 未闭合 pending：pending 状态、非反馈本身（无 reply_to）、且其 id 未被任何 reply_to 引用
+      const replied = new Set(log.filter((e) => e.reply_to).map((e) => e.reply_to))
+      const openSet = new Set(
+        log.filter((e) =>
+          (PENDING_STATUSES as readonly string[]).includes(e.status)
+          && !e.reply_to
+          && !(e.id && replied.has(e.id)),
+        ).map((e) => e.status),
+      )
+      const pendingMarks = (PENDING_STATUSES as readonly string[])
+        .filter((s) => openSet.has(s))
+        .map((s) => ({ status: s, color: progressColor(s) }))
       return {
         ...p,
         _deptShort: getDepartmentShortName(p.department),
@@ -290,6 +306,7 @@ const rows = computed(() => {
         _stalledColor: stalled?.color ?? '',
         _stalledBold: stalled?.bold ?? false,
         _stalledCritical: stalled?.critical ?? false,
+        _pendingMarks: pendingMarks,
         _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
         _lastStatus: log.length ? (log[log.length - 1].status || '') : '',
         _recentProgress: [...log].slice(-8),
@@ -429,6 +446,8 @@ onMounted(() => {
 .progress-cell { display: flex; align-items: center; gap: 6px; }
 .prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-status { font-weight: 600; }
+.pending-mark { flex-shrink: 0; font-weight: 800; font-size: 16px; line-height: 1; cursor: default; animation: pending-blink 1s ease-in-out infinite; }
+@keyframes pending-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 .stalled { flex-shrink: 0; font-size: 13px; white-space: nowrap; }
 .no-progress { color: var(--c-ink-3); font-size: 13px; }
 

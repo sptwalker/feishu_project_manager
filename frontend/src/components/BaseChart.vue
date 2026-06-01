@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import * as echartsNs from 'echarts/core'
-import { PieChart, BarChart } from 'echarts/charts'
+import { PieChart, BarChart, GaugeChart } from 'echarts/charts'
 import {
   TooltipComponent, LegendComponent, GridComponent,
 } from 'echarts/components'
@@ -17,7 +17,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 const echarts: any = echartsNs
 
 echarts.use([
-  PieChart, BarChart,
+  PieChart, BarChart, GaugeChart,
   TooltipComponent, LegendComponent, GridComponent,
   CanvasRenderer,
 ])
