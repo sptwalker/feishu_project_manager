@@ -33,7 +33,7 @@
         </div>
       </div>
 
-      <!-- 简要说明（对应表格“说明”字段） -->
+      <!-- 简要说明（对应表格"说明"字段） -->
       <div class="brief-block">
         <div class="mini-label">简要说明</div>
         <div v-if="!editing" class="brief">{{ local.content || '—' }}</div>
@@ -130,6 +130,19 @@
                       text type="primary" size="small" class="feedback-btn"
                       @click="addFeedback(i)"
                     >反馈</el-button>
+                    <el-button
+                      text type="primary" size="small" class="attach-btn"
+                      :icon="Link"
+                      @click="openAttachDialog(i)"
+                    >文档</el-button>
+                  </div>
+                  <!-- 附件列表（编辑态） -->
+                  <div v-if="e.attachments && e.attachments.length" class="edit-attachments">
+                    <div v-for="(att, ai) in e.attachments" :key="ai" class="edit-attach-item">
+                      <el-icon class="attach-icon"><Document /></el-icon>
+                      <a :href="att.url" target="_blank" class="attach-link">{{ att.title || att.url }}</a>
+                      <el-icon class="attach-remove" @click="removeAttachment(i, ai)"><Close /></el-icon>
+                    </div>
                   </div>
                 </td>
                 <td>
@@ -142,7 +155,7 @@
                 <td><el-icon class="row-del" @click="removeRow(i)"><Delete /></el-icon></td>
               </tr>
               <tr v-if="!progressDraft.length">
-                <td colspan="4" class="empty-row muted">暂无记录，点击下方“添加一条”</td>
+                <td colspan="4" class="empty-row muted">暂无记录，点击下方"添加一条"</td>
               </tr>
             </tbody>
           </table>
@@ -181,7 +194,36 @@
                     {{ e.reply_to ? replyLabel(e) : e.status }}
                   </span>
                 </div>
-                <div class="tl-content"><span v-if="e.meeting_session" class="meeting-prefix">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content || '（无内容）' }}</div>
+                <div class="tl-content" @contextmenu.prevent="onProgressContextMenu($event, e)">
+                  <span v-if="e.meeting_session" class="meeting-prefix">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content || '（无内容）' }}
+                </div>
+                <!-- 文档附件列表（展示态） -->
+                <div v-if="e.attachments && e.attachments.length" class="tl-attachments">
+                  <div v-for="att in e.attachments" :key="att.url" class="tl-attach-item">
+                    <el-icon class="attach-icon"><Document /></el-icon>
+                    <a :href="att.url" target="_blank" class="attach-link">{{ att.title || '飞书文档' }}</a>
+                  </div>
+                </div>
+                <!-- 批注列表 -->
+                <div v-if="e.annotations && e.annotations.length" class="annotations">
+                  <div v-for="ann in e.annotations" :key="ann.id" class="annotation" @contextmenu.prevent="onAnnotationContextMenu($event, e, ann)">
+                    <div class="ann-header">
+                      <span class="ann-author">{{ ann.author_name }}</span>
+                      <span class="ann-time">{{ ann.created_at }}</span>
+                    </div>
+                    <div class="ann-content">{{ ann.content }}</div>
+                    <!-- 回复列表 -->
+                    <div v-if="ann.replies && ann.replies.length" class="ann-replies">
+                      <div v-for="reply in ann.replies" :key="reply.id" class="ann-reply">
+                        <div class="reply-header">
+                          <span class="reply-author">{{ reply.author_name }}</span>
+                          <span class="reply-time">{{ reply.created_at }}</span>
+                        </div>
+                        <div class="reply-content">{{ reply.content }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -193,6 +235,60 @@
         </div>
       </div>
     </div>
+
+    <!-- 批注/回复对话框 -->
+    <el-dialog
+      v-model="annotationDialog.visible"
+      :title="annotationDialog.mode === 'annotation' ? '添加批注' : '回复批注'"
+      width="500px"
+    >
+      <el-input
+        v-model="annotationDialog.content"
+        type="textarea"
+        :rows="4"
+        :maxlength="annotationDialog.mode === 'annotation' ? 256 : 128"
+        show-word-limit
+        :placeholder="annotationDialog.mode === 'annotation' ? '请输入批注内容（不超过256字）' : '请输入回复内容（不超过128字）'"
+      />
+      <template #footer>
+        <el-button @click="annotationDialog.visible = false">取消</el-button>
+        <el-button type="primary" @click="saveAnnotation">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 文档附件对话框 -->
+    <el-dialog
+      v-model="attachDialog.visible"
+      title="添加飞书文档"
+      width="500px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="文档链接">
+          <el-input
+            v-model="attachDialog.url"
+            placeholder="粘贴飞书文档链接，如 https://example.feishu.cn/docx/..."
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="文档标题">
+          <el-input
+            v-model="attachDialog.title"
+            placeholder="可选，留空则显示链接"
+            clearable
+          />
+        </el-form-item>
+        <el-alert v-if="attachDialog.validating" type="info" :closable="false" show-icon>
+          正在验证链接...
+        </el-alert>
+        <el-alert v-if="attachDialog.error" type="error" :closable="false" show-icon>
+          {{ attachDialog.error }}
+        </el-alert>
+      </el-form>
+      <template #footer>
+        <el-button @click="attachDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="attachDialog.validating" @click="saveAttachment">确定</el-button>
+      </template>
+    </el-dialog>
   </el-drawer>
 </template>
 
@@ -201,9 +297,9 @@ import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } 
 import { useMeetingStore } from '@/stores/meeting'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { EditPen, Close, Delete, Plus, Check } from '@element-plus/icons-vue'
+import { EditPen, Close, Delete, Plus, Check, Link, Document } from '@element-plus/icons-vue'
 import { projectApi, departmentApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department } from '@/types'
+import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, progressStatusColor, isOverdue,
@@ -289,7 +385,8 @@ function sync() {
   }
   local.value = props.project ? { ...props.project } : null
   resetForm()
-  progressDraft.value = (local.value?.progress_log ?? []).map((e) => ({ ...e }))
+  // 深拷贝以保留 annotations
+  progressDraft.value = JSON.parse(JSON.stringify(local.value?.progress_log ?? []))
   editing.value = false
   editingProgress.value = false
 }
@@ -583,7 +680,8 @@ function blankProject(): Project {
 
 function enterProgressEdit() {
   if (!local.value) return
-  progressDraft.value = (local.value.progress_log ?? []).map((e) => ({ ...e }))
+  // 深拷贝以保留 annotations
+  progressDraft.value = JSON.parse(JSON.stringify(local.value.progress_log ?? []))
   editingProgress.value = true
 }
 function addRow() {
@@ -603,7 +701,7 @@ function addFeedback(i: number) {
     reply_to: origin.id,
   })
 }
-/* 草稿中某未结束事件是否已有反馈（编辑态据此隐藏“反馈”按钮） */
+/* 草稿中某未结束事件是否已有反馈（编辑态据此隐藏"反馈"按钮） */
 function draftHasReply(e: ProgressEntry): boolean {
   return !!e.id && progressDraft.value.some((x) => x.reply_to === e.id)
 }
@@ -611,7 +709,7 @@ function removeRow(i: number) {
   progressDraft.value.splice(i, 1)
 }
 
-/* 清洗草稿为可保存的 progress_log：补 id、保留 meeting_session/reply_to */
+/* 清洗草稿为可保存的 progress_log：补 id、保留 meeting_session/reply_to/annotations/attachments */
 function cleanDraft(): ProgressEntry[] {
   return progressDraft.value
     .filter((e) => (e.content || '').trim())
@@ -624,6 +722,8 @@ function cleanDraft(): ProgressEntry[] {
       }
       if (e.meeting_session != null) out.meeting_session = e.meeting_session
       if (e.reply_to) out.reply_to = e.reply_to
+      if (e.annotations) out.annotations = e.annotations
+      if (e.attachments) out.attachments = e.attachments
       return out
     })
 }
@@ -649,7 +749,9 @@ function onDocClick(e: MouseEvent) {
   if (!editingProgress.value) return
   const t = e.target as HTMLElement
   if (progressWrap.value?.contains(t)) return
-  if (t.closest('.el-popper, .el-select-dropdown, .el-picker-panel, .el-picker__popper')) return
+  // 弹层（下拉、日期选择、对话框、消息提示）内的点击不触发退出
+  // 注意：用 .el-overlay-dialog 而非 .el-overlay，后者也匹配抽屉自身遮罩会导致无法退出
+  if (t.closest('.el-popper, .el-select-dropdown, .el-picker-panel, .el-picker__popper, .el-dialog, .el-overlay-dialog, .el-message-box, .el-message')) return
   commitProgress()
 }
 
@@ -675,6 +777,172 @@ function onVisible(v: boolean) {
   if (!v && !props.createMode && editingProgress.value) commitProgress()
   emit('update:visible', v)
 }
+
+/* ---------- 批注功能 ---------- */
+const annotationDialog = reactive({
+  visible: false,
+  mode: 'annotation' as 'annotation' | 'reply',
+  content: '',
+  targetEntry: null as ProgressEntry | null,
+  targetAnnotation: null as Annotation | null,
+})
+
+function genAnnotationId(): string {
+  return `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function nowISOStr(): string {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function onProgressContextMenu(event: MouseEvent, entry: ProgressEntry) {
+  event.preventDefault()
+  annotationDialog.mode = 'annotation'
+  annotationDialog.targetEntry = entry
+  annotationDialog.targetAnnotation = null
+  annotationDialog.content = ''
+  annotationDialog.visible = true
+}
+
+function onAnnotationContextMenu(event: MouseEvent, entry: ProgressEntry, annotation: Annotation) {
+  event.preventDefault()
+  annotationDialog.mode = 'reply'
+  annotationDialog.targetEntry = entry
+  annotationDialog.targetAnnotation = annotation
+  annotationDialog.content = ''
+  annotationDialog.visible = true
+}
+
+async function saveAnnotation() {
+  if (!annotationDialog.content.trim()) {
+    ElMessage.warning('请输入批注内容')
+    return
+  }
+  if (!auth.currentUser?.name) {
+    ElMessage.warning('无法获取当前用户信息')
+    return
+  }
+  if (!local.value || !annotationDialog.targetEntry) return
+
+  const entry = annotationDialog.targetEntry
+  // 深拷贝 progress_log，避免直接修改引用
+  const log = JSON.parse(JSON.stringify(local.value.progress_log ?? []))
+  const entryIndex = log.findIndex((e: ProgressEntry) => e.id === entry.id)
+  if (entryIndex === -1) return
+
+  if (annotationDialog.mode === 'annotation') {
+    // 添加批注
+    const newAnnotation: Annotation = {
+      id: genAnnotationId(),
+      author_name: auth.currentUser.name,
+      content: annotationDialog.content.trim(),
+      created_at: nowISOStr(),
+      replies: [],
+    }
+    if (!log[entryIndex].annotations) log[entryIndex].annotations = []
+    log[entryIndex].annotations!.push(newAnnotation)
+  } else {
+    // 添加回复
+    const ann = annotationDialog.targetAnnotation
+    if (!ann) return
+    const annIndex = (log[entryIndex].annotations ?? []).findIndex((a: Annotation) => a.id === ann.id)
+    if (annIndex === -1) return
+    const newReply: AnnotationReply = {
+      id: genAnnotationId(),
+      author_name: auth.currentUser.name,
+      content: annotationDialog.content.trim(),
+      created_at: nowISOStr(),
+    }
+    if (!log[entryIndex].annotations![annIndex].replies) log[entryIndex].annotations![annIndex].replies = []
+    log[entryIndex].annotations![annIndex].replies!.push(newReply)
+  }
+
+  // 保存到后端
+  try {
+    const updated = await projectApi.update(local.value.id, { progress_log: log } as Partial<Project>)
+    local.value = updated
+    emit('updated')
+    annotationDialog.visible = false
+    ElMessage.success(annotationDialog.mode === 'annotation' ? '批注已添加' : '回复已添加')
+  } catch {
+    ElMessage.error('保存失败（需要管理员或项目经理权限）')
+  }
+}
+
+/* ---------- 文档附件功能 ---------- */
+const attachDialog = reactive({
+  visible: false,
+  url: '',
+  title: '',
+  validating: false,
+  error: '',
+  targetIndex: -1,
+})
+
+function openAttachDialog(index: number) {
+  attachDialog.targetIndex = index
+  attachDialog.url = ''
+  attachDialog.title = ''
+  attachDialog.error = ''
+  attachDialog.validating = false
+  attachDialog.visible = true
+}
+
+function validateFeishuUrl(url: string): boolean {
+  // 飞书文档链接格式：https://*.feishu.cn/docx/... 或 https://*.feishu.cn/docs/...
+  const pattern = /^https:\/\/[a-zA-Z0-9-]+\.feishu\.cn\/(docx|docs|wiki|base|mindnote|file|drive)\/[a-zA-Z0-9_-]+/
+  return pattern.test(url)
+}
+
+async function saveAttachment() {
+  if (!attachDialog.url.trim()) {
+    ElMessage.warning('请输入文档链接')
+    return
+  }
+
+  const url = attachDialog.url.trim()
+
+  // 验证链接格式
+  if (!validateFeishuUrl(url)) {
+    attachDialog.error = '链接格式不正确，请输入有效的飞书文档链接'
+    return
+  }
+
+  attachDialog.validating = true
+  attachDialog.error = ''
+
+  // 简单验证：检查 URL 是否可访问（HEAD 请求）
+  try {
+    await fetch(url, { method: 'HEAD', mode: 'no-cors' })
+    // no-cors 模式下无法读取响应状态，只要不抛错就认为链接有效
+  } catch (err) {
+    // fetch 失败可能是跨域或网络问题，但链接格式正确就允许添加
+    console.warn('文档链接验证警告:', err)
+  }
+
+  attachDialog.validating = false
+
+  // 添加附件到草稿
+  const newAttachment: DocumentAttachment = {
+    url,
+    title: attachDialog.title.trim() || null,
+    added_at: nowISOStr(),
+  }
+
+  if (!progressDraft.value[attachDialog.targetIndex].attachments) {
+    progressDraft.value[attachDialog.targetIndex].attachments = []
+  }
+  progressDraft.value[attachDialog.targetIndex].attachments!.push(newAttachment)
+
+  attachDialog.visible = false
+  ElMessage.success('文档已添加')
+}
+
+function removeAttachment(entryIndex: number, attachIndex: number) {
+  progressDraft.value[entryIndex].attachments?.splice(attachIndex, 1)
+}
+
+
 </script>
 
 <style scoped>
@@ -773,5 +1041,50 @@ function onVisible(v: boolean) {
 .meeting-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }
 .feedback-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }
 .feedback-btn { flex-shrink: 0; padding: 0 6px; }
+.attach-btn { flex-shrink: 0; padding: 0 6px; }
 .meeting-prefix { color: #1a73e8; font-weight: 700; }
+
+/* 文档附件样式 */
+.edit-attachments { margin-top: var(--sp-2); display: flex; flex-direction: column; gap: 4px; }
+.edit-attach-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; background: var(--c-surface-2); border-radius: var(--r-sm);
+}
+.attach-icon { color: #1a73e8; font-size: 14px; }
+.attach-link {
+  flex: 1; font-size: 12px; color: #1a73e8; text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.attach-link:hover { text-decoration: underline; }
+.attach-remove { cursor: pointer; color: var(--c-ink-3); font-size: 14px; }
+.attach-remove:hover { color: var(--c-status-overdue); }
+
+.tl-attachments { margin-top: var(--sp-2); display: flex; flex-direction: column; gap: 4px; }
+.tl-attach-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; background: var(--c-surface-2); border-radius: var(--r-sm);
+  border-left: 2px solid #1a73e8;
+}
+
+/* 批注样式 */
+.annotations { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.annotation {
+  background: var(--c-surface-2); border-left: 3px solid #1a73e8;
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  cursor: context-menu;
+}
+.annotation:hover { background: var(--c-surface-3); }
+.ann-header { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 4px; }
+.ann-author { font-weight: 600; font-size: 13px; color: var(--c-ink); }
+.ann-time { font-size: 11px; color: var(--c-ink-3); }
+.ann-content { font-size: 13px; color: var(--c-ink-2); line-height: 1.5; white-space: pre-wrap; }
+.ann-replies { margin-top: var(--sp-2); padding-left: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ann-reply {
+  background: var(--c-canvas); padding: var(--sp-2);
+  border-radius: var(--r-sm); border-left: 2px solid var(--c-border);
+}
+.reply-header { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 2px; }
+.reply-author { font-weight: 600; font-size: 12px; color: var(--c-ink-2); }
+.reply-time { font-size: 11px; color: var(--c-ink-3); }
+.reply-content { font-size: 12px; color: var(--c-ink-2); line-height: 1.4; white-space: pre-wrap; }
 </style>

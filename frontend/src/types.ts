@@ -31,6 +31,27 @@ export interface Department {
   updated_at?: string
 }
 
+export interface DocumentAttachment {
+  url: string
+  title?: string | null
+  added_at: string
+}
+
+export interface AnnotationReply {
+  id: string
+  author_name: string
+  content: string
+  created_at: string
+}
+
+export interface Annotation {
+  id: string
+  author_name: string
+  content: string
+  created_at: string
+  replies?: AnnotationReply[] | null
+}
+
 export interface ProgressEntry {
   time: string
   content: string
@@ -38,6 +59,8 @@ export interface ProgressEntry {
   meeting_session?: number | null
   id?: string | null
   reply_to?: string | null
+  annotations?: Annotation[] | null
+  attachments?: DocumentAttachment[] | null
 }
 
 export interface MeetingState {

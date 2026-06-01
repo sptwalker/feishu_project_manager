@@ -4,6 +4,30 @@ from typing import Optional, List
 from backend.models.project import ProjectStatus, ProjectUrgency
 
 
+class AnnotationReply(BaseModel):
+    """批注回复"""
+    id: str = Field(..., description="回复唯一标识")
+    author_name: str = Field(..., description="回复人姓名")
+    content: str = Field(..., max_length=128, description="回复内容")
+    created_at: str = Field(..., description="创建时间")
+
+
+class Annotation(BaseModel):
+    """进展记录批注"""
+    id: str = Field(..., description="批注唯一标识")
+    author_name: str = Field(..., description="批注人姓名")
+    content: str = Field(..., max_length=256, description="批注内容")
+    created_at: str = Field(..., description="创建时间")
+    replies: Optional[List['AnnotationReply']] = Field(default=None, description="批注回复列表")
+
+
+class DocumentAttachment(BaseModel):
+    """飞书文档附件"""
+    url: str = Field(..., description="文档链接")
+    title: Optional[str] = Field(None, description="文档标题")
+    added_at: str = Field(..., description="添加时间")
+
+
 class ProgressEntry(BaseModel):
     """项目进展记录条目"""
     time: str = Field(..., description="更新时间")
@@ -12,6 +36,8 @@ class ProgressEntry(BaseModel):
     meeting_session: Optional[int] = Field(None, description="周会次数（该条属于第几次周例会记录）")
     id: Optional[str] = Field(None, description="条目唯一标识")
     reply_to: Optional[str] = Field(None, description="反馈事件指向的原事件 id")
+    annotations: Optional[List[Annotation]] = Field(default=None, description="批注列表")
+    attachments: Optional[List[DocumentAttachment]] = Field(default=None, description="文档附件列表")
 
 
 class ProjectBase(BaseModel):
