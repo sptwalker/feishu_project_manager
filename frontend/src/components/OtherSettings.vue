@@ -50,6 +50,24 @@
     </section>
 
     <section class="card">
+      <h3 class="card-title">项目进展催办设置</h3>
+      <p class="tip muted" style="margin-top:0">
+        飞书机器人每天定时扫描项目进展，对「进展停滞」或「存在未闭合待办」的项目在群里催办相关负责人。
+        下方设置进展停滞的天数阈值——最新进展距今超过该天数的项目将被催办。
+      </p>
+      <div class="calibrate" style="border-top:none; padding-top:0">
+        <span class="ilabel">停滞天数</span>
+        <el-input-number
+          v-model="stallDays" :min="1" :max="365" :disabled="!isAdmin" controls-position="right" style="width: 140px"
+        />
+        <el-button type="primary" :loading="savingStall" :disabled="!isAdmin || stallDays === savedStallDays" @click="saveStallDays">
+          保存
+        </el-button>
+        <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+      </div>
+    </section>
+
+    <section class="card">
       <h3 class="card-title">数据备份</h3>
       <p class="tip muted" style="margin-top:0">
         导出当前全部数据为 JSON 快照文件，可复制到其他环境上传导入。导入为<b>全量替换</b>——会清空并覆盖目标环境的现有数据。
@@ -86,6 +104,35 @@ const editCount = ref(0)
 const state = computed(() => meeting.state)
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 
+/* 项目进展催办：停滞天数阈值 */
+const stallDays = ref(30)
+const savedStallDays = ref(30)
+const savingStall = ref(false)
+
+async function loadStallDays() {
+  try {
+    const r = await settingsApi.getFollowupStallDays()
+    stallDays.value = r.days
+    savedStallDays.value = r.days
+  } catch {
+    // 读取失败保持默认值
+  }
+}
+
+async function saveStallDays() {
+  savingStall.value = true
+  try {
+    const r = await settingsApi.setFollowupStallDays(stallDays.value)
+    stallDays.value = r.days
+    savedStallDays.value = r.days
+    ElMessage.success('催办天数已保存')
+  } catch {
+    ElMessage.error('保存失败（需要管理员权限）')
+  } finally {
+    savingStall.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -94,6 +141,7 @@ async function load() {
   } finally {
     loading.value = false
   }
+  await loadStallDays()
 }
 
 async function save() {

@@ -27,6 +27,7 @@ def test_scheduler_starts_when_enabled(monkeypatch):
         assert job_ids == {
             "overdue_task_reminders", "due_soon_reminders",
             "milestone_reminders", "progress_followups", "weekly_report",
+            "project_followups",
         }
         sched.shutdown_scheduler()
 

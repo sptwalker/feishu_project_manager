@@ -52,6 +52,12 @@ def _build_scheduler() -> AsyncIOScheduler:
                     hour=settings.WEEKLY_REPORT_HOUR, minute=0),
         id="weekly_report", replace_existing=True,
     )
+    scheduler.add_job(
+        scheduler_jobs.job_project_followups,
+        CronTrigger(hour=settings.PROJECT_FOLLOWUP_HOUR,
+                    minute=settings.PROJECT_FOLLOWUP_MINUTE),
+        id="project_followups", replace_existing=True,
+    )
     return scheduler
 
 

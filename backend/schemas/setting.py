@@ -29,3 +29,13 @@ class MeetingActiveUpdate(BaseModel):
 class MeetingCountUpdate(BaseModel):
     """校准周会次数（以 calibration_monday 为基准重设）"""
     count: int = Field(..., ge=1)
+
+
+class FollowupStallDaysResponse(BaseModel):
+    """项目进展停滞催办天数"""
+    days: int = Field(..., description="停滞催办天数阈值")
+
+
+class FollowupStallDaysUpdate(BaseModel):
+    """更新停滞催办天数阈值"""
+    days: int = Field(..., ge=1, le=365)

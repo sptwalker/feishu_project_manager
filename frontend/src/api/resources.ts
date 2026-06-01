@@ -106,6 +106,12 @@ export const settingsApi = {
   setMeetingCount(count: number) {
     return api.put<MeetingState>('/settings/meeting/count', { count }).then((r) => r.data)
   },
+  getFollowupStallDays() {
+    return api.get<{ days: number }>('/settings/followup-stall-days').then((r) => r.data)
+  },
+  setFollowupStallDays(days: number) {
+    return api.put<{ days: number }>('/settings/followup-stall-days', { days }).then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },

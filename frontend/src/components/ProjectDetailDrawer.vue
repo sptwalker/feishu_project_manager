@@ -108,7 +108,7 @@
         <div class="prog-title">
           <span class="mini-label">项目进展详情</span>
           <span v-if="stalled" class="stalled-tag" :style="{ color: stalled.color, fontWeight: stalled.bold ? 700 : 600 }">⏱超过{{ stalled.days }}无反馈</span>
-          <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑' }}</span>
+          <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑，右键点击记录可添加批注' }}</span>
         </div>
 
         <!-- 编辑态：可编辑表格 -->
@@ -119,7 +119,7 @@
             </thead>
             <tbody>
               <tr v-for="(e, i) in progressDraft" :key="i">
-                <td><el-date-picker v-model="e.time" type="datetime" value-format="YYYY-MM-DD HH:mm" size="small" style="width: 100%" /></td>
+                <td><el-date-picker v-model="e.time" type="datetime" value-format="YYYY-MM-DD HH:mm" size="small" style="width: 100%" :disabled-date="disabledFutureDate" /></td>
                 <td>
                   <div class="content-cell">
                     <span v-if="e.reply_to" class="feedback-tag">反馈：</span>
@@ -323,6 +323,9 @@ const auth = useAuthStore()
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const departmentList = ref<Department[]>([])
 
+/* 批注/回复作者名：优先英文名，缺失时回退中文名 */
+const annotationAuthor = computed(() => auth.currentUser?.name_en?.trim() || auth.currentUser?.name || '')
+
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 const urgText = (u: ProjectUrgency) => urgencyLabel[u]
@@ -468,6 +471,8 @@ async function saveCreate() {
   if (!form.urgency) { ElMessage.warning('请选择优先级'); return }
   const firstProgress = progressDraft.value.filter((e) => (e.content || '').trim())
   if (!firstProgress.length) { ElMessage.warning('请填写首次进展记录'); return }
+  const future = findFutureProgress()
+  if (future) { ElMessage.error(`进展「${future}」的更新时间晚于当前时间，请修正后再保存`); return }
   saving.value = true
   try {
     const progress_log = cleanDraft()
@@ -668,6 +673,29 @@ function todayStr(): string {
   return nowStr().slice(0, 10)
 }
 
+/* 日历禁用未来日期（晚于今天的整天不可选） */
+function disabledFutureDate(date: Date): boolean {
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  return date.getTime() > today.getTime()
+}
+
+/* 进展时间是否晚于当前时刻（精确到分钟）。'time' 格式为 'YYYY-MM-DD HH:mm' */
+function isFutureTime(time?: string): boolean {
+  if (!time) return false
+  const t = new Date(time.replace(' ', 'T')).getTime()
+  if (Number.isNaN(t)) return false
+  return t > Date.now()
+}
+
+/* 草稿中存在内容的进展是否含未来时间，返回第一条违规的内容片段（用于提示），无则返回 null */
+function findFutureProgress(): string | null {
+  const bad = progressDraft.value.find((e) => (e.content || '').trim() && isFutureTime(e.time))
+  if (!bad) return null
+  const snippet = (bad.content || '').trim().slice(0, 12)
+  return snippet || (bad.time || '')
+}
+
 function blankProject(): Project {
   return {
     id: 0, name: '', record_date: todayStr(), content: null,
@@ -731,6 +759,12 @@ function cleanDraft(): ProgressEntry[] {
 async function commitProgress() {
   if (props.createMode) return
   if (!editingProgress.value || !local.value) return
+  // 校验：进展时间不能晚于当前时刻
+  const future = findFutureProgress()
+  if (future) {
+    ElMessage.error(`进展「${future}」的更新时间晚于当前时间，请修正后再保存`)
+    return // 保持编辑态，不退出
+  }
   editingProgress.value = false
   const cleaned = cleanDraft()
   // 无变化则不请求
@@ -774,7 +808,14 @@ onBeforeUnmount(() => {
 })
 
 function onVisible(v: boolean) {
-  if (!v && !props.createMode && editingProgress.value) commitProgress()
+  if (!v && !props.createMode && editingProgress.value) {
+    // 存在未来时间的进展时，阻止关闭抽屉，提示修正
+    if (findFutureProgress()) {
+      ElMessage.error('存在更新时间晚于当前时间的进展记录，请修正后再关闭')
+      return // 不 emit，抽屉保持打开
+    }
+    commitProgress()
+  }
   emit('update:visible', v)
 }
 
@@ -818,7 +859,7 @@ async function saveAnnotation() {
     ElMessage.warning('请输入批注内容')
     return
   }
-  if (!auth.currentUser?.name) {
+  if (!annotationAuthor.value) {
     ElMessage.warning('无法获取当前用户信息')
     return
   }
@@ -834,7 +875,7 @@ async function saveAnnotation() {
     // 添加批注
     const newAnnotation: Annotation = {
       id: genAnnotationId(),
-      author_name: auth.currentUser.name,
+      author_name: annotationAuthor.value,
       content: annotationDialog.content.trim(),
       created_at: nowISOStr(),
       replies: [],
@@ -849,7 +890,7 @@ async function saveAnnotation() {
     if (annIndex === -1) return
     const newReply: AnnotationReply = {
       id: genAnnotationId(),
-      author_name: auth.currentUser.name,
+      author_name: annotationAuthor.value,
       content: annotationDialog.content.trim(),
       created_at: nowISOStr(),
     }

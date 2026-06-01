@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     # 各定时任务的触发时间（cron，本地时区 TIMEZONE）
     REMINDER_HOUR: int = 9            # 逾期/临期/里程碑提醒：每天 09:00
     FOLLOWUP_HOUR: int = 10          # 进度跟催：每天 10:00
+    PROJECT_FOLLOWUP_HOUR: int = 9   # 项目进展催办：每天 09:30
+    PROJECT_FOLLOWUP_MINUTE: int = 30
     WEEKLY_REPORT_DAY: str = "mon"   # 周报：周一
     WEEKLY_REPORT_HOUR: int = 9      # 周报：09:00
     # 提醒阈值
@@ -58,6 +60,8 @@ class Settings(BaseSettings):
     FOLLOWUP_STALE_DAYS: int = 3     # 进度跟催：进行中且 N 天未更新
     # 周报接收人（飞书用户ID，为空则不发送）
     FEISHU_REPORT_RECEIVER_ID: str = ""
+    # 项目进展催办的目标飞书群（chat_id，为空则不发送）
+    FEISHU_PROJECT_GROUP_CHAT_ID: str = ""
 
     # 前端配置
     FRONTEND_URL: str = "http://localhost:3000"

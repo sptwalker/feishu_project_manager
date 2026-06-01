@@ -81,3 +81,57 @@ def build_reminder_card(title: str, lines: List[str],
     """提醒类卡片（逾期/临期/里程碑/跟催）。urgent 为真用红色，否则橙色。"""
     template = HEADER_RED if urgent else HEADER_ORANGE
     return build_notification_card(title, lines, template)
+
+
+def _owner_mention(owner_name: str, owner_feishu_id: str = "") -> str:
+    """负责人 @ 标记：有飞书 id 用 <at> 真正 @ 个人，否则文字提名"""
+    if owner_feishu_id:
+        # 飞书卡片 lark_md 的 at 语法
+        return f'<at id="{owner_feishu_id}"></at>'
+    if owner_name:
+        return f"**@{owner_name}**"
+    return "**@未指定负责人**"
+
+
+def build_project_followup_card(items: List[Dict[str, Any]],
+                                frontend_url: str = "") -> Dict[str, Any]:
+    """构建项目进展催办群卡片。
+
+    items: [{project, owner_name, owner_feishu_id, stall_days, no_progress,
+             pending_list, reasons}]，project 为 ORM 对象或含 name/id 的字典。
+    """
+    count = len(items)
+    title = f"项目进展待跟进（{count}）"
+    elements: List[Dict[str, Any]] = [
+        {"tag": "div", "text": {"tag": "lark_md",
+         "content": f"以下 **{count}** 个项目需要关注，请相关负责人及时更新进展或处理阻塞："}},
+        {"tag": "hr"},
+    ]
+
+    for entry in items:
+        proj = entry.get("project")
+        name = getattr(proj, "name", None) or (proj.get("name") if isinstance(proj, dict) else "未命名项目")
+        pid = getattr(proj, "id", None) or (proj.get("id") if isinstance(proj, dict) else None)
+        mention = _owner_mention(entry.get("owner_name") or "", entry.get("owner_feishu_id") or "")
+        reasons = entry.get("reasons") or []
+
+        lines = [f"**{name}** · 负责人 {mention}"]
+        for r in reasons:
+            lines.append(f"  · {r}")
+        if frontend_url and pid is not None:
+            lines.append(f"  · [查看详情]({frontend_url}/?project={pid})")
+        elements.append({"tag": "div", "text": {"tag": "lark_md", "content": "\n".join(lines)}})
+
+    elements.append({"tag": "hr"})
+    elements.append({"tag": "note", "elements": [
+        {"tag": "lark_md", "content": "由项目管理系统自动发送 · 请及时更新进展记录"},
+    ]})
+
+    return {
+        "config": {"wide_screen_mode": True},
+        "header": {
+            "template": HEADER_ORANGE,
+            "title": {"tag": "plain_text", "content": title},
+        },
+        "elements": elements,
+    }

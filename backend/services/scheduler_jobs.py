@@ -8,6 +8,7 @@ import logging
 from backend.db.session import SessionLocal
 from backend.services.reminder_service import ReminderService
 from backend.services.report_service import ReportService
+from backend.services.project_followup_service import ProjectFollowupService
 
 logger = logging.getLogger(__name__)
 
@@ -44,3 +45,7 @@ async def job_milestone_reminders() -> int:
 
 async def job_weekly_report() -> int:
     return await _run_with_session(ReportService.send_weekly_report, "weekly_report")
+
+
+async def job_project_followups() -> int:
+    return await _run_with_session(ProjectFollowupService.send_project_followups, "project_followups")

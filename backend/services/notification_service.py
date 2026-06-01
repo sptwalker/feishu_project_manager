@@ -6,7 +6,7 @@
 后台任务中安全执行。
 """
 import logging
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from backend.core.config import get_settings
 from backend.core.feishu import feishu_client, FeishuAPIError
 from backend.utils import feishu_cards
@@ -22,7 +22,8 @@ class NotificationService:
         return bool(get_settings().FEISHU_NOTIFY_ENABLED)
 
     @staticmethod
-    async def _send_card(receive_id: Optional[str], card: dict) -> bool:
+    async def _send_card(receive_id: Optional[str], card: dict,
+                         receive_id_type: str = "user_id") -> bool:
         """发送卡片，返回是否实际发送。受开关与 receive_id 有效性保护。"""
         if not NotificationService._enabled():
             logger.debug("Feishu notify disabled; skip sending card")
@@ -31,7 +32,7 @@ class NotificationService:
             logger.debug("No receive_id; skip sending card")
             return False
         try:
-            await feishu_client.send_card(receive_id, card, receive_id_type="user_id")
+            await feishu_client.send_card(receive_id, card, receive_id_type=receive_id_type)
             return True
         except FeishuAPIError as e:
             # 通知为尽力而为，失败不应影响主流程
@@ -78,3 +79,15 @@ class NotificationService:
         """通用提醒通知（逾期/临期/里程碑/进度跟催/周报）"""
         card = feishu_cards.build_reminder_card(title, lines, urgent)
         return await NotificationService._send_card(receive_id, card)
+
+    @staticmethod
+    async def notify_project_followups(
+        chat_id: Optional[str],
+        items: List[Dict[str, Any]],
+    ) -> bool:
+        """项目进展催办（发送到群）。items 见 build_project_followup_card。"""
+        if not items:
+            return False
+        frontend_url = get_settings().FRONTEND_URL or ""
+        card = feishu_cards.build_project_followup_card(items, frontend_url)
+        return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")
