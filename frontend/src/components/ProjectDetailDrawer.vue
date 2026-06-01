@@ -107,6 +107,7 @@
       <div ref="progressWrap" class="progress-block">
         <div class="prog-title">
           <span class="mini-label">项目进展详情</span>
+          <span v-if="stalled" class="stalled-tag" :style="{ color: stalled.color, fontWeight: stalled.bold ? 700 : 600 }">⏱超过{{ stalled.days }}无反馈</span>
           <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑' }}</span>
         </div>
 
@@ -185,6 +186,10 @@
             </div>
           </div>
           <div v-else class="tl-empty muted">暂无进展记录，点击此处添加</div>
+        </div>
+
+        <div v-if="stalled" class="stalled-banner">
+          --- 已超过 <span class="stalled-banner-days" :style="{ color: stalled.color }">{{ stalled.days }}</span> 天没有进展反馈 ---
         </div>
       </div>
     </div>
@@ -293,6 +298,25 @@ watch(() => props.project, sync)
 watch(() => props.visible, (v) => { if (v) sync() })
 
 const overdue = computed(() => !!local.value && isOverdue(local.value.estimated_end_date, local.value.status))
+
+/* 停滞分级：最新进展距今天数 → 颜色/加粗（与项目总览一致，仅 >30 天显示） */
+const stalled = computed<{ days: number; color: string; bold: boolean } | null>(() => {
+  const log = local.value?.progress_log ?? []
+  if (!log.length) return null
+  const lastTime = [...log].sort((a, b) => (a.time || '').localeCompare(b.time || ''))[log.length - 1].time || ''
+  if (!lastTime) return null
+  const days = Math.floor((Date.now() - new Date(lastTime.replace(' ', 'T')).getTime()) / 86400000)
+  if (days <= 30) return null
+  let color = '#9AA0A6'
+  let bold = false
+  if (days <= 40) color = '#9AA0A6'
+  else if (days <= 50) color = '#E6B422'
+  else if (days <= 60) color = '#E6A23C'
+  else if (days <= 70) { color = '#FA8C16'; bold = true }
+  else if (days <= 90) { color = '#F0492A'; bold = true }
+  else { color = '#E5484D'; bold = true }
+  return { days, color, bold }
+})
 
 const ownerOptions = computed(() => uniq([...(props.owners || []), form.owner_name as string, local.value?.owner_name || '']))
 function uniq(arr: (string | undefined | null)[]): string[] {
@@ -689,8 +713,14 @@ function onVisible(v: boolean) {
 
 /* 进展 */
 .progress-block { border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
-.prog-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--sp-3); }
-.hint { font-size: 12px; }
+.prog-title { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.stalled-tag { font-size: 13px; white-space: nowrap; margin-left: var(--sp-2); }
+.hint { font-size: 12px; margin-left: auto; }
+.stalled-banner {
+  text-align: center; font-style: italic; font-weight: 700; font-size: 17px;
+  color: #c0c4cc; letter-spacing: 1px; margin-top: var(--sp-4);
+}
+.stalled-banner-days { font-weight: 800; font-style: italic; }
 
 .prog-table { width: 100%; border-collapse: collapse; }
 .prog-table th, .prog-table td { border: 1px solid var(--c-border); padding: 6px; vertical-align: top; text-align: left; }

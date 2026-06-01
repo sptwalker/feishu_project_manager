@@ -106,4 +106,15 @@ export const settingsApi = {
   setMeetingCount(count: number) {
     return api.put<MeetingState>('/settings/meeting/count', { count }).then((r) => r.data)
   },
+  exportBackup() {
+    return api.get('/backup/export', { responseType: 'blob' })
+  },
+  importBackup(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<{ message: string; counts: Record<string, number> }>(
+      '/backup/import', form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ).then((r) => r.data)
+  },
 }

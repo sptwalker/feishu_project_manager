@@ -5,11 +5,11 @@
     </div>
 
     <div class="head-toolbar">
-      <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消/暂停），其中重要项目 {{ importantCount }} 个</p>
+      <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消/暂停），其中重要项目 {{ importantCount }} 个，高优先级项目 {{ highPriorityCount }} 个</p>
       <div class="head-actions">
         <el-input
           v-model="keyword" placeholder="搜索项目名称" clearable
-          :prefix-icon="Search" style="width: 220px"
+          :prefix-icon="Search" style="width: 220px; margin-right: 60px"
         />
         <el-button text :icon="View" :disabled="!currentRow" @click="detailSelected">详情</el-button>
         <el-button text type="danger" :icon="Delete" :disabled="!currentRow" @click="removeSelected">删除</el-button>
@@ -30,9 +30,10 @@
       style="width: 100%"
       @current-change="onCurrentChange"
       @row-dblclick="openDetail"
+      :row-class-name="rowClassName"
     >
       <el-table-column
-        prop="department" label="部门" width="130"
+        prop="department" label="部门" width="100" align="center"
         sortable :sort-method="sortDept"
         :filters="deptFilters" :filter-method="filterDept"
       >
@@ -44,7 +45,7 @@
       </el-table-column>
 
       <el-table-column
-        prop="status" label="完成情况" width="130"
+        prop="status" label="完成情况" width="124" align="center"
         sortable :sort-method="cmpStatus"
         :filters="statusFilters" :filter-method="filterStatus"
         :filtered-value="defaultStatusFiltered"
@@ -70,7 +71,7 @@
       </el-table-column>
 
       <el-table-column
-        label="项目进展" min-width="320"
+        label="项目进展" min-width="380"
         :filters="progressFilters" :filter-method="filterProgress"
       >
         <template #default="{ row }">
@@ -87,14 +88,17 @@
                 </div>
               </div>
             </template>
-            <span class="progress-cell"><span v-if="row._lastStatus" class="prog-status" :style="{ color: progressColor(row._lastStatus) }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
+            <span class="progress-cell">
+              <span class="prog-main"><span v-if="row._lastStatus" class="prog-status" :style="{ color: progressColor(row._lastStatus) }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
+              <span v-if="row._stalledColor" class="stalled" :style="{ color: row._stalledColor, fontWeight: row._stalledBold ? 700 : 400 }">⏱{{ row._stalledDays }}</span>
+            </span>
           </el-tooltip>
-          <span v-else>—</span>
+          <span v-else class="no-progress">- 无进展记录 -</span>
         </template>
       </el-table-column>
 
       <el-table-column
-        prop="owner_name" label="负责人" width="130"
+        prop="owner_name" label="负责人" width="116" align="center"
         sortable :sort-method="sortOwner"
         :filters="ownerFilters" :filter-method="filterOwner"
       >
@@ -102,7 +106,7 @@
       </el-table-column>
 
       <el-table-column
-        prop="urgency" label="优先级" width="110"
+        prop="urgency" label="优先级" width="108" align="center"
         sortable :sort-method="sortUrgency"
         :filters="urgencyFilters" :filter-method="filterUrgency"
       >
@@ -210,6 +214,13 @@ const importantCount = computed(() => {
   ).length
 })
 
+/* 计算高优先级项目数量（优先级为 high） */
+const highPriorityCount = computed(() => {
+  return projects.value.filter(p =>
+    p.urgency === 'high' && !['completed', 'cancelled', 'paused'].includes(p.status)
+  ).length
+})
+
 /* 排序/比较工具 */
 const collator = new Intl.Collator('zh-Hans-CN')
 function cmpStr(a?: string | null, b?: string | null) {
@@ -241,6 +252,22 @@ const filterProgress = (value: string, row: Project) => latestStatusOf(row) === 
 
 /* 默认排序：部门简称 › 负责人 › 优先级(重要在前)，再叠加关键词过滤。
    预计算 _deptShort/_deptColor 并生成新对象，确保部门数据异步到达后 el-table 重渲染。 */
+/* 停滞分级：按最新进展距今天数映射颜色/加粗/严重 */
+function stalledMetaOf(lastTime: string): { days: number; color: string; bold: boolean; critical: boolean } {
+  const t = new Date(lastTime.replace(' ', 'T'))
+  const days = Math.floor((Date.now() - t.getTime()) / 86400000)
+  let color = ''
+  let bold = false
+  if (days <= 30) color = ''
+  else if (days <= 40) color = '#9AA0A6'
+  else if (days <= 50) color = '#E6B422'
+  else if (days <= 60) color = '#E6A23C'
+  else if (days <= 70) { color = '#FA8C16'; bold = true }
+  else if (days <= 90) { color = '#F0492A'; bold = true }
+  else { color = '#E5484D'; bold = true }
+  return { days, color, bold, critical: days > 90 }
+}
+
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   const list = projects.value.filter((p) => !kw || p.name.toLowerCase().includes(kw))
@@ -252,10 +279,17 @@ const rows = computed(() => {
     )
     .map((p) => {
       const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      const lastTime = log.length ? (log[log.length - 1].time || '') : ''
+      const stalled = lastTime ? stalledMetaOf(lastTime) : null
       return {
         ...p,
         _deptShort: getDepartmentShortName(p.department),
         _deptColor: getDepartmentColor(p.department),
+        _hasProgress: log.length > 0,
+        _stalledDays: stalled?.days ?? null,
+        _stalledColor: stalled?.color ?? '',
+        _stalledBold: stalled?.bold ?? false,
+        _stalledCritical: stalled?.critical ?? false,
         _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
         _lastStatus: log.length ? (log[log.length - 1].status || '') : '',
         _recentProgress: [...log].slice(-8),
@@ -263,6 +297,10 @@ const rows = computed(() => {
       }
     })
 })
+
+function rowClassName({ row }: { row: { _stalledCritical?: boolean } }): string {
+  return row._stalledCritical ? 'row-critical' : ''
+}
 
 /* 表头筛选项 */
 function uniqueFilters(values: (string | null | undefined)[]) {
@@ -377,19 +415,22 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-top: var(--sp-3);
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-1);
 }
 .head-actions {
   display: flex;
-  gap: var(--sp-1);
+  gap: 0;
   align-items: center;
 }
 .badge { font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: var(--r-sm); }
 .urg { font-weight: 600; }
 .link { color: var(--c-accent); cursor: pointer; font-weight: 500; }
 .link:hover { text-decoration: underline; }
-.progress-cell { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress-cell { display: flex; align-items: center; gap: 6px; }
+.prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-status { font-weight: 600; }
+.stalled { flex-shrink: 0; font-size: 13px; white-space: nowrap; }
+.no-progress { color: var(--c-ink-3); font-size: 13px; }
 
 .tbar { display: inline-block; width: 70px; height: 6px; background: var(--c-canvas); border-radius: 999px; overflow: hidden; vertical-align: middle; }
 .tbar-fill { height: 100%; border-radius: 999px; }
@@ -399,6 +440,8 @@ onMounted(() => {
 
 .footer-bar { margin-top: var(--sp-3); font-size: 13px; }
 :deep(.el-table) { --el-table-border-color: var(--c-border); }
+/* 停滞 >90 天：整行淡红背景（覆盖斑马纹） */
+:deep(.el-table .row-critical td.el-table__cell) { background-color: #fdecec; }
 </style>
 
 <!-- 「说明」列 tooltip 样式：浅棕背景 + 黑字 + 合适尺寸。
