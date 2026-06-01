@@ -3,8 +3,8 @@
     <!-- 左侧导航 -->
     <aside class="sidebar">
       <div class="brand">
-        <span class="brand-mark">飞</span>
-        <span class="brand-name">飞书<span class="brand-accent">PM</span></span>
+        <img :src="logoUrl" alt="Logo" class="brand-logo" />
+        <span class="brand-name"><span class="brand-accent">P</span>roject <span class="brand-accent">M</span>anager</span>
       </div>
 
       <nav class="nav">
@@ -39,6 +39,8 @@
           <div class="crumb">
             <slot name="crumb">项目管理</slot>
           </div>
+        </div>
+        <div class="top-actions">
           <div class="meeting-switch" :class="{ 'is-on': meeting.active }">
             <el-icon class="m-ico"><Calendar /></el-icon>
             <span class="m-label">周例会</span>
@@ -54,8 +56,6 @@
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
           </div>
-        </div>
-        <div class="top-actions">
           <el-dropdown trigger="click" @command="onCommand">
             <span class="user">
               <span class="uname">{{ userName }}</span>
@@ -89,6 +89,7 @@ import { Document } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMeetingStore } from '@/stores/meeting'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
+import logoUrl from '@/assets/logo.png'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -147,27 +148,26 @@ onMounted(async () => {
 }
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   padding: 0 var(--sp-2) var(--sp-6);
 }
-.brand-mark {
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  background: var(--c-accent);
-  color: #fff;
-  border-radius: var(--r-md);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 17px;
+.brand-logo {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 .brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 22px;
   letter-spacing: -0.02em;
+  color: var(--c-on-dark);
+  text-align: center;
 }
-.brand-accent { color: var(--c-accent); margin-left: 2px; }
+.brand-accent { color: var(--c-accent); }
 
 .nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .nav-foot { padding-top: var(--sp-3); border-top: 1px solid var(--c-sidebar-hover); }
@@ -205,6 +205,7 @@ onMounted(async () => {
 }
 .crumb { font-family: var(--font-display); font-weight: 600; color: var(--c-ink-2); }
 .topbar-left { display: flex; align-items: center; gap: var(--sp-5); }
+.top-actions { display: flex; align-items: center; gap: var(--sp-4); }
 .meeting-switch {
   display: flex; align-items: center; gap: var(--sp-2);
   padding: 5px 12px; border-radius: 999px;

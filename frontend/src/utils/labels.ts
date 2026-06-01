@@ -35,8 +35,8 @@ export const urgencyWeight: Record<ProjectUrgency, number> = {
 export const urgencyColor: Record<ProjectUrgency, string> = {
   low: 'var(--c-ink-3)',
   medium: 'var(--c-status-progress)',
-  high: 'var(--c-status-blocked)',
-  urgent: 'var(--c-status-overdue)',
+  high: '#EF8A8A',     // 高优先级：浅红
+  urgent: '#C0392B',   // 重要：深红
 }
 
 export const taskStatusLabel: Record<TaskStatus, string> = {
@@ -123,4 +123,33 @@ export const progressStatusColor: Record<string, string> = {
   待讨论: '#E8833A', // 橙
   待执行: '#21C7C7', // 青
   待确认: '#E87FB0', // 粉
+}
+
+/* 完成度进度条渐变：随完成度从浅到深的同色系绿。
+   completion 0→100 映射为浅→深，返回 CSS linear-gradient（左浅右深）。 */
+export function completionGradient(completion: number): string {
+  const c = Math.max(0, Math.min(100, completion))
+  // 浅绿 #A7E8C4 → 深绿 #1E8E54，按完成度插值起止色
+  const light = mixHex('#C5EFD9', '#3DBE7B', c / 100)
+  const dark = mixHex('#3DBE7B', '#1E8E54', c / 100)
+  return `linear-gradient(90deg, ${light} 0%, ${dark} 100%)`
+}
+
+/* 十六进制颜色按比例 t(0..1) 线性混合 */
+function mixHex(from: string, to: string, t: number): string {
+  const a = hexToRgb(from)
+  const b = hexToRgb(to)
+  const r = Math.round(a[0] + (b[0] - a[0]) * t)
+  const g = Math.round(a[1] + (b[1] - a[1]) * t)
+  const bl = Math.round(a[2] + (b[2] - a[2]) * t)
+  return `rgb(${r}, ${g}, ${bl})`
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ]
 }

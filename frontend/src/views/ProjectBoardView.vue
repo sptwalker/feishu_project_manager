@@ -5,11 +5,6 @@
         <h1 class="page-title">项目看板</h1>
         <p class="muted">掌握所有项目的进度与风险</p>
       </div>
-      <div class="head-actions">
-        <el-button :icon="Upload" :loading="importing" @click="triggerImport">表格导入</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreate">新建项目</el-button>
-        <input ref="fileInput" type="file" accept=".xlsx" style="display:none" @change="onFileChosen" />
-      </div>
     </div>
 
     <!-- 统计卡片 -->
@@ -52,7 +47,7 @@
     </div>
 
     <div v-loading="loading" class="zones">
-      <section v-for="z in zones" :key="z.key" class="zone">
+      <section v-for="z in zones" :key="z.key" class="zone" :class="{ 'zone-key': z.key === 'key' }">
         <div class="zone-head">
           <h3 class="zone-title">{{ z.title }}<span class="zone-count">{{ z.items.length }}</span></h3>
           <span class="zone-desc muted">{{ z.desc }}</span>
@@ -93,13 +88,14 @@
                 <span class="badge" :style="{ color: statusColor(p.status), background: 'var(--c-surface-2)' }">
                   {{ statusLabel(p.status) }}
                 </span>
-                <span class="muted">· {{ urgencyText(p.urgency) }}</span>
+                <span :style="{ color: urgColor(p.urgency), fontWeight: 600 }">· {{ urgencyText(p.urgency) }}</span>
                 <span v-if="p.department" class="muted">· {{ p.department }}</span>
+                <span v-if="p.owner_name" class="muted">· {{ p.owner_name }}</span>
               </div>
               <div class="pc-progress">
                 <span v-if="p.is_long_term" class="pc-longterm">长期项目</span>
                 <template v-else>
-                  <div class="bar"><div class="bar-fill" :style="{ width: p.completion + '%', background: statusColor(p.status) }" /></div>
+                  <div class="bar"><div class="bar-fill" :style="{ width: p.completion + '%', background: completionGradient(p.completion) }" /></div>
                   <span class="num pc-pct">{{ p.completion }}%</span>
                 </template>
               </div>
@@ -109,33 +105,6 @@
         <el-empty v-else :description="`暂无${z.title}`" :image-size="50" />
       </section>
     </div>
-
-    <!-- 新建项目对话框 -->
-    <el-dialog v-model="createVisible" title="新建项目" width="480px">
-      <el-form :model="form" label-width="92px" label-position="left">
-        <el-form-item label="项目名称" required>
-          <el-input v-model="form.name" placeholder="请输入项目名称" />
-        </el-form-item>
-        <el-form-item label="负责人">
-          <el-input v-model="form.owner_name" placeholder="负责人姓名（可选）" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="紧急程度">
-          <el-select v-model="form.urgency" style="width: 100%">
-            <el-option v-for="u in urgencyOptions" :key="u.value" :label="u.label" :value="u.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="部门">
-          <el-input v-model="form.department" placeholder="可选" />
-        </el-form-item>
-        <el-form-item label="预计完成">
-          <el-date-picker v-model="form.estimated_end_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitCreate">创建</el-button>
-      </template>
-    </el-dialog>
 
     <!-- 项目详情抽屉 -->
     <ProjectDetailDrawer
@@ -147,14 +116,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Upload, Grid, List } from '@element-plus/icons-vue'
+import { Grid, List } from '@element-plus/icons-vue'
 import { projectApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency } from '@/types'
 import {
-  projectStatusLabel, projectStatusColor, urgencyLabel, isOverdue, progressStatusColor,
-  PENDING_STATUSES,
+  projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor, isOverdue, progressStatusColor,
+  PENDING_STATUSES, completionGradient,
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
@@ -174,16 +143,10 @@ function onDetailUpdated() {
   loadProjects()
 }
 
-const urgencyOptions = [
-  { value: 'low', label: '低' },
-  { value: 'medium', label: '中' },
-  { value: 'high', label: '高' },
-  { value: 'urgent', label: '重要' },
-]
-
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 const urgencyText = (u: ProjectUrgency) => urgencyLabel[u]
+const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const overdue = (p: Project) => isOverdue(p.estimated_end_date, p.status)
 const progressColor = (s?: string | null) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
 
@@ -246,7 +209,10 @@ const timelinessGauge = computed(() => ({
 } as Record<string, unknown>))
 
 /* 三个关注分区（仅展示进行中项目；项目可同时出现在多个区）。
-   边缘色：重点-重要=红、重点-高=暗红，等待=蓝，延迟=橙 */
+   边缘色：
+   - 重点：重要=深红 #C0392B、高=浅红 #EF8A8A
+   - 等待关注：按最新进展状态着色（待确认=粉、待讨论=橙、待执行=青）
+   - 延迟关注：橙 */
 const zones = computed(() => {
   const active = allProjects.value
     .filter((p) => p.status === 'in_progress')
@@ -267,8 +233,8 @@ const zones = computed(() => {
   const wait = active.filter((p) => ['待讨论', '待确认', '待执行'].includes(p._latest?.status || ''))
   const delay = active.filter((p) => (p._latest?.status || '') === '延迟')
   return [
-    { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => (p.urgency === 'urgent' ? '#E5484D' : '#A12D2D') },
-    { key: 'wait', title: '等待关注', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: () => '#1A73E8' },
+    { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => urgencyColor[p.urgency] },
+    { key: 'wait', title: '等待关注', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
     { key: 'delay', title: '延迟关注', desc: '最新进展：延迟', items: delay, barColor: () => '#FA8C16' },
   ]
 })
@@ -345,79 +311,12 @@ async function loadProjects() {
   }
 }
 
-/* 表格导入 */
-const fileInput = ref<HTMLInputElement | null>(null)
-const importing = ref(false)
-
-function triggerImport() {
-  fileInput.value?.click()
-}
-
-async function onFileChosen(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''  // 允许重复选择同一文件
-  if (!file) return
-  importing.value = true
-  try {
-    const res = await projectApi.importExcel(file)
-    if (res.error_count > 0) {
-      ElMessage.warning(`导入完成：成功 ${res.created} 条，失败 ${res.error_count} 条`)
-    } else {
-      ElMessage.success(`导入成功 ${res.created} 条项目`)
-    }
-    await loadProjects()
-  } catch (err: unknown) {
-    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-    ElMessage.error(detail ? `导入失败：${detail}` : '导入失败，请检查表格格式')
-  } finally {
-    importing.value = false
-  }
-}
-
-/* 新建项目（记录日期由后端自动记录为创建当天） */
-const createVisible = ref(false)
-const saving = ref(false)
-const form = reactive<Record<string, unknown>>({
-  name: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
-})
-
-function openCreate() {
-  Object.assign(form, {
-    name: '', owner_name: '', urgency: 'medium', department: '', estimated_end_date: null,
-  })
-  createVisible.value = true
-}
-
-async function submitCreate() {
-  if (!form.name) {
-    ElMessage.warning('请填写项目名称')
-    return
-  }
-  saving.value = true
-  try {
-    const payload: Record<string, unknown> = { ...form }
-    if (!payload.department) delete payload.department
-    if (!payload.owner_name) delete payload.owner_name
-    if (!payload.estimated_end_date) delete payload.estimated_end_date
-    await projectApi.create(payload as Partial<Project>)
-    ElMessage.success('项目已创建')
-    createVisible.value = false
-    await loadProjects()
-  } catch {
-    ElMessage.error('创建失败（需要管理员或项目经理权限）')
-  } finally {
-    saving.value = false
-  }
-}
-
 onMounted(() => {
   loadProjects()
 })
 </script>
 
 <style scoped>
-.head-actions { display: flex; gap: var(--sp-2); align-items: center; }
 .stats {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -463,7 +362,18 @@ onMounted(() => {
 .zone { border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
 .zone-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
 .zone-switch { margin-left: auto; }
-.zone-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: var(--sp-2); }
+.zone-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: var(--sp-2); position: relative; }
+/* 重点项目标题下方衬托半透明渐变红（右深左浅），不挡文字 */
+.zone-key .zone-title::after {
+  content: '';
+  position: absolute;
+  left: -6px; right: -6px; bottom: -3px;
+  height: 9px;
+  background: linear-gradient(90deg, rgba(192, 57, 43, 0) 0%, rgba(192, 57, 43, 0.28) 100%);
+  border-radius: 999px;
+  z-index: -1;
+  pointer-events: none;
+}
 .zone-count {
   font-size: 13px; font-weight: 600; color: var(--c-accent);
   background: var(--c-accent-soft); padding: 1px 9px; border-radius: 999px;

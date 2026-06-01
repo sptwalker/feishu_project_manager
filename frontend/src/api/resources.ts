@@ -17,14 +17,6 @@ export const projectApi = {
   remove(id: number) {
     return api.delete(`/projects/${id}`)
   },
-  importExcel(file: File) {
-    const form = new FormData()
-    form.append('file', file)
-    return api.post<{ created: number; error_count: number; errors: unknown[] }>(
-      '/reports/projects/import', form,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
-    ).then((r) => r.data)
-  },
 }
 
 export const taskApi = {

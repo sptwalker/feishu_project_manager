@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page overview-page">
     <div class="page-head">
       <h1 class="page-title">项目总览</h1>
     </div>
@@ -24,6 +24,7 @@
       border
       size="default"
       row-key="id"
+      height="100%"
       highlight-current-row
       :header-cell-style="headerCellStyle"
       :default-sort="{ prop: '', order: null }"
@@ -123,7 +124,7 @@
         <template #default="{ row }">
           <span v-if="row.is_long_term" class="long-term-text">长期项目</span>
           <template v-else>
-            <div class="tbar"><div class="tbar-fill" :style="{ width: row.completion + '%', background: statusColor(row.status) }" /></div>
+            <div class="tbar"><div class="tbar-fill" :style="{ width: row.completion + '%', background: completionGradient(row.completion) }" /></div>
             <span class="num tpct">{{ row.completion }}%</span>
           </template>
         </template>
@@ -171,6 +172,7 @@ import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   urgencyWeight, PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, isOverdue, progressStatusColor,
+  completionGradient,
 } from '@/utils/labels'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 
@@ -427,6 +429,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 整页填满内容区、不随表体滚动；仅 el-table 表体内部滚动，表头与工具栏固定 */
+.overview-page {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.overview-page .page-head,
+.overview-page .head-toolbar,
+.overview-page .footer-bar {
+  flex-shrink: 0;
+}
+/* el-table 占据剩余高度，min-height:0 允许其在 flex 容器内收缩并触发内部滚动 */
+.overview-page :deep(.el-table) {
+  flex: 1;
+  min-height: 0;
+}
 .head-toolbar {
   display: flex;
   align-items: center;
