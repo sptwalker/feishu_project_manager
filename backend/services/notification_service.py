@@ -91,3 +91,15 @@ class NotificationService:
         frontend_url = get_settings().FRONTEND_URL or ""
         card = feishu_cards.build_project_followup_card(items, frontend_url)
         return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")
+
+    @staticmethod
+    async def notify_meeting_doc(
+        chat_id: Optional[str],
+        session: int,
+        meeting_date: str,
+        recorder: str,
+        doc_url: str,
+    ) -> bool:
+        """周会纪要分享（发送到核心组群），含飞书文档链接。"""
+        card = feishu_cards.build_meeting_doc_card(session, meeting_date, recorder or "", doc_url)
+        return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")

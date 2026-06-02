@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -114,5 +114,23 @@ export const settingsApi = {
       '/backup/import', form,
       { headers: { 'Content-Type': 'multipart/form-data' } },
     ).then((r) => r.data)
+  },
+}
+
+export const meetingApi = {
+  sessions() {
+    return api.get<MeetingSessions>('/meeting-records/sessions').then((r) => r.data)
+  },
+  detail(session: number) {
+    return api.get<MeetingRecordDetail>(`/meeting-records/${session}`).then((r) => r.data)
+  },
+  open(payload: { session: number; recorder?: string | null; meeting_date: string }) {
+    return api.post<MeetingRecordDetail>('/meeting-records/open', payload).then((r) => r.data)
+  },
+  close() {
+    return api.post<MeetingState>('/meeting-records/close').then((r) => r.data)
+  },
+  send(session: number) {
+    return api.post<MeetingSendResult>(`/meeting-records/${session}/send`).then((r) => r.data)
   },
 }

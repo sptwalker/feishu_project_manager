@@ -40,7 +40,7 @@
             <span class="muted">{{ fmtDate(row.last_login_at) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" align="right">
+        <el-table-column label="操作" width="90" align="center">
           <template #default="{ row }">
             <el-button v-if="isAdmin" size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
             <span v-else class="muted">—</span>

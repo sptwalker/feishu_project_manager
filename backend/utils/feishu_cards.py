@@ -135,3 +135,24 @@ def build_project_followup_card(items: List[Dict[str, Any]],
         },
         "elements": elements,
     }
+
+
+def build_meeting_doc_card(session: int, meeting_date: str, recorder: str,
+                           doc_url: str) -> Dict[str, Any]:
+    """周会纪要分享卡片（发核心组群），含飞书文档链接。"""
+    lines = []
+    if meeting_date:
+        lines.append(f"**会议日期**：{meeting_date}")
+    if recorder:
+        lines.append(f"**记录人**：{recorder}")
+    lines.append(f"[查看会议记录]({doc_url})")
+    return {
+        "config": {"wide_screen_mode": True},
+        "header": {
+            "template": HEADER_BLUE,
+            "title": {"tag": "plain_text", "content": f"第 {session} 次周会纪要"},
+        },
+        "elements": [
+            {"tag": "div", "text": {"tag": "lark_md", "content": "\n".join(lines)}},
+        ],
+    }

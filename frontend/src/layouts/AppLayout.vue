@@ -1,32 +1,32 @@
 <template>
   <div class="shell">
     <!-- 左侧导航 -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ collapsed }">
       <div class="brand">
         <img :src="logoUrl" alt="Logo" class="brand-logo" />
         <span class="brand-name"><span class="brand-accent">P</span>roject <span class="brand-accent">M</span>anager</span>
       </div>
 
       <nav class="nav">
-        <RouterLink to="/board" class="nav-item" active-class="active">
+        <RouterLink to="/board" class="nav-item" active-class="active" :title="collapsed ? '项目看板' : undefined">
           <el-icon><Grid /></el-icon><span>项目看板</span>
         </RouterLink>
-        <RouterLink to="/overview" class="nav-item" active-class="active">
+        <RouterLink to="/overview" class="nav-item" active-class="active" :title="collapsed ? '项目总览' : undefined">
           <el-icon><Tickets /></el-icon><span>项目总览</span>
         </RouterLink>
-        <RouterLink to="/settings" class="nav-item" active-class="active">
+        <RouterLink to="/settings" class="nav-item" active-class="active" :title="collapsed ? '系统设置' : undefined">
           <el-icon><Setting /></el-icon><span>系统设置</span>
         </RouterLink>
-        <div class="nav-item disabled">
+        <div class="nav-item disabled" :title="collapsed ? '风险' : undefined">
           <el-icon><Warning /></el-icon><span>风险</span>
         </div>
-        <div class="nav-item disabled">
+        <div class="nav-item disabled" :title="collapsed ? '报表' : undefined">
           <el-icon><DataAnalysis /></el-icon><span>报表</span>
         </div>
       </nav>
 
       <div class="nav-foot">
-        <div class="nav-item" @click="onCommand('profile')">
+        <div class="nav-item" :title="collapsed ? '个人信息' : undefined" @click="onCommand('profile')">
           <el-icon><User /></el-icon><span>个人信息</span>
         </div>
       </div>
@@ -36,6 +36,9 @@
     <div class="main">
       <header class="topbar">
         <div class="topbar-left">
+          <el-icon class="collapse-btn" :title="collapsed ? '展开侧栏' : '收起侧栏'" @click="toggleSidebar">
+            <Expand v-if="collapsed" /><Fold v-else />
+          </el-icon>
           <div class="crumb">
             <slot name="crumb">项目管理</slot>
           </div>
@@ -52,7 +55,7 @@
             <span v-else class="m-state" :class="{ on: meeting.active }">
               {{ meeting.active ? '记录中' : '未开启' }}
             </span>
-            <el-tooltip v-if="meeting.active" content="周会自动记录" placement="bottom">
+            <el-tooltip content="查看周会记录" placement="bottom">
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
           </div>
@@ -78,23 +81,38 @@
     </div>
 
     <MeetingRecordDialog v-model:visible="recordVisible" :session="meeting.currentCount" />
+    <MeetingConfirmDialog
+      v-model:visible="confirmVisible"
+      :default-session="confirmSession"
+      @opened="recordVisible = true"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMeetingStore } from '@/stores/meeting'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
+import MeetingConfirmDialog from '@/components/MeetingConfirmDialog.vue'
 import logoUrl from '@/assets/logo.png'
 
 const router = useRouter()
 const auth = useAuthStore()
 const meeting = useMeetingStore()
 const recordVisible = ref(false)
+const confirmVisible = ref(false)
+const confirmSession = ref(1)
+
+// 侧边栏折叠（localStorage 记住偏好）
+const collapsed = ref(localStorage.getItem('fpm_sidebar_collapsed') === '1')
+function toggleSidebar() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem('fpm_sidebar_collapsed', collapsed.value ? '1' : '0')
+}
 
 const userName = computed(() => auth.currentUser?.name ?? '')
 const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
@@ -111,12 +129,34 @@ function onCommand(cmd: string) {
 
 async function onToggleMeeting(val: string | number | boolean) {
   const next = Boolean(val)
-  try {
-    await meeting.setActive(next)
-    if (next) ElMessage.success('现在进入公司管理周例会记录状态')
-    else ElMessage.info('已退出周例会记录状态')
-  } catch {
-    ElMessage.error('操作失败（需要管理员权限）')
+  if (next) {
+    // 开启：取最新状态，判断是否跨周（本周未记录且存在更早的上次会议）
+    await meeting.load()
+    const st = meeting.state
+    const session = st?.calibration_count ?? meeting.currentCount ?? 1
+    const crossWeek = !!st && !st.this_week_recorded && !!st.last_meeting
+      && st.last_meeting.count < (st.calibration_count ?? 0)
+    if (crossWeek) {
+      try {
+        await ElMessageBox.confirm(
+          '本周尚未开过周会，现在开启周会模式将结束上周周会记录，并刷新周会记录窗口。是否继续？',
+          '开启新一周周会',
+          { type: 'warning', confirmButtonText: '继续', cancelButtonText: '取消' },
+        )
+      } catch {
+        return  // 用户取消，开关回弹
+      }
+    }
+    confirmSession.value = session
+    confirmVisible.value = true   // 打开信息确认窗（确认后才真正开启）
+  } else {
+    // 关闭：归档当前周会并关闭模式
+    try {
+      await meeting.closeMeeting()
+      ElMessage.info('已结束本次周会并归档')
+    } catch {
+      ElMessage.error('操作失败（需要管理员权限）')
+    }
   }
 }
 
@@ -145,7 +185,16 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   padding: var(--sp-5) var(--sp-3);
+  transition: width 0.2s ease;
+  overflow: hidden;
 }
+/* 折叠态：只留图标，宽度收窄 */
+.sidebar.collapsed { width: 64px; padding-left: var(--sp-2); padding-right: var(--sp-2); }
+.sidebar.collapsed .brand { padding-bottom: var(--sp-4); }
+.sidebar.collapsed .brand-logo { width: 40px; }
+.sidebar.collapsed .brand-name { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+.sidebar.collapsed .nav-item span { display: none; }
 .brand {
   display: flex;
   flex-direction: column;
@@ -204,7 +253,9 @@ onMounted(async () => {
   padding: 0 var(--sp-6);
 }
 .crumb { font-family: var(--font-display); font-weight: 600; color: var(--c-ink-2); }
-.topbar-left { display: flex; align-items: center; gap: var(--sp-5); }
+.topbar-left { display: flex; align-items: center; gap: var(--sp-4); }
+.collapse-btn { cursor: pointer; font-size: 20px; color: var(--c-ink-3); transition: color 0.15s; }
+.collapse-btn:hover { color: var(--c-accent); }
 .top-actions { display: flex; align-items: center; gap: var(--sp-4); }
 .meeting-switch {
   display: flex; align-items: center; gap: var(--sp-2);

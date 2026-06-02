@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { settingsApi } from '@/api/resources'
+import { settingsApi, meetingApi } from '@/api/resources'
 import type { MeetingState } from '@/types'
 
 export const useMeetingStore = defineStore('meeting', () => {
@@ -32,5 +32,18 @@ export const useMeetingStore = defineStore('meeting', () => {
     return state.value
   }
 
-  return { state, loaded, active, currentCount, load, setActive, setCount }
+  /** 开启周会：确认计次/记录人/会议日期后开启，并刷新状态 */
+  async function openMeeting(payload: { session: number; recorder?: string | null; meeting_date: string }) {
+    const detail = await meetingApi.open(payload)
+    await load()
+    return detail
+  }
+
+  /** 关闭周会：归档当前周会并关闭模式，刷新状态 */
+  async function closeMeeting() {
+    state.value = await meetingApi.close()
+    return state.value
+  }
+
+  return { state, loaded, active, currentCount, load, setActive, setCount, openMeeting, closeMeeting }
 })

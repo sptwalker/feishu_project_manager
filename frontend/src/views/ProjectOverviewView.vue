@@ -7,10 +7,24 @@
     <div class="head-toolbar">
       <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消/暂停），其中重要项目 {{ importantCount }} 个，高优先级项目 {{ highPriorityCount }} 个</p>
       <div class="head-actions">
-        <el-input
-          v-model="keyword" placeholder="搜索项目名称" clearable
-          :prefix-icon="Search" style="width: 220px; margin-right: 60px"
-        />
+        <el-autocomplete
+          v-model="keyword"
+          :fetch-suggestions="querySearch"
+          placeholder="搜索项目名称 / 负责人 / 部门"
+          clearable
+          :prefix-icon="Search"
+          :trigger-on-focus="false"
+          value-key="value"
+          style="width: 260px; margin-right: 60px"
+          @select="onSelectSuggestion"
+        >
+          <template #default="{ item }">
+            <div class="ac-item">
+              <span class="ac-name">{{ item.value }}</span>
+              <span v-if="item.meta" class="ac-meta">{{ item.meta }}</span>
+            </div>
+          </template>
+        </el-autocomplete>
         <el-button text :icon="View" :disabled="!currentRow" @click="detailSelected">详情</el-button>
         <el-button text type="danger" :icon="Delete" :disabled="!currentRow" @click="removeSelected">删除</el-button>
         <el-button text :icon="Plus" @click="openCreate">新增项目</el-button>
@@ -205,6 +219,34 @@ function getDepartmentShortName(deptName?: string | null) {
   return findDepartment(deptName)?.short_name || ''
 }
 
+/* 智能补齐搜索：按 项目名 / 负责人 / 部门(全称或简称) 匹配，下拉候选含副信息 */
+interface SearchSuggestion { value: string; meta: string }
+function querySearch(q: string, cb: (results: SearchSuggestion[]) => void) {
+  const kw = (q || '').trim().toLowerCase()
+  const matched = projects.value
+    .filter((p) => {
+      if (!kw) return true
+      const short = getDepartmentShortName(p.department).toLowerCase()
+      return p.name.toLowerCase().includes(kw)
+        || (p.owner_name || '').toLowerCase().includes(kw)
+        || (p.department || '').toLowerCase().includes(kw)
+        || short.includes(kw)
+    })
+    .slice(0, 10)
+    .map((p) => ({
+      value: p.name,
+      meta: [getDepartmentShortName(p.department) || p.department, p.owner_name].filter(Boolean).join(' · '),
+    }))
+  cb(matched)
+}
+
+/* 选中候选：以项目名过滤表格并选中该行 */
+function onSelectSuggestion(item: Record<string, unknown>) {
+  keyword.value = String(item.value || '')
+  const hit = projects.value.find((p) => p.name === item.value)
+  if (hit) currentRow.value = hit
+}
+
 /* 表头：文字居中 + 黑色 */
 const headerCellStyle = { textAlign: 'center' as const, color: 'var(--c-ink)', fontWeight: 600 }
 
@@ -276,7 +318,14 @@ function stalledMetaOf(lastTime: string): { days: number; color: string; bold: b
 
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
-  const list = projects.value.filter((p) => !kw || p.name.toLowerCase().includes(kw))
+  const list = projects.value.filter((p) => {
+    if (!kw) return true
+    const short = getDepartmentShortName(p.department).toLowerCase()
+    return p.name.toLowerCase().includes(kw)
+      || (p.owner_name || '').toLowerCase().includes(kw)
+      || (p.department || '').toLowerCase().includes(kw)
+      || short.includes(kw)
+  })
   return [...list]
     .sort((a, b) =>
       cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
@@ -486,6 +535,11 @@ onMounted(() => {
 <!-- 「说明」列 tooltip 样式：浅棕背景 + 黑字 + 合适尺寸。
      tooltip 通过 teleport 挂到 body，必须用非 scoped 全局样式才能命中。 -->
 <style>
+/* 智能补齐下拉项（teleport 到 body，需全局样式） */
+.ac-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ac-item .ac-name { font-weight: 500; color: var(--c-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-item .ac-meta { font-size: 12px; color: var(--c-ink-3); flex-shrink: 0; }
+
 .el-popper.desc-tip.is-light {
   max-width: 360px;
   background: #f5ecd9;            /* 浅棕背景 */

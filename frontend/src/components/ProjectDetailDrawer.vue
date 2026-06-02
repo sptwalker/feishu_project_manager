@@ -69,7 +69,7 @@
         <div class="f">
           <dt>负责人<span v-if="createMode" class="req">*</span></dt>
           <dd v-if="!editing">{{ local.owner_name || '—' }}</dd>
-          <el-select v-else v-model="form.owner_name" filterable allow-create default-first-option clearable placeholder="选择/输入" size="small">
+          <el-select v-else v-model="form.owner_name" filterable clearable placeholder="选择负责人（项目经理/管理员）" size="small">
             <el-option v-for="o in ownerOptions" :key="o" :label="o" :value="o" />
           </el-select>
         </div>
@@ -300,7 +300,7 @@ import { useMeetingStore } from '@/stores/meeting'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Close, Delete, Plus, Check, Link, Document } from '@element-plus/icons-vue'
-import { projectApi, departmentApi } from '@/api/resources'
+import { projectApi, departmentApi, userApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
@@ -423,9 +423,29 @@ const stalled = computed<{ days: number; color: string; bold: boolean } | null>(
   return { days, color, bold }
 })
 
-const ownerOptions = computed(() => uniq([...(props.owners || []), form.owner_name as string, local.value?.owner_name || '']))
+/* 负责人候选：用户管理中「项目经理 + 管理员」的英文名（与账号关联）；
+   另把当前项目负责人原值并入，保证存量值（历史中文名）仍能回显 */
+const managerNames = ref<string[]>([])
+const ownerOptions = computed(() => uniq([
+  local.value?.owner_name || '',
+  form.owner_name as string,
+  ...managerNames.value,
+]))
 function uniq(arr: (string | undefined | null)[]): string[] {
   return [...new Set(arr.map((x) => (x || '').trim()).filter(Boolean))]
+}
+
+async function loadManagers() {
+  try {
+    const users = await userApi.list({ limit: 200 })
+    managerNames.value = uniq(
+      users
+        .filter((u) => u.role === 'admin' || u.role === 'project_manager')
+        .map((u) => u.name_en || ''),
+    )
+  } catch {
+    // 静默失败，负责人候选为可选增强
+  }
 }
 
 function toggleEdit() {
@@ -812,6 +832,7 @@ async function loadDepartments() {
 onMounted(() => {
   document.addEventListener('click', onDocClick, true)
   loadDepartments()
+  loadManagers()
   nextTick(() => { recomputeConnectors(); observeTimeline() })
 })
 onBeforeUnmount(() => {

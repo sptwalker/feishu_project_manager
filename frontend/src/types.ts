@@ -77,6 +77,38 @@ export interface MeetingState {
   calibration_monday: string
 }
 
+export interface MeetingItem {
+  dept?: string | null
+  dept_short?: string | null
+  dept_color?: string | null
+  project: string
+  owner?: string | null
+  status: string
+  content: string
+  time: string
+  urgency: string
+}
+
+export interface MeetingRecordDetail {
+  session: number
+  meeting_date?: string | null
+  recorder?: string | null
+  status: string
+  doc_url?: string | null
+  items: MeetingItem[]
+}
+
+export interface MeetingSessions {
+  sessions: number[]
+  current: number
+}
+
+export interface MeetingSendResult {
+  ok: boolean
+  doc_url?: string | null
+  message: string
+}
+
 export interface Project {
   id: number
   name: string

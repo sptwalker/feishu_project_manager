@@ -1,22 +1,43 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="`周会自动记录 · 第 ${session} 次`"
-    width="720px"
+    width="820px"
     top="6vh"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
-    @open="load"
+    @open="onOpen"
   >
-    <div v-loading="loading" class="mr-body">
-      <p class="mr-hint muted">
-        自动汇总本次周会（第 {{ session }} 次）各项目的最新进展，按 部门 › 负责人 › 优先级 排序。
-      </p>
+    <!-- 标题行：次数两侧翻页 -->
+    <template #header>
+      <div class="mr-title">
+        <el-button-group class="mr-pager">
+          <el-button :icon="DArrowLeft" :disabled="!canPrev" size="small" title="第一次" @click="goFirst" />
+          <el-button :icon="ArrowLeft" :disabled="!canPrev" size="small" title="上一次" @click="goPrev" />
+        </el-button-group>
+        <span class="mr-title-text">周会记录 · 第 {{ viewingSession }} 次</span>
+        <el-button-group class="mr-pager">
+          <el-button :icon="ArrowRight" :disabled="!canNext" size="small" title="下一次" @click="goNext" />
+          <el-button :icon="DArrowRight" :disabled="!canNext" size="small" title="最后一次" @click="goLast" />
+        </el-button-group>
+      </div>
+    </template>
 
-      <div v-if="records.length" class="mr-list">
-        <div v-for="(r, i) in records" :key="i" class="mr-item">
+    <!-- 固定信息区（不随列表滚动）：左侧时间/记录人，右侧排序说明 -->
+    <div class="mr-info-row">
+      <p class="mr-meta">
+        本周周会时间：<b>{{ detail?.meeting_date || '—' }}</b>，
+        记录人：<b>{{ detail?.recorder || '—' }}</b>
+      </p>
+      <p class="mr-hint muted">
+        本次周会各项目最新进展，按 部门 › 负责人 › 优先级 排序。
+      </p>
+    </div>
+
+    <div v-loading="loading" class="mr-body">
+      <div v-if="items.length" class="mr-list">
+        <div v-for="(r, i) in items" :key="i" class="mr-item">
           <div class="mr-head">
-            <span class="mr-dept" :style="{ color: r.deptColor }">{{ r.deptShort || '—' }}</span>
-            <span class="mr-name">{{ r.name }}</span>
+            <span class="mr-dept" :style="{ color: r.dept_color || undefined }">{{ r.dept_short || '—' }}</span>
+            <span class="mr-name">{{ r.project }}</span>
             <span class="mr-owner muted">{{ r.owner || '—' }}</span>
           </div>
           <div class="mr-content">
@@ -25,84 +46,64 @@
           </div>
         </div>
       </div>
-      <el-empty v-else-if="!loading" :description="`本次周会暂无记录（第 ${session} 次）`" />
+      <el-empty v-else-if="!loading" :description="`本次周会暂无记录（第 ${viewingSession} 次）`" />
     </div>
 
     <template #footer>
-      <span class="mr-count muted">共 {{ records.length }} 个项目本次有进展记录</span>
-      <el-button @click="emit('update:visible', false)">关闭</el-button>
-      <el-button type="primary" :icon="Promotion" @click="onSend">发送会议记录</el-button>
+      <div class="mr-footer">
+        <span class="mr-count muted">共 {{ items.length }} 个项目本次有进展记录</span>
+        <span class="mr-actions">
+          <el-button @click="emit('update:visible', false)">关闭</el-button>
+          <el-button type="primary" :icon="Promotion" :loading="sending" @click="onSend">发送会议记录</el-button>
+        </span>
+      </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Promotion } from '@element-plus/icons-vue'
-import { projectApi, departmentApi } from '@/api/resources'
-import type { Department } from '@/types'
-import { urgencyWeight, progressStatusColor } from '@/utils/labels'
+import { Promotion, ArrowLeft, ArrowRight, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { meetingApi } from '@/api/resources'
+import type { MeetingRecordDetail, MeetingItem } from '@/types'
+import { progressStatusColor } from '@/utils/labels'
 
 const props = defineProps<{ visible: boolean; session: number }>()
 const emit = defineEmits<{ (e: 'update:visible', v: boolean): void }>()
 
-interface RecordRow {
-  name: string
-  owner: string
-  deptShort: string
-  deptColor?: string
-  status: string
-  content: string
-  time: string
-}
-
 const loading = ref(false)
-const records = ref<RecordRow[]>([])
+const sending = ref(false)
+const detail = ref<MeetingRecordDetail | null>(null)
+const sessions = ref<number[]>([])
+const viewingSession = ref(props.session || 1)
 
-const collator = new Intl.Collator('zh-Hans-CN')
+const items = computed<MeetingItem[]>(() => detail.value?.items ?? [])
 const progressColor = (s?: string) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
 
-function findDept(depts: Department[], name?: string | null) {
-  if (!name) return undefined
-  const key = name.trim()
-  return depts.find((d) => d.name === key || d.short_name === key)
+const idx = computed(() => sessions.value.indexOf(viewingSession.value))
+const canPrev = computed(() => idx.value > 0)
+const canNext = computed(() => idx.value >= 0 && idx.value < sessions.value.length - 1)
+
+async function onOpen() {
+  // 打开时拉取翻页边界，默认定位到当前次数（无则末次）
+  try {
+    const s = await meetingApi.sessions()
+    sessions.value = s.sessions
+    viewingSession.value = s.sessions.includes(props.session) ? props.session
+      : (s.current || s.sessions[s.sessions.length - 1] || 1)
+  } catch {
+    sessions.value = [props.session || 1]
+    viewingSession.value = props.session || 1
+  }
+  await loadDetail()
 }
 
-async function load() {
+async function loadDetail() {
   loading.value = true
-  records.value = []
+  detail.value = null
   try {
-    const [projects, depts] = await Promise.all([
-      projectApi.list({ limit: 500 }),
-      departmentApi.list({ limit: 100 }),
-    ])
-    const rows: (RecordRow & { _dept: string; _urg: number })[] = []
-    for (const p of projects) {
-      const entries = (p.progress_log ?? []).filter((e) => e.meeting_session === props.session)
-      if (!entries.length) continue
-      const latest = [...entries].sort((a, b) => (a.time || '').localeCompare(b.time || '')).pop()!
-      const dept = findDept(depts, p.department)
-      const deptShort = dept?.short_name || ''
-      rows.push({
-        name: p.name,
-        owner: p.owner_name || '',
-        deptShort,
-        deptColor: dept?.color || undefined,
-        status: latest.status || '正常',
-        content: latest.content || '',
-        time: latest.time || '',
-        _dept: deptShort,
-        _urg: urgencyWeight[p.urgency] ?? 0,
-      })
-    }
-    // 与项目总览一致：部门简称 › 负责人 › 优先级(重要在前)
-    rows.sort((a, b) =>
-      collator.compare(a._dept, b._dept)
-      || collator.compare(a.owner, b.owner)
-      || (b._urg - a._urg),
-    )
-    records.value = rows
+    detail.value = await meetingApi.detail(viewingSession.value)
   } catch {
     ElMessage.error('加载周会记录失败')
   } finally {
@@ -110,14 +111,42 @@ async function load() {
   }
 }
 
-function onSend() {
-  ElMessage.info('发送会议记录功能开发中')
+function goFirst() { if (canPrev.value) { viewingSession.value = sessions.value[0]; loadDetail() } }
+function goPrev() { if (canPrev.value) { viewingSession.value = sessions.value[idx.value - 1]; loadDetail() } }
+function goNext() { if (canNext.value) { viewingSession.value = sessions.value[idx.value + 1]; loadDetail() } }
+function goLast() { if (canNext.value) { viewingSession.value = sessions.value[sessions.value.length - 1]; loadDetail() } }
+
+async function onSend() {
+  if (!items.value.length) {
+    ElMessage.warning('本次周会暂无记录，无法发送')
+    return
+  }
+  sending.value = true
+  try {
+    const res = await meetingApi.send(viewingSession.value)
+    if (res.ok) {
+      ElMessage.success(res.message || '已发送')
+      await loadDetail()
+    } else {
+      ElMessage.warning(res.message || '发送未完成')
+    }
+  } catch {
+    ElMessage.error('发送失败（需要管理员权限）')
+  } finally {
+    sending.value = false
+  }
 }
 </script>
 
 <style scoped>
-.mr-body { max-height: 64vh; overflow-y: auto; }
-.mr-hint { margin: 0 0 var(--sp-3); font-size: 13px; }
+.mr-title { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); }
+.mr-title-text { font-size: 20px; font-weight: 600; line-height: 2; min-width: 180px; text-align: center; }
+.mr-pager { flex-shrink: 0; }
+.mr-body { max-height: 60vh; min-height: 280px; overflow-y: auto; padding: var(--sp-3) 0 var(--sp-5); }
+/* 固定信息区（不随列表滚动）：上端气口 + 底部分隔线 */
+.mr-info-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-3) 0 var(--sp-4); margin: 0; border-bottom: 1px solid var(--c-border); }
+.mr-hint { margin: 0; font-size: 13px; flex-shrink: 0; }
+.mr-meta { margin: 0; font-size: 13px; color: var(--c-ink-2); }
 .mr-list { display: flex; flex-direction: column; gap: var(--sp-3); }
 .mr-item {
   border: 1px solid var(--c-border);
@@ -132,6 +161,7 @@ function onSend() {
 .mr-content { font-size: 14px; color: var(--c-ink); line-height: 1.6; }
 .mr-status { font-weight: 600; }
 .mr-time { font-size: 12px; margin-left: var(--sp-2); }
-.mr-count { margin-right: auto; font-size: 12px; }
-:deep(.el-dialog__footer) { display: flex; align-items: center; }
+.mr-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.mr-actions { display: flex; align-items: center; gap: var(--sp-2); }
+.mr-count { font-size: 12px; }
 </style>

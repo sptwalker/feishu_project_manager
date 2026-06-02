@@ -6,6 +6,7 @@ from backend.core.scheduler import start_scheduler, shutdown_scheduler
 from backend.api.v1 import auth, projects, tasks, risks, feishu_webhook, bitable, reports, users, departments
 from backend.api.v1 import settings as settings_api
 from backend.api.v1 import backup as backup_api
+from backend.api.v1 import meeting_records as meeting_records_api
 
 settings = get_settings()
 
@@ -87,6 +88,11 @@ app.include_router(
     backup_api.router,
     prefix="/api/v1",
     tags=["backup"]
+)
+app.include_router(
+    meeting_records_api.router,
+    prefix="/api/v1",
+    tags=["meeting_records"]
 )
 
 

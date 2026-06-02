@@ -29,14 +29,11 @@
         </el-table-column>
         <el-table-column label="颜色" width="120">
           <template #default="{ row }">
-            <div v-if="row.color" class="color-preview">
-              <span class="color-dot" :style="{ background: row.color }"></span>
-              <span class="color-code">{{ row.color }}</span>
-            </div>
+            <span v-if="row.color" class="color-swatch" :style="{ background: row.color }"></span>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" align="right">
+        <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
             <el-button size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
@@ -211,23 +208,13 @@ onMounted(load)
   margin-bottom: var(--sp-4);
 }
 
-.color-preview {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.color-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
+.color-swatch {
+  display: inline-block;
+  width: 36px;
+  height: 22px;
+  border-radius: 6px;
   border: 1px solid var(--c-border);
-}
-
-.color-code {
-  font-size: 12px;
-  color: var(--c-ink-2);
-  font-family: monospace;
+  vertical-align: middle;
 }
 
 .color-picker-wrapper {
