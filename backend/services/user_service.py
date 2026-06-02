@@ -18,8 +18,8 @@ class UserService:
         return db.query(User).filter(User.feishu_user_id == feishu_user_id).first()
 
     @staticmethod
-    def create(db: Session, user_data: UserCreate) -> User:
-        """创建用户"""
+    def create(db: Session, user_data: UserCreate, role: UserRole = UserRole.MEMBER) -> User:
+        """创建用户（role 默认普通成员，可由调用方指定初始角色，如初始管理员）"""
         user = User(
             feishu_user_id=user_data.feishu_user_id,
             name=user_data.name,
@@ -27,7 +27,7 @@ class UserService:
             # HttpUrl 是 Pydantic 对象，需转为字符串才能写入数据库
             avatar_url=str(user_data.avatar_url) if user_data.avatar_url else None,
             department=user_data.department,
-            role=UserRole.MEMBER,
+            role=role,
             last_login_at=datetime.now(timezone.utc)
         )
         db.add(user)
@@ -37,6 +37,14 @@ class UserService:
         except Exception:
             db.rollback()
             raise
+        return user
+
+    @staticmethod
+    def ensure_initial_admin(db: Session, user: User, initial_admin_ids: List[str]) -> User:
+        """确保初始管理员角色：若用户属于初始管理员名单且当前不是 admin，则提升为 admin。
+        用于外网部署后，指定人员（按飞书 open_id 识别）每次登录都能恢复管理员权限，避免被锁在系统外。"""
+        if user.feishu_user_id in initial_admin_ids and user.role != UserRole.ADMIN:
+            return UserService.update_role(db, user.id, UserRole.ADMIN)
         return user
 
     @staticmethod

@@ -1,0 +1,5065 @@
+{
+  "version": 1,
+  "exported_at": "2026-06-02T00:50:04.778159",
+  "app_version": "1.0.0",
+  "tables": {
+    "users": [
+      {
+        "feishu_user_id": "ou_bf1b517ee3c1a8d508e1c0947aa6f5a9",
+        "name": "刘丹",
+        "name_en": "Walkerr",
+        "position": "CEO",
+        "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00vu_2f744a30-449a-48d5-b21f-ca923f16977g~?image_size=72x72&cut_type=&quality=&format=image&sticker_format=.webp",
+        "department": "公司核心组",
+        "role": "admin",
+        "last_login_at": "2026-05-31T02:14:20.132374",
+        "id": 2,
+        "created_at": "2026-05-30T14:45:20",
+        "updated_at": "2026-06-01T01:24:04"
+      }
+    ],
+    "departments": [
+      {
+        "id": 1,
+        "name": "基础产品部",
+        "short_name": "产品",
+        "leader": "申华",
+        "responsibility": "基础产品研发管理",
+        "color": "rgb(192, 0, 0)",
+        "created_at": "2026-05-31T04:55:57",
+        "updated_at": "2026-05-31T05:13:20"
+      },
+      {
+        "id": 2,
+        "name": "游戏研发部",
+        "short_name": "游戏",
+        "leader": "noice;sunner",
+        "responsibility": "游戏项目研发管理",
+        "color": "rgb(47, 84, 235)",
+        "created_at": "2026-05-31T04:57:39",
+        "updated_at": "2026-05-31T05:14:04"
+      },
+      {
+        "id": 3,
+        "name": "商务合作部",
+        "short_name": "商务",
+        "leader": "simon",
+        "responsibility": "对外商务合作，CP/IP合作，政府沟通",
+        "color": "rgb(250, 140, 22)",
+        "created_at": "2026-05-31T05:08:49",
+        "updated_at": "2026-05-31T05:14:09"
+      },
+      {
+        "id": 4,
+        "name": "平台运营部",
+        "short_name": "平台",
+        "leader": "Ollie",
+        "responsibility": "平台产品设计研发，平台日常运营，游戏上架管理，线上商业经营",
+        "color": "rgb(82, 196, 26)",
+        "created_at": "2026-05-31T05:10:35",
+        "updated_at": "2026-05-31T05:14:15"
+      },
+      {
+        "id": 5,
+        "name": "公共设计组",
+        "short_name": "设计",
+        "leader": "guoki",
+        "responsibility": "承担公司级的公共设计任务",
+        "color": "rgb(114, 46, 209)",
+        "created_at": "2026-05-31T05:15:28",
+        "updated_at": "2026-05-31T05:15:28"
+      },
+      {
+        "id": 6,
+        "name": "品牌宣传组",
+        "short_name": "品牌",
+        "leader": "Leon",
+        "responsibility": "负责产品和公司品牌的策划，设计，传播",
+        "color": "rgb(19, 194, 194)",
+        "created_at": "2026-05-31T05:16:37",
+        "updated_at": "2026-05-31T05:16:37"
+      },
+      {
+        "id": 7,
+        "name": "营销销售部",
+        "short_name": "销售",
+        "leader": "Jack",
+        "responsibility": "负责产品的线上线下的营销销售工作",
+        "color": "rgb(235, 47, 150)",
+        "created_at": "2026-05-31T05:17:42",
+        "updated_at": "2026-05-31T05:17:42"
+      },
+      {
+        "id": 8,
+        "name": "人资行政组",
+        "short_name": "行政",
+        "leader": "Jenny",
+        "responsibility": "负责公司的人事，行政，财务",
+        "color": "rgb(160, 217, 17)",
+        "created_at": "2026-05-31T05:18:59",
+        "updated_at": "2026-05-31T05:18:59"
+      },
+      {
+        "id": 9,
+        "name": "公司核心组",
+        "short_name": "综合",
+        "leader": "walker",
+        "responsibility": "负责公司层面的战略制定，整体业务协调和管理",
+        "color": "rgb(0, 0, 80)",
+        "created_at": "2026-05-31T05:21:00",
+        "updated_at": "2026-05-31T05:21:11"
+      },
+      {
+        "id": 10,
+        "name": "AI研发组",
+        "short_name": "AI组",
+        "leader": "Jarvisili",
+        "responsibility": null,
+        "color": "rgb(47, 125, 235)",
+        "created_at": "2026-05-31T08:14:08",
+        "updated_at": "2026-05-31T08:14:08"
+      }
+    ],
+    "system_settings": [
+      {
+        "key": "meeting_active",
+        "value": "false",
+        "id": 1,
+        "created_at": "2026-05-31T09:27:40",
+        "updated_at": "2026-05-31T11:58:15"
+      },
+      {
+        "key": "meeting_base_monday",
+        "value": "2026-06-01",
+        "id": 2,
+        "created_at": "2026-05-31T09:27:40",
+        "updated_at": "2026-05-31T09:27:40"
+      },
+      {
+        "key": "meeting_base_count",
+        "value": "22",
+        "id": 3,
+        "created_at": "2026-05-31T09:27:40",
+        "updated_at": "2026-05-31T09:27:40"
+      }
+    ],
+    "projects": [
+      {
+        "name": "签约muskAI提供API",
+        "record_date": "2026-04-01",
+        "content": "长期采购初始合同签订\n【进展】【4.29更新】已签约，后续陆续充值",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-30",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 2,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "展销场景用店头模式",
+        "record_date": "2026-05-31",
+        "content": "用于展销卖场的无人值守演示体验",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 02:14",
+            "content": "【0525】功能已跑通。预计本周合入各游戏最新版本相关内容",
+            "status": "正常",
+            "id": "1780251275509-23jqee"
+          },
+          {
+            "time": "2026-05-11 02:14",
+            "content": "【0511】由廖斌负责策划、文峰负责程序开发，已启动。预计6月10日前完成",
+            "status": "正常",
+            "id": "1780251284455-jezbep"
+          }
+        ],
+        "id": 3,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-31T18:31:48"
+      },
+      {
+        "name": "AI转型比赛",
+        "record_date": "2026-05-31",
+        "content": "举办内部的AI转型挑战赛\n【进展】【5.5】报名、审核、比赛流程中\n【4.20】4.13已发送全员邮件\n【3.30】最终确认细节\n【4.7】本周二完成公告",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "行政",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 4,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "市场视频素材制作",
+        "record_date": "2026-03-10",
+        "content": "鲲域作为采购方进行合同签署\n【进展】【4.7】签署完毕",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 5,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "作曲家协会：运动员进行曲/天宫迅音",
+        "record_date": "2026-03-02",
+        "content": "获得歌曲授权\n【进展】【5.6更新】合同签署完成",
+        "status": "completed",
+        "urgency": "low",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-21",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 6,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "新创华：奥特曼",
+        "record_date": "2026-02-02",
+        "content": "获取奥特曼正式授权\n【进展】【3.19更新】付款完成",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-20",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 7,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "主机ID微调",
+        "record_date": "2026-02-02",
+        "content": "主要配色已经给出，需要等待手板效果\n【进展】包含上机盖外观，摇臂金属漆效果，下周返回手板\n【2月9日更新】本周给出摄像头盖板，丝印修改方案，机盖按钮文字修改方案【重点】\n【2.25更新】需要配合最终的颜色再确认一次主机灯的两种状态颜色",
+        "status": "completed",
+        "urgency": "high",
+        "department": "产品",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-02-09",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 8,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "主机vigo logo处理",
+        "record_date": "2026-02-02",
+        "content": "暂时去除logo\n【进展】激光打掉目前的logo",
+        "status": "completed",
+        "urgency": "low",
+        "department": "产品",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 9,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "小屏幕系列问题：电磁辐射，下垂",
+        "record_date": "2026-02-02",
+        "content": "小屏辐射同时影响触摸按键，带来系列问题。该问题目前等待数字方面推动供应商解决。目前要先给出deadline\n【进展】【2月3日更新】分阶段，屏幕点亮问题可解决，2月7号拿到新批次料，新发现电机问题，继续的更新信息\n【2月13日更新】只剩余屏幕电磁辐射超标问题【重要】\n【2.28更新】新的200台试产，需要解决以上问题，且为发布会机器，前面板修改来不及，宗海会尝试一个临时替代方案\n预期3.15\n【3.13更新】预期要到3.17拿到新的排线方案结果【3.30更新】换线后解决，但装配难度大，需要工厂讨论",
+        "status": "completed",
+        "urgency": "high",
+        "department": "产品",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 95,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 10,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "手柄存在陀螺仪故障",
+        "record_date": "2026-02-02",
+        "content": "等待威达方面给出下一步反馈\n【进展】等2月5日测试新版本固件，测试OK\n【2.6更新】新一批6号上午快递，预估8号到\n【2.13更新】新一批在跟踪中，目前还未发现异常\n【2.25更新】新一批遥控处理软件更新与震动马达位置优化后，暂时没有发现问题，重点跟踪小伴龙，光枪项目的使用情况反馈\n【2.28更新】小伴龙反馈的陀螺仪问题，经确认是版本号未更新，换用最新版本测试无问题\n【3.3更新】建议和新世界沟通，详细分析误差类型和原因，借鉴校准方案，输出一个详细的技术报告\n【3.11更新】与新世界沟通后，整理方案和报告\n【3.24更新】跟进个别遥控器零飘的原因\n【4月7日更新】要厂商确认装配后校准的工艺要求\n【4.9更新】明确出厂校准的阈值范围标准，软件侧做过滤",
+        "status": "completed",
+        "urgency": "low",
+        "department": "产品",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 11,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-30T16:17:09"
+      },
+      {
+        "name": "遥控器更换9轴加强方案",
+        "record_date": "2026-02-02",
+        "content": "为了解决光枪存在累积误差问题，决定采用带有磁力计的九轴芯片替代目前遥控器使用的六轴芯片。",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-11 10:05",
+            "content": "硬件完成，软件固件在制作，预计3.20寄出样品，必须在3月底前决策具体方案",
+            "status": "正常",
+            "id": "1780285912895-0fvp2t"
+          },
+          {
+            "time": "2026-03-12 11:06",
+            "content": "威达的磁力计调教有点问题，预计延迟5天发出",
+            "status": "延迟",
+            "id": "1780285912895-ygjd4h"
+          },
+          {
+            "time": "2026-03-27 10:06",
+            "content": "因TDK不开放校准库，需要再改板子，预计330发板，401贴片，402测试",
+            "status": "延迟",
+            "id": "1780285912895-uqfipz"
+          },
+          {
+            "time": "2026-04-07 11:07",
+            "content": "本周给出具体升级方案 ",
+            "status": "正常",
+            "id": "1780285912895-cr2b81"
+          },
+          {
+            "time": "2026-04-11 10:07",
+            "content": "4.10拿到9轴样品，协议接口没变，由系统和sdk先处理数据，4.13出计划",
+            "status": "延迟",
+            "id": "1780285912895-iho1iz"
+          },
+          {
+            "time": "2026-04-13 11:11",
+            "content": "给出最后更换9轴的决策时间点和具体方案",
+            "status": "正常",
+            "id": "1780285912895-lhhfc3"
+          },
+          {
+            "time": "2026-04-18 09:20",
+            "content": "9轴数据融合遇到一些坑点，预计4.23前测试 ",
+            "status": "延迟",
+            "id": "1780285912895-coycoq"
+          },
+          {
+            "time": "2026-04-24 10:10",
+            "content": "9轴测试程序与光枪游戏内已可测试效果和对比，需要一起拉会评审，本周须决定是否换用9轴 ",
+            "status": "待讨论",
+            "id": "1780285912895-ojf95i"
+          },
+          {
+            "time": "2026-05-11 11:52",
+            "content": "验证9轴优于6轴，基本可用于光枪项目，确定更换",
+            "status": "待讨论",
+            "id": "1780285934563-3wve9n",
+            "reply_to": "1780285912895-ojf95i"
+          },
+          {
+            "time": "2026-05-11 10:10",
+            "content": "数字供应链还在找芯片，威达的方案有两种国产的，需要在本周内明确测试样品的时间",
+            "status": "阻塞",
+            "id": "1780285912895-eybooc"
+          },
+          {
+            "time": "2026-05-16 10:11",
+            "content": "预计22号完成固件调试，可以进行游戏适配测试",
+            "status": "延迟",
+            "id": "1780285912895-owqpye"
+          },
+          {
+            "time": "2026-05-24 11:11",
+            "content": "初步测试国产芯片的数据没有问题，5.25游戏内测试，5.30前确认",
+            "status": "正常",
+            "id": "1780285912895-ybq87r"
+          },
+          {
+            "time": "2026-05-31 18:24",
+            "content": "待测试结论",
+            "status": "待确认",
+            "meeting_session": 21,
+            "id": "1780285912895-awxsza"
+          }
+        ],
+        "id": 12,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-06-01T03:53:07"
+      },
+      {
+        "name": "研发陀螺仪校准和测试程序",
+        "record_date": "2026-02-02",
+        "content": "包括游戏内的校准机制和游戏外的测试程序\n【进展】【2.13更新】游戏内校准机制基本完成\n【2.28更新】游戏内校准测试发现存在一定问题，在迭代优化\n【3.11更新】与新世界再对齐了一些细节内容\n【3.14更新】研究了新的方案，需要花费少量时间尝试\n【3.24更新】本周必须完成系统整合【3.30更新】功能完成，验收反馈\n【4.7更新】已解决叠加误差，零漂问题正在解决，本周三必须确认是否能解决，周三确认后续各个关键时间点\n【4.11更新】算法层面已经实现空鼠能力效果，参数还需要调整，预计4.15\n【4.13更新】陀螺仪软件优化效果改进，后期技术策划已经联调\n【4.19更新】软件数据融合优化与9轴兼容，预计与9轴测试一起给出‘\n【4.24】合并进9轴工作，确定选型后，更新一版测试程序\n【4.30】预计510后排期\n【5.11更新】预计本周内完成测试程序更新\n【5.17更新】已完成新的测试程序\n【5.24更新】根据新国产芯片特性，要增加一个8字校准",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-24 02:28",
+            "content": "根据新国产芯片特性，要增加一个8字校准",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-17 02:28",
+            "content": "已完成新的测试程序 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-30 02:28",
+            "content": "预计5.10后才能排期",
+            "status": "延迟"
+          }
+        ],
+        "id": 13,
+        "created_at": "2026-05-30T16:17:09",
+        "updated_at": "2026-05-31T14:30:19"
+      },
+      {
+        "name": "算法AI手部数据丢失问题",
+        "record_date": "2026-02-02",
+        "content": "AI算法改进问题\n【进展】已经改进了两版模型，目前评估短期无法靠算法完全解决，先退回到NEX的方案\n【2月9日更新】推动算法团队重新训练手部动作，游戏方面希望再评估改进效果后确定新的调整方案\n【2.28更新】讨论重新定义手部数据的输出策略，同时针对不同大小的手型做强化训练\n3.10计划更新一版\n【3.14更新】手势识别更新后反馈问题，预计3.18左右迭代；骨骼模型预计3.16更新\n【3.23更新】手势与身体模型已测试通过整合SDK4.0对外发布【3.30更新】4.0版本测试效果有明显改善，需要跟进后续持续优化",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "产品",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-06",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 14,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-30T16:17:10"
+      },
+      {
+        "name": "算法测试评估程序",
+        "record_date": "2026-02-02",
+        "content": "此项为长期跟进项目\n【进展】和nex对比的功能在第二阶段开发\n【2月9日更新】本周可将测试模型用在NEX算法上，本周归纳量化性能指标\n【2.28更新】因NEX算法后处理部分无法逆向，与吴聪，春斌重新讨论了一种比较方式与确认输出规格\n【3月3日更新】建议向NEX申请开发接口，开发对比评测程序\n3.9和吴聪沟通\n【3.14更新】预计3.18模型迭代后输出【3.27更新】已经输出报告\n【4月7日】10日会有评估程序的测试版本，本周输出测试报告\n【4.11更新】针对与nex模型的对比报告已经完成，预计4.12由独立数据集再进行一个通用标准打分\n【4.15更新】打分与评估结果已经邮件给出，一些优化需求也一并列出，本周需要同数字团队做讨论\n【4.23】与算法团队进行沟通优化事项，本周须进一步确认版本时间\n【4.30】更新一版算法，预期解决优化项目，待QA做质量验证，详情见邮件\n【5.11】测试验证新版算法，合入sdk\n【5.24更新】根据内测反馈问题，进行针对性优化",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-13",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 10:29",
+            "content": "根据内测反馈问题，进行针对性优化",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 10:29",
+            "content": "测试验证新版算法，合入sdk",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-30 08:30",
+            "content": "更新一版算法，预期解决优化项目，待QA做质量验证，详情见邮件",
+            "status": "正常"
+          }
+        ],
+        "id": 15,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T14:30:26"
+      },
+      {
+        "name": "算法测试数据标注工作",
+        "record_date": "2026-02-02",
+        "content": "等待招收实习生参与标注\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-30 20:12",
+            "content": "【4.30】持续进行，人员数量暂时不主动增加，等待实习生接收",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 20:12",
+            "content": "【4.20更新】继续增加标注数量，目标10万张级别",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-14 20:13",
+            "content": "【3.14更新】已2人到位，开始标注工作，预计两周后验收成果【3.30更新】已经标注1万张，作为训练数据不足，但用来评估模型足够，预计4月中旬会有一版正式的模型",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 20:13",
+            "content": "【2.27更新】入职实习生开始安排工作，需尽快跟进排期",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-06 20:13",
+            "content": "【2.6更新】持续面试，年后入职",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-02 20:13",
+            "content": "【进展】年后才能开始招收实习生（至少三人）",
+            "status": "正常"
+          }
+        ],
+        "id": 16,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T14:31:15"
+      },
+      {
+        "name": "光枪外设研发",
+        "record_date": "2026-02-02",
+        "content": "通过创维数字的硬件招标流程完成光枪外设的研发，生产项目",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 86,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-20",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-23 11:57",
+            "content": "已拿到手板做评审，修改细节预计5.25完成，扭簧组件5.26拿到组装新手板测试扳机，开模评审同步开始",
+            "status": "正常",
+            "meeting_session": 21
+          },
+          {
+            "time": "2026-05-16 11:58",
+            "content": "预计22号前拿到新手板 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 19:58",
+            "content": "预计本周调整手板",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 19:59",
+            "content": "预计5月7日去威达",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 19:59",
+            "content": "预计510左右去威达现场调优",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-18 11:59",
+            "content": "威达手板评审完成，问题已开会同步，威达先出解决方案，预计4.23，后续扳机手感调整部分需要出差现场确认",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-04-08 20:00",
+            "content": "东莞厂商手板调整需等合同正式签订，威达结构手板预计4.20拿到（在沟通协调尽量提前）（尽量要求17号前提供） ",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-03-23 20:01",
+            "content": "就外观部分做了反馈，预计4月初调整+结构手板 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-13 20:02",
+            "content": "我方已做完配色给到威达 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-25 20:02",
+            "content": "数字结构部门已经给出反馈意见，需同工厂追踪确认情况 （建议同时加入方向盘外设的需求）",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-06 20:03",
+            "content": "威达方面给出新的方案，东莞厂手板同步评估，现在同步推进两种方案，需要给出里程时间 【",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-03 20:03",
+            "content": "数字招标流程已推动，需要商务跟进配合 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-01-26 20:03",
+            "content": "跟进硬件招标流程 ，先走创维内部的硬件招标流程",
+            "status": "正常"
+          }
+        ],
+        "id": 17,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T14:30:37"
+      },
+      {
+        "name": "首批NFC游戏卡制作",
+        "record_date": "2026-02-02",
+        "content": "完成首批NFC卡的设置，制作，并跑通招标到生产全流程",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 45,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-23 20:05",
+            "content": "打样普通游戏卡印刷效果已基本确认，本周需带机器去厂家调试线圈灵敏度",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 20:05",
+            "content": "NFC有个执行标准号，需要数字来跟进 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 20:05",
+            "content": "游戏卡打样预计508-512期间陆续回收，钥匙卡准备量产，9号发出 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 20:05",
+            "content": "钥匙卡根据打样确认工艺细节，优化后进行最后一次打样，预计515量产；游戏卡打样，建和达不到需求，同另外3家进行打样确认，预计620量产；确认出版物资质",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 20:05",
+            "content": "【4.20更新】钥匙卡第二次打样预计20号拿到，其它几家供应商已经开始卡丁车卡打样对接，详情见邮件",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 20:05",
+            "content": "【4.13更新】本周测试游戏内白卡的实际使用体验 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-11 20:07",
+            "content": " 【4.11更新】钥匙卡预计14号由建和打样 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-07 20:07",
+            "content": "【4月7日】钥匙卡设计周三前给出，本周先测试两类完整用户体验流程，本周确认未来卡的生产流程，本周发送项目跟进邮件",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-23 20:07",
+            "content": "【3.23更新】样品质量不满足，总结问题，马上联系其它供应商打样 ",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-03-16 20:07",
+            "content": "【3.16更新】预期3.20样品，与各方沟通，对供应商响应时间比较担忧，预计要尽快推动其它供应商 ",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-02-28 20:08",
+            "content": "【2.28更新】与爱心总明确了NFC卡走数字流程，以及确认负责人相关 3.9安排打样 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-26 20:08",
+            "content": "【2.26更新】先安排打样 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-09 20:08",
+            "content": "【2.9更新】走创维的内部硬件招标生产流程 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-06 20:08",
+            "content": "【2.6更新】收集的卡样品预计2.8收到 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-02 20:09",
+            "content": "完成首批NFC卡的制作，跑通全流程 ，加入到双周重点跟进项目持续跟进 ",
+            "status": "正常"
+          }
+        ],
+        "id": 18,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T12:10:45"
+      },
+      {
+        "name": "主机第二配色",
+        "record_date": "2026-02-02",
+        "content": "讨论第二配色是否需要根据市场反馈修正\n【进展】目前已经输出一些配色方案，后续调研确认具体配色方案",
+        "status": "completed",
+        "urgency": "low",
+        "department": "产品",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 19,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-30T16:17:10"
+      },
+      {
+        "name": "大厅APP开发",
+        "record_date": "2026-02-02",
+        "content": "大厅v3优化需求开发和高光时刻开发\n【进展】大厅5月31号完成v3需求开发，高光时刻6月7号完成开发，6月17号完成所有bug的修复和回归测试",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-17",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 20:31",
+            "content": "大厅v3优化需求开发和高光时刻开发 【计划】大厅5月31号完成v3需求开发，高光时刻6月7号完成开发，6月17号完成所有bug的修复和回归测试",
+            "status": "正常"
+          }
+        ],
+        "id": 20,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T12:31:50"
+      },
+      {
+        "name": "手机端家长app",
+        "record_date": "2026-05-23",
+        "content": "家长端app v3功能开发和渠道打包上架流程测试\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 85,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-17",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 20:48",
+            "content": "【522】各渠道打包流程测试",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 20:48",
+            "content": "【518】开发者账号，软著都已经下来，可上架测试版本",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 20:49",
+            "content": "【4.20】在测试中，苹果开发者账号还没有下来",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-04-13 20:49",
+            "content": "【4.13】安卓版本已经ok，苹果开发者账号还没下来",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-03 20:49",
+            "content": "【3.3更新】存在UI风格不一致问题，需要调整UI风格",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-23 20:49",
+            "content": "【进展】安卓版本已经基本开发完成，但是产品需要增加设备管理和寻找遥控器功能。IOS和鸿蒙版本我们开发团队先自己尝试打包，需要购买Mac和开通苹果/鸿蒙开发者账号。如果我们自己搞不到，再联系外包团队。",
+            "status": "正常"
+          }
+        ],
+        "id": 21,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T12:50:27"
+      },
+      {
+        "name": "高光时刻",
+        "record_date": "2026-02-02",
+        "content": "用于用户传播视频功能开发",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-27 00:35",
+            "content": "【4月27日】本周按既定方案评审，会改名",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 00:35",
+            "content": "【5月5日】拉分支开发，不放入V2正式必更内容",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-22 00:35",
+            "content": "【5月22日】平台预计本周完成1期需求开发，手机侧一斤完成开发。预计在首发后+1版本对外",
+            "status": "正常"
+          }
+        ],
+        "id": 22,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T16:35:59"
+      },
+      {
+        "name": "广角骨骼畸变修正",
+        "record_date": "2026-02-02",
+        "content": "采用AI辅助，矫正目前广角镜头造成的骨骼畸变问题",
+        "status": "paused",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-02-06 20:17",
+            "content": "【2.6更新】进行两轮理论方案讨论，预估2.13测试效果",
+            "status": "等待"
+          },
+          {
+            "time": "2026-02-02 20:17",
+            "content": "目前在篮球火项目中先应用了一个经验修正方案，使用AI根据玩家站位推算的镜头畸变矫正系数 ",
+            "status": "正常"
+          }
+        ],
+        "id": 23,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T12:18:41"
+      },
+      {
+        "name": "艺术画廊策划迭代",
+        "record_date": "2026-02-02",
+        "content": "艺术画廊可玩性感觉不足，需要完善策划案\n【进展】【0331】确认CP为广州光域\n【0316】已在2603批次招标\n【0309】已完成策划案调整，新增涂抹猜画玩法，本周发竞标\n【0301】预计下周完成策划案修改。3月发外包",
+        "status": "completed",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 24,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-30T16:17:10"
+      },
+      {
+        "name": "咪咕移植评估",
+        "record_date": "2026-02-02",
+        "content": "评估咪咕内容移植方案\n",
+        "status": "cancelled",
+        "urgency": "low",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-09 23:59",
+            "content": "【0309】1、预计本周将八段锦的合作提案给到对方评估；2、音乐版权部分的合作方式对方评估中\n评估咪咕的技术移植成本\n评估感觉内容品质不高，风格差异太大，建议先评估移植的难度和替换美术资源的可能性，然后再评估优先级",
+            "status": "阻塞"
+          }
+        ],
+        "id": 25,
+        "created_at": "2026-05-30T16:17:10",
+        "updated_at": "2026-05-31T15:59:47"
+      },
+      {
+        "name": "翻译外包审核",
+        "record_date": "2026-02-02",
+        "content": "确定稳定外包翻译供应商\n",
+        "status": "paused",
+        "urgency": "low",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-02 01:48",
+            "content": "【3.2更新】已经确定供应商，等待策划测试需求",
+            "status": "正常",
+            "id": "1780249685663-47333d"
+          }
+        ],
+        "id": 26,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T17:48:39"
+      },
+      {
+        "name": "奥特曼外包制作资源",
+        "record_date": "2026-02-02",
+        "content": "评估天上友嘉的制作资源\n【进展】【0316】已在2603批次招标\n【0309】上海方面的价格更优，本周将请美术评估质量，如无意外，将采购上海方的美术资产。预计本周发竞标\n【0303】本周内先两家比价\n【0209】目前方案倾向购买天上友嘉资源另外外包研发，同步评估另外一家美术资源\n【0206】永恒到实地考察资源。目前天上友嘉倾向于直接卖美术资产，当前资产数量足够满足需求。需要另外找CP负责功能开发",
+        "status": "completed",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 27,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "派对游戏角色设计",
+        "record_date": "2026-02-02",
+        "content": "外部资源开始角色细化，场景资源本周计划完成原画设计，功能开发\n 派对游戏-排期甘特图\n【进展】1.美术角色设定：本周开会对齐角色风格\n2.场景设计进度：复盘周期，2 个月还没有结果，完成时间未知\n3.程序开发进度：大富翁功能需求程序开始研发\n4.策划需求进度：大富翁细化部分功能验证，轨道相关接过来继续",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 28,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "Bodycam游戏进度",
+        "record_date": "2026-02-02",
+        "content": null,
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 25,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:04",
+            "content": "内部优化-场景性能测试、体感、双枪\n外部辅助CP提高设计能力\n【0522更新】上周对齐下一个版本计划，美术设计风格对齐，二次修改",
+            "status": "正常"
+          }
+        ],
+        "id": 29,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T16:04:30"
+      },
+      {
+        "name": "品牌命名问题",
+        "record_date": "2026-02-02",
+        "content": "尝试多种注册方案，寻找更多途径\n【进展】目前作为最优先关注的问题，需要双日报告项目推进进度，等待品牌总监入职继续推动，目前先用youdoobox名称，目前待确认中文名称",
+        "status": "completed",
+        "urgency": "urgent",
+        "department": "品牌",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 30,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "公司logo重新设计",
+        "record_date": "2026-02-02",
+        "content": "修改目前公司的logo",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 00:45",
+            "content": "【5.25】上周工作排满未开始，安排这周进行；",
+            "status": "延迟"
+          }
+        ],
+        "id": 31,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T16:45:17"
+      },
+      {
+        "name": "品牌+平台品牌形象体系",
+        "record_date": "2026-02-02",
+        "content": "推进内部设计\n【进展】【3.16】本周二会议讨论",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "品牌",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 32,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "美术团建讨论会",
+        "record_date": "2026-02-02",
+        "content": "美术内部讨论会议\n【进展】本周安排",
+        "status": "completed",
+        "urgency": "low",
+        "department": "行政",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-02-05",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 33,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "孩之宝IP授权",
+        "record_date": "2026-02-02",
+        "content": "获取小猪佩琪/小马宝莉授权\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-01",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:52",
+            "content": "【5.22更新】与亚洲事务负责人见面沟通，预计月末给与答复",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-31 23:52",
+            "content": "孩子宝方面有最新更新消息，给出最新方案，待董事会方面确认",
+            "status": "待确认"
+          }
+        ],
+        "id": 34,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T15:53:27"
+      },
+      {
+        "name": "完美鲲鹏：宇宙/彩虹护卫队",
+        "record_date": "2026-02-02",
+        "content": "获取宇宙/彩虹护卫队IP\n【进展】【4.9更新】签署完毕。",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-06",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 35,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-30T16:17:11"
+      },
+      {
+        "name": "申请产品软著与版号",
+        "record_date": "2026-02-02",
+        "content": "软著及版号申请",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 38,
+        "is_long_term": true,
+        "estimated_end_date": "2026-12-31",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:53",
+            "content": "【进展】【5.22更新】新增3个软著；已有版号提交总局",
+            "status": "正常"
+          }
+        ],
+        "id": 36,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T18:11:01"
+      },
+      {
+        "name": "用户体验室租赁装修",
+        "record_date": "2026-02-02",
+        "content": "推进合同流程和装修工程\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 29,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:36",
+            "content": "【进展】【5月22日】最早本周末启用",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-03 00:36",
+            "content": "4月3日已经开工",
+            "status": "正常"
+          }
+        ],
+        "id": 37,
+        "created_at": "2026-05-30T16:17:11",
+        "updated_at": "2026-05-31T16:36:31"
+      },
+      {
+        "name": "NFC钥匙功能卡",
+        "record_date": "2026-02-02",
+        "content": "已明确策划需求，进入设计阶段\n【进展】【4月27日】测试收尾阶段",
+        "status": "completed",
+        "urgency": "low",
+        "department": "产品",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 38,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-30T16:17:12"
+      },
+      {
+        "name": "KOL资源",
+        "record_date": "2026-02-25",
+        "content": "与年糕妈妈/董宇辉/俞敏洪/罗永浩/祝晓晗/刘耕宏联系\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-10",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-03 00:46",
+            "content": "【3.3】赛选出大概50人，需要确定名字，注册抖音号，在用星图查数据看匹配度。\n年糕妈妈新出短视频种草+带货带货方案本周沟通落地；\n董宇辉商务已经对接，在沟通带货细节。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-25 00:46",
+            "content": "【2.25更新】年糕妈妈整体偏内容种草，在沟通加入直播带货的部分。\n刘耕宏纯内容，且费用较高，第一阶段先不合作。\n董宇辉在要约中，预计下周给答复。 \n抖音已经给出了超1000人的推荐达人，下周完成初步塞选。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-09 00:46",
+            "content": "【3.9】董宇辉和年糕妈妈已经对接上，上面有写细节。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-16 00:46",
+            "content": "【3.16】罗永浩、董宇辉、年糕妈妈三巨头作为核心基石去打造，增加亲子旅游博主类目，用户群体匹配。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-23 00:46",
+            "content": "【3.23】罗永浩已经洽谈完毕，消费电子场2万坑位费，可以先带货，还在沟通中，本周输出方案。年糕妈妈答应所有内容配合直播带货，预计产生100万销售，总费用降低到60万。已经和服务商沟通建立亲子KOL联盟的需求。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 00:46",
+            "content": "【4.13】已经有超1000个kol亲子达人库需要塞选和测试出可以带货的，同时头部达人罗永浩可以先小场播，年糕妈妈60万合作，董宇辉需要产品发布后寄过去评测。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 00:46",
+            "content": "【4.20】新增6千万级别网红祝晓晗和3千万东方甄选俞敏洪建联，沟通带货中。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:46",
+            "content": "【5.18】提供新的一批博主，塞选中，抖音和小红书比例2:1 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:47",
+            "content": "【5.25】服务商提供的100个抖音平台的博主目前筛选出14个，也新提供了小红书的博主，已经完成初筛，等待下一轮的博主名单。波哥说的AI测试ROI的可以尝试应用。",
+            "status": "正常"
+          }
+        ],
+        "id": 39,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T16:48:24"
+      },
+      {
+        "name": "第四轮市场调研",
+        "record_date": "2026-02-25",
+        "content": "确定方案，推进流程，输出调研报告\n【进展】【5.25】6月15号输出 \n【5.06】本周完成第4轮调研广告方案输出\n【4.13】卖点已经和窝总确定，围绕卖点再出AB测试方案中。 \n【3.23】第4轮调研报告已经输出，需要等卖点梳理后，本周确定第五轮广告调研大纲，需要大量广告素材。\n【3.16】已经输出第四轮定性和定量调研，本周4给出第一阶段报告，然后需要给到他们广告AB测试。 根据调研卖点排序和品牌手册本周需要完成。 \n【3.9】第四次定性和定量调研已经结束，本周输出调研报告\n【2.25更新】第一轮定性和定量调研的内容已经确定，下周二开始执行。明天更新进度表。\n【3.3】已经开始执行定性和定量调研//预计第一轮3.20反馈，3月30日给定性和定量报告。4月10日给广告调研报告。",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-09",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-03 00:13",
+            "content": "【3.3】已经开始执行定性和定量调研//预计第一轮3.20反馈，3月30日给定性和定量报告。4月10日给广告调研报告。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-25 00:13",
+            "content": "【2.25更新】第一轮定性和定量调研的内容已经确定，下周二开始执行。明天更新进度表。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-09 00:13",
+            "content": "【3.9】第四次定性和定量调研已经结束，本周输出调研报告",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-16 00:13",
+            "content": "【3.16】已经输出第四轮定性和定量调研，本周4给出第一阶段报告，然后需要给到他们广告AB测试。 根据调研卖点排序和品牌手册本周需要完成。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-23 00:13",
+            "content": "【3.23】第4轮调研报告已经输出，需要等卖点梳理后，本周确定第五轮广告调研大纲，需要大量广告素材。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 00:14",
+            "content": "【4.13】卖点已经和窝总确定，围绕卖点再出AB测试方案中。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 00:14",
+            "content": "【5.06】本周完成第4轮调研广告方案输出",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:14",
+            "content": "【5.25】6月15号输出 ",
+            "status": "正常"
+          }
+        ],
+        "id": 40,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T16:15:17"
+      },
+      {
+        "name": "705发布会招标和落地",
+        "record_date": "2026-02-25",
+        "content": "招募公关公司，确定发布会方案\n【进展】【5.25】已经考察中标公司，每年承接超30场大型搭建，符合要求，今天沟通。\n【5.18】提出解决方案，去中标公司考察，非皮包公司就选他中标。 \n【5.11】服务商确认，爱心总在和招标办沟通，暂时没有结论。\n【5.06】选出了服务商，但现场存在异议待定。营销日历今天完成。 \n【4.20】已经完成发布会邀标和答疑，下周服务商来讲标\n【4.13】今天确定预算，已经出了价格明细，且KOL选出了100个，含到场、带儿童、内容、行业等。 服务商业对接了2家有实力的，等待我们出标。 \n【3.23】服务商今天给出最新选址方案和发布会方案，时间甘特图、预热器计划已经给出，需要讨论整体节奏。\n【3.16】确定发布会510，今天和爱心总对焦当天安排\n【3.9】由于调整，等待发布会最终时间安排\n评估报价并确定方案\n【2.9更新】三个预算方案待确认\n【2.25更新】负责创维发布会公司也加入其中，已经输出3个预算方案的对比。\n【3.3】今天下午约了爱心总和市场服务公司对接，制定规划和了解资源，同时确定2c发布会时间//确定数字投入什么资源",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-01",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-06-01 00:55",
+            "content": "\n【3.3】今天下午约了爱心总和市场服务公司对接，制定规划和了解资源，同时确定2c发布会时间//确定数字投入什么资源",
+            "status": "正常"
+          },
+          {
+            "time": "2026-06-01 00:55",
+            "content": "\n【2.25更新】负责创维发布会公司也加入其中，已经输出3个预算方案的对比。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-06-01 00:55",
+            "content": "【进展】【5.25】已经考察中标公司，每年承接超30场大型搭建，符合要求，今天沟通。\n【5.18】提出解决方案，去中标公司考察，非皮包公司就选他中标。 \n【5.11】服务商确认，爱心总在和招标办沟通，暂时没有结论。\n【5.06】选出了服务商，但现场存在异议待定。营销日历今天完成。 \n【4.20】已经完成发布会邀标和答疑，下周服务商来讲标\n【4.13】今天确定预算，已经出了价格明细，且KOL选出了100个，含到场、带儿童、内容、行业等。 服务商业对接了2家有实力的，等待我们出标。 \n【3.23】服务商今天给出最新选址方案和发布会方案，时间甘特图、预热器计划已经给出，需要讨论整体节奏。\n【3.16】确定发布会510，今天和爱心总对焦当天安排\n【3.9】由于调整，等待发布会最终时间安排\n评估报价并确定方案\n【2.9更新】三个预算方案待确认",
+            "status": "正常"
+          }
+        ],
+        "id": 41,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T16:55:40"
+      },
+      {
+        "name": "市场销售招标",
+        "record_date": "2026-02-25",
+        "content": "招募市场销售公司和输出品牌、市场和销售建议\n【进展】【3.23】给出了选址、时间甘特图、预热器计划等。 \n【3.16】完成了核心团队访谈，本周协助我们输出卖点和如何给第一批消费者身份认同\n【3.9】沟通加速时间节奏和营销节奏对焦\n推进招标流程\n【2.9更新】市场标进入内部投票环节，销售标正在邀标\n【2.25更新】市场标2月27日投票，销售标在走审批流程\n【3.3】已经完成市场标招募，今天开始对接落地细节，包括；市场标已确认/销售标待确认；借用其他服务商的创意，需要拜访经过他们同意，预计放到下周。",
+        "status": "completed",
+        "urgency": "low",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 52,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-01",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 42,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T08:15:38"
+      },
+      {
+        "name": "OMO销售标",
+        "record_date": "2026-03-03",
+        "content": "招募抖音本地销售商，大家协助推荐商家资源\n【进展】【3.31】今天下午招标，有3家竞标公司，争取全要。\n【3.20】招标四个文件已发送，等招标办党工确认周二时间汇报，同步服务商制作方案竞标；下周二招标。  \n【3.16】已经把评分标准、招标核心需求、议价细节和考核标准全部给到招标办，本周需要完成服务商沟通。暂时只剩3家符合要求。 \n【3.9】截止到周五有4家投标，在写服务商沟通细则、评分标准和考核标准，本周输出。 \n【3.3】标书已经发出，截止到周五",
+        "status": "completed",
+        "urgency": "high",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 43,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T08:10:33"
+      },
+      {
+        "name": "月卡、单卖价格；售卖提成",
+        "record_date": "2026-05-31",
+        "content": "【进展】线下售卖的提成需要和销售团队确认",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "产品",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 44,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-30T16:17:12"
+      },
+      {
+        "name": "直播间建设",
+        "record_date": "2026-02-25",
+        "content": "确认直播资质，直播相关的公司架构问题\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-28",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-03 00:15",
+            "content": "【3.3】需要沟通HC两个直播间需要6个主播2个运营（自招聘期望一个月内到岗），长沙会预留一个直播间给我们",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-25 00:15",
+            "content": "【2.25更新】先利用创维资源，走主播外包形式，特别优秀再签约，可以加入敬业条款",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-09 00:15",
+            "content": "【2.9更新】待讨论明确未来直播人力的招聘签约管理问题，研究创维的直播相关资质，对接他们的直播资源，招募总部直播人力",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-09 00:15",
+            "content": "【3.9】长沙和深圳地址确认。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-16 00:15",
+            "content": "【3.16】深圳可选楼下wework和彩电直播基地，长沙待赫总决策，各有利弊。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-23 00:15",
+            "content": "【3.23】确定楼下和彩电两个直播间，直播间搭建方案和运营计划已出。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 00:15",
+            "content": "【4.13】主播暂无，场地本周可以去确认",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 00:16",
+            "content": "【4.20】主播最迟到岗为530日，暂时无合适主播",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 00:16",
+            "content": "【5.06】本周完成选址，暂定一个直播间",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 00:16",
+            "content": "【5.11】本周继续找直播位置，已经让直播团队每天试玩产品，以后周维度给出产品反馈和直播形式。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:16",
+            "content": "【5.18】暂定7楼",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:16",
+            "content": "【5.25】1 前期3个直播间，自建已经完成选址（泰邦4楼12楼选其一），待HR确认。 另外两个直播间服务商提供，设置在杭州和佛山\n2 已多次优化直播间搭建与运营方案细节，调整主播人设定位表，与运营同事讨论引流周边礼品如何发放、",
+            "status": "正常"
+          }
+        ],
+        "id": 45,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T16:17:54"
+      },
+      {
+        "name": "开发自动演示模式",
+        "record_date": "2026-02-02",
+        "content": "为商业场所开发特定演示模式\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-07 02:20",
+            "content": "【4月7日更新】对接一下发布会演示需求",
+            "status": "正常",
+            "id": "1780251610388-g6ngky"
+          },
+          {
+            "time": "2026-02-09 02:20",
+            "content": "【0206】预计0209出策划案",
+            "status": "正常",
+            "id": "1780251610896-brynbw"
+          },
+          {
+            "time": "2026-02-13 02:20",
+            "content": "【0213】已有策划案，与ollie对过一次，需要再和walker核对一次需求",
+            "status": "正常",
+            "id": "1780251611480-8dmb5p"
+          },
+          {
+            "time": "2026-03-09 02:20",
+            "content": "【0309】与窝总讨论后，方案改为放在具体游戏内。本周评估哪些游戏需要放演示模式，已执行的项目发需求变更",
+            "status": "正常",
+            "id": "1780251612069-vy1kg4"
+          },
+          {
+            "time": "2026-04-27 02:20",
+            "content": "【0427】海底世界的演示模式，CP预计在510版本提交后开始开发，5月底前完成",
+            "status": "正常",
+            "id": "1780251633712-bjevoj"
+          },
+          {
+            "time": "2026-03-23 02:20",
+            "content": "【0323】已在海底世界中设计演示模式，待开发",
+            "status": "正常",
+            "id": "1780251638232-0nik39"
+          }
+        ],
+        "id": 46,
+        "created_at": "2026-05-30T16:17:12",
+        "updated_at": "2026-05-31T18:21:29"
+      },
+      {
+        "name": "调研视频广告素材",
+        "record_date": "2026-02-25",
+        "content": "为调研准备视频和图片广告测试素材\n【进展】【3.9】发布会有调整，在等待最终安排输出方案\n【2.25更新】颜色已经加入，教育演示视频已经和视频组沟通，今天在跟进进度。 \n【3.3】展示视频已经完成",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-02-28",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 47,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T08:11:24"
+      },
+      {
+        "name": "发布会版本白皮书",
+        "record_date": "2026-02-25",
+        "content": null,
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-15",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-03 01:39",
+            "content": "【3.3】需要讨论输出新的节点，销售和产品咬合，今天约会，//待输出发布会的安排细节，15:00先过会",
+            "status": "正常",
+            "id": "1780249143277-x2vlr6"
+          },
+          {
+            "time": "2026-02-25 01:39",
+            "content": "【2.25更新】根据之前销售和产品咬合表去执行\n其余新增内容需要待发布会场景搭建规划后再确定",
+            "status": "正常",
+            "id": "1780249143842-ohijfz"
+          },
+          {
+            "time": "2026-03-09 01:39",
+            "content": "【3.9】在对接市场标节奏，推进时间进度。",
+            "status": "正常",
+            "id": "1780249144391-9ggydj"
+          },
+          {
+            "time": "2026-03-16 01:39",
+            "content": "【3.16】已经完成整体咬合表，本周输出预热期内容。 ",
+            "status": "正常",
+            "id": "1780249144928-wqosjt"
+          },
+          {
+            "time": "2026-03-23 01:39",
+            "content": "【3.23】1 本周根据核心卖点输出悬疑海报和视频的BRIEF。 2 媒介需求已经列出，需要和创维集团品牌部讨论资源。本周和李杨去见他们。3 发布会的标书今天提交，还需要和李杨对接具体内容。 ",
+            "status": "正常",
+            "id": "1780249145486-lu6w8n"
+          },
+          {
+            "time": "2026-03-31 01:39",
+            "content": "【3.31】集团需要我们具体预算再给媒介，和真珍沟通请款流程；发布会标书还缺具体流程，李杨今天给出。 ",
+            "status": "正常",
+            "id": "1780249146243-egi5hy"
+          },
+          {
+            "time": "2026-04-13 01:39",
+            "content": "【4.13】已经明确了分工，等服务商到位。 ",
+            "status": "正常",
+            "id": "1780249168334-ni9jl5"
+          },
+          {
+            "time": "2026-04-20 01:39",
+            "content": "【4.20】本周三前完成发布会分工会议。",
+            "status": "正常",
+            "id": "1780249181848-tzrof9"
+          },
+          {
+            "time": "2026-05-18 01:39",
+            "content": "【5.18】已经获取2套背书方案，今天和Simon沟通",
+            "status": "正常",
+            "id": "1780249188030-b6s1fd"
+          },
+          {
+            "time": "2026-05-25 01:39",
+            "content": "确认发布会版本内容方案：\n1.mvp+列表+guest角色；\n2.列表+角色+数据/排行榜+nfc+其它？\n【5.25】\n1 已经完成北师大100万/3年的权益方案需求收集和输出，核心在背书端、电商端、品牌端等获取权益；\n2 另外输出10万和30万两个版本，和simon沟通确认后，在向窝总和赫总汇报，获取预算。",
+            "status": "正常",
+            "id": "1780249191924-o0kcy2"
+          }
+        ],
+        "id": 48,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T17:41:42"
+      },
+      {
+        "name": "小天才合作洽谈",
+        "record_date": "2026-02-09",
+        "content": "和小天才的战略合作谈判项目",
+        "status": "paused",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 5,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-24 23:58",
+            "content": "【0324】用结合手表和我们的教育和运动类应用的策划方案，再与对方进一步沟通",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-07 23:58",
+            "content": "【0407】本周内给出进一步合作方案，并获得对方回复",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 23:58",
+            "content": "【0413】本周四约对方沟通新方案和对方完成首次接触，后续邀约下轮深入洽谈",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-20 23:58",
+            "content": "【0420】上周提交一板新方案给到对方负责产品的赵松。但对方表示精力有限，短期内没有计划合作。。",
+            "status": "阻塞"
+          }
+        ],
+        "id": 49,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T15:59:10"
+      },
+      {
+        "name": "通用交互UI设计参考",
+        "record_date": "2026-02-09",
+        "content": "给CP作为标准交互UX/UI模版，以免出现界面手游化，交互不符合体感、遥控器操作\n【进展】联合美术 产品共同制定 https://3t72fjcm6c.coze.site",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "游戏",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-02-15",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 50,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "品牌宣传-主要视频制作",
+        "record_date": "2026-02-09",
+        "content": "制作品牌宣传、传播、发布会所需的视频内容",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 31,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:03",
+            "content": "【525】上周视频同事与窝总有做对齐，本周二三脚本方向会议",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 23:03",
+            "content": "【518】上周内部会议对齐后，根据会议意见调整视频方向，本周三内部确认新版脚本方向，会辅以AI视频demo",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 23:03",
+            "content": "【5.11】三条痛点脚本思路已确认，长视频底层情绪逻辑不足需调优，本周三出调优方案 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 23:03",
+            "content": "【5.06】7、8日完成脚本定稿，18、19日拍摄，6.1成片初稿 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 23:03",
+            "content": "【4.27】根据发布会时间调整，调整视频排期与创意方案，目前节点为5月15日拍摄，创意方向上周已经选定，此事项安排视频导演Eason跟进（以及发布会期间所有视频），rex配合 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-07 23:04",
+            "content": "【4月7日更新】4月20号给出样片 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-26 23:04",
+            "content": "【2.26更新】27号看风格样片 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-02-23 23:05",
+            "content": "早期的文案讨论确定阶段，",
+            "status": "正常"
+          }
+        ],
+        "id": 51,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T18:29:39"
+      },
+      {
+        "name": "开发正式官网",
+        "record_date": "2026-02-09",
+        "content": "官网设计和功能开发\n【进展】3.4开会\n【4.13更新】本周先上传官网确定网址",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "品牌",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 75,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 52,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "内部用户首轮测试",
+        "record_date": "2026-02-09",
+        "content": "内部用户体验测试计划\n【进展】已经结束。问卷已经回收",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "产品",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 53,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "视频骨骼节点导出测试工具",
+        "record_date": "2026-02-09",
+        "content": "为视频游戏输出骨骼节点数据\n【进展】【0316】编辑器已可用\n需求评估阶段，后续和AI生成工具对比效果",
+        "status": "completed",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 54,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "电商平台对接",
+        "record_date": "2026-02-25",
+        "content": "抖音和小红书的推广资源沟通\n天猫、京东平台运营对接\n【进展】【5.25】\n1 京东商务合同毛保扣点12%-14%个点之间，采销已发邮件审批，京东开店相关财务资质已联系创维那边财务并给到相关证明文件，本周走保证金流程。\n2 京东的年框，今天下午再沟通。\n3 上周参加小红丝AI的3C高层分享会，虽然是白牌，会给到我们KA资源。\n4 创维已经把兴趣电商的详情页完成，在沟通细节修改，传统电商的详情页布局已经完成，等待服务商输出。\n5 天猫运营本周入职\n【5.18】\n1 和京东沟通对赌协议中，卡点在于ROI \n2 周五去小红书开会，获取最新打法和案例\n3 详情页兴趣电商版本已经完成80%，传统电商版本还在找供应商。 \n【5.11】\n1 已经和赫总和窝总汇报进度和平台给出的资源，持续和平台沟通，推动资源落地。 \n2 兴趣电商创维设计已经修改第二版demo，本周拉会沟通再改进。 传统电商依然没确定供应商，卡在价格。 \n【5.06】\n1 抖音、京东、天猫所需材料准备就绪，6月初开开店，小红书已经开店。 \n2 电商详情页两个版本的策划案已经完成。创维已经完成兴趣电商版本，需改进；传统电商版本还在找服务商公司。\n【4.20】已经输出一版电商策划，数字设计制作中，第二版今天定稿，我们自己自作。\n抖音和京东首发资源已经确定。本周再此拜访天猫和小红书，协商资源。\n【4.13】详情页在策划中，明天输出\n【3.23】确定京东首发，资源对接完毕，会免费给小黑盒、小魔方、所有同品类详情页推荐等，并给出了行业数据（纯体感小于1亿）和竞对数据（2000万）。小红书服务商本周继续给到相关完整方案\n【3.16】今天去京东，沟通类目和如果京东首发，给啥具体资源。 \n【3.9】小红书、抖音、京东、天猫全部完成对接，根据推广节奏开店。 \n【2.9】本周对方拜访联系\n【2.25更新】抖音已经给出亲子达人推荐，已经塞选50个亲子达人，抖音资源已经对接。 天猫京东运营已经对接完毕，等待产品上线。 \n【3.3】明天3.4小红书会上门拜访,筛选官方资源。",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 55,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T08:11:44"
+      },
+      {
+        "name": "整机内存优化",
+        "record_date": "2026-05-23",
+        "content": "2.07内测版本开机空闲内存剩余2G，对游戏以及其它服务稳定运行造成较大风险\n\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-25",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 20:32",
+            "content": "【5.22】斯涛做了一些小优化，内存占用有减少，6月份没有新需求开发，重点攻关",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 20:32",
+            "content": "需要协同系统与主要服务模块技术进行讨论，建议尽快寻求外部的专业优化服务商进行协作",
+            "status": "正常"
+          }
+        ],
+        "id": 56,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T12:33:07"
+      },
+      {
+        "name": "语音识别服务方案",
+        "record_date": "2026-02-25",
+        "content": "为主机游戏端协调整合语音识别服务，初步先评估腾讯云tts\n【进展】【3.2更新】所需能力几家云服务商都具备，主要还是评估腾讯云与华为云\n【3.11更新】使用数字的子账号开通ASR服务，可以安排进行相关测试\n【4.13】预计5.10后启动",
+        "status": "paused",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 67,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-09",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-02-23 20:18",
+            "content": "为主机游戏端协调整合语音识别服务，初步先评估腾讯云tts 【进展】",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-02 20:19",
+            "content": "【3.2更新】所需能力几家云服务商都具备，主要还是评估腾讯云与华为云 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-11 20:19",
+            "content": "【3.11更新】使用数字的子账号开通ASR服务，可以安排进行相关测试 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 20:19",
+            "content": "【4.13】预计5.10后启动",
+            "status": "正常"
+          }
+        ],
+        "id": 57,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-31T12:20:00"
+      },
+      {
+        "name": "拆分细化各模块工作节点与时间",
+        "record_date": "2026-02-28",
+        "content": "为保障后续产品计划，发现问题，系统性梳理更新各模块工作\n【进展】【3.2更新】先整理测试流程和标准",
+        "status": "completed",
+        "urgency": "low",
+        "department": "综合",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-06",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 58,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "NBA品牌合作",
+        "record_date": "2026-03-23",
+        "content": "联系NBA拿品牌合作方案\n【进展】【3.25更新】已转接市场沟通评估",
+        "status": "completed",
+        "urgency": "low",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-30",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 59,
+        "created_at": "2026-05-30T16:17:13",
+        "updated_at": "2026-05-30T16:17:13"
+      },
+      {
+        "name": "AI辅助工作流系统",
+        "record_date": "2026-02-24",
+        "content": "开发基于AI的项目管理工作流系统，梳理目前的项目工作流程\n【进展】策划美术demo 平台和美术同学对接需求，完善美术工具（UI、2d 场景物件拆解、序列帧动画），招标以这个选择风格后为标准\n招标系统 自动代码修复优化\n项目管理系统 项目模块 补充四个子级页面功能",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "AI研发组",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 60,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T15:14:29"
+      },
+      {
+        "name": "710租赁建设项目",
+        "record_date": "2026-03-03",
+        "content": "办公场地建设\n【进展】【4.20】本周开始可逐步搬入\n【3.31】租赁合同已完成，待完成软装后入驻，座位安排本周内出来\n【3月24日】已经与数字沟通完毕，尽快装修场地\n【3.3】本周邀约看场地",
+        "status": "completed",
+        "urgency": "low",
+        "department": "行政",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 94,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 61,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "游戏体验室租赁",
+        "record_date": "2026-05-31",
+        "content": "完成场地租赁和装修合同（中粮）\n【进展】【3.31】确定4.2正式开工装修\n【3月24日】已经与数字沟通完毕，尽快装修场地\n装修合同签完，3月4日开工装修，3月底装修完毕",
+        "status": "completed",
+        "urgency": "low",
+        "department": "行政",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 88,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 62,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "内容剧集模式游戏开发",
+        "record_date": "2026-03-03",
+        "content": "开发内容剧集模式的游戏",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 15,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-11 00:02",
+            "content": "【0511】大中华寻宝记策划案还需修改，预计跟着5月份招标一起出",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 00:02",
+            "content": "【0506】Simon说大中华寻宝记已返回合同，预计本周内启动该产品招标",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-31 00:02",
+            "content": "【0331】小猪佩奇确认CP为广州光域；与版权方确认，视频内容不可直接使用，需要另做",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-16 00:02",
+            "content": "【0316】1、小猪佩奇已在2603批次招标；2、大中华寻宝记方案已发IP方评估",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-03 00:03",
+            "content": "【0303】跟各IP方确认是否可用视频资源，建议先制作小猪佩奇，接下来评估技术方案",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-07 00:03",
+            "content": "【0407】寻找更多商务方面的渠道资源",
+            "status": "正常"
+          }
+        ],
+        "id": 63,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T16:03:46"
+      },
+      {
+        "name": "内容创作",
+        "record_date": "2026-02-25",
+        "content": "职人、UGC和AI创作短视频\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-15",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-02-25 01:57",
+            "content": "【2.25更新】学习AI制作视频，有助于直播带货\n职人的方案已经输出，待去创维RBG宣讲\nUGC的方案待定 \n【3.3】注册抖音和小红书小号，先发一些AIGC内容做测试",
+            "status": "正常",
+            "id": "1780250276785-rdjeyx"
+          },
+          {
+            "time": "2026-03-09 01:57",
+            "content": " 【3.9】已经注册抖音和小红书，在规划内容中 。从1500个推荐中选出65个亲子KOL，待星途开通查看匹配度。年糕妈妈短直带货确认68万。董宇辉通过创维和外部资源都已经建联，等品牌手册和产品过审后可约见。 ",
+            "status": "正常",
+            "id": "1780250277320-hbu7ug"
+          },
+          {
+            "time": "2026-03-16 01:57",
+            "content": "【3.16】罗永浩、年糕妈妈直播间本周3出差杭州沟通落地，董宇辉依然答复等产品出来，他们需要看产品。",
+            "status": "正常",
+            "id": "1780250277883-ifqifo"
+          },
+          {
+            "time": "2026-03-23 01:57",
+            "content": "【3.23】已经输出职人GC的激励方案，需要和桃子老师学习AIGC如何落地",
+            "status": "正常",
+            "id": "1780250278441-ul32pd"
+          },
+          {
+            "time": "2026-04-13 01:57",
+            "content": "【4.13】已经完成了营销日历，发布会期间的BF本周输出。",
+            "status": "正常",
+            "id": "1780250278962-fbsc6z"
+          },
+          {
+            "time": "2026-04-20 01:58",
+            "content": "【4.20】需要更新营销日历，并匹配内容，本周完成",
+            "status": "正常",
+            "id": "1780250311661-tqq1uu"
+          },
+          {
+            "time": "2026-05-11 01:58",
+            "content": "【5.11】已经汇报了预热期的内容方案，还在和品牌服务商咬合，本周输出最终版本，并开始落地。 ",
+            "status": "正常",
+            "id": "1780250312708-dnkcqf"
+          },
+          {
+            "time": "2026-05-25 01:58",
+            "content": "【5.25】官方好的预热期和首销期的内容也已经完成，本周加入服务商配合内容。",
+            "status": "正常",
+            "id": "1780250313273-tb7co1"
+          }
+        ],
+        "id": 64,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T17:59:48"
+      },
+      {
+        "name": "指挥家游戏分轨音频制作问题",
+        "record_date": "2026-05-31",
+        "content": "音频分轨制作成本太贵，目前先尝试使用AI制作分轨资源\n【进展】【0323】已完成样片\n评估AI制作难度中",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "游戏",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 65,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "精准渠道",
+        "record_date": "2026-03-03",
+        "content": "小天才、大米和小米等精准用户渠道\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-15",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-16 01:42",
+            "content": "【3.16】已经对接小天才和美的，小天才有意向但需要有具体内容落地场景，快闪形式有明确意向。美的渠道需要我们有一定销量后，再结合场景给方案。",
+            "status": "正常",
+            "id": "1780249325213-2yb60w"
+          },
+          {
+            "time": "2026-03-23 01:42",
+            "content": "【3.23】大米和小米的60家店铺沟通合作意向，本周沟通小天才快闪店的合作模式。",
+            "status": "正常",
+            "id": "1780249325792-5s9hd2"
+          },
+          {
+            "time": "2026-04-13 01:42",
+            "content": "【4.13】京东mall可以同步上线，在外部找代理中，已经谈了3家（小米、华为、美的背景）处于有意向但观望销售阶段。 ",
+            "status": "正常",
+            "id": "1780249326346-h483xn"
+          },
+          {
+            "time": "2026-04-20 01:42",
+            "content": "【4.20】上周电信渠道来公司拜访，本周跟进。同步小天才快闪店本周跟进落地方案。 ",
+            "status": "正常",
+            "id": "1780249326982-lp4hne"
+          },
+          {
+            "time": "2026-05-06 01:42",
+            "content": "【5.06】宝妈时光合作意向强，5月会再次拜访公司。\n是否需要注册新的家电类别？？\n同一产品可以主类目3c数码，辅类目家电（智能家居），不能两个链接两个类目。",
+            "status": "正常",
+            "id": "1780249327589-steaob"
+          },
+          {
+            "time": "2026-05-18 01:42",
+            "content": "【5.18】奈尔宝确定合作，沟通合同和落地细节",
+            "status": "正常",
+            "id": "1780249328163-y2pbnn"
+          },
+          {
+            "time": "2026-05-25 01:42",
+            "content": "【5.25】\n1 奈尔宝第4次对接完成，修改方案，本周再沟通细节。需要演示版。\n2 今天下午和宝妈时光第2次线下沟通。\n3 meland和奥飞欢乐世界本周约线下沟通。",
+            "status": "正常",
+            "id": "1780249328801-78d1l8"
+          }
+        ],
+        "id": 66,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T18:01:11"
+      },
+      {
+        "name": "专业资源背书",
+        "record_date": "2026-03-03",
+        "content": "寻找专业资源背书提高产品市场公信力",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": true,
+        "estimated_end_date": "2026-04-10",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-03 00:10",
+            "content": "【3.3】今天3.3和市场服务沟通相关资源",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-09 00:10",
+            "content": "【3.9】等市场入职，划给他对接，暂无进度",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-16 00:10",
+            "content": "【3.16】本周开始联系",
+            "status": "正常"
+          },
+          {
+            "time": "2026-03-23 00:10",
+            "content": "【3.23】已经输出相关背书需求明细，并联系相关单位，本周给出落地。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 00:10",
+            "content": "【4.13】simon负责，我找KOL和补充 ",
+            "status": "正常"
+          }
+        ],
+        "id": 67,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T18:11:13"
+      },
+      {
+        "name": "wwise工具采购",
+        "record_date": "2026-02-28",
+        "content": "基于音频需要采购工具\n【进展】【4.8更新】确认5月6月所有产品wwise接入的情况",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-06",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 68,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "AI辅助流程接入",
+        "record_date": "2026-02-28",
+        "content": "以动作标注和数据统计两个需求接入\n【进展】【3.25更新】已盖章完毕",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-27",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 69,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "奥特曼美术资源授权",
+        "record_date": "2026-02-26",
+        "content": "购买符合标准的美术资源授权\n【进展】【4.8更新】合同签署完毕",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-27",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 70,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-30T16:17:14"
+      },
+      {
+        "name": "玩家异常位置处理汇总表",
+        "record_date": "2026-03-03",
+        "content": "针对玩家游戏中各种异常的位置和角色变化，针对不同类型游戏制定系统处理方案，并推动算法匹配\n",
+        "status": "paused",
+        "urgency": "low",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-07 00:00",
+            "content": "【进展】游戏侧先制定出玩家位置角色事件的汇总表\n【0407】重新评估一下方案",
+            "status": "延迟"
+          }
+        ],
+        "id": 71,
+        "created_at": "2026-05-30T16:17:14",
+        "updated_at": "2026-05-31T16:01:35"
+      },
+      {
+        "name": "IP授权大中华寻宝记",
+        "record_date": "2026-03-02",
+        "content": "获取寻宝记授权",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-21 00:39",
+            "content": "【5.21更新】对方更新版号限制条件，我方提出不同条件，待对方反馈",
+            "status": "待确认"
+          }
+        ],
+        "id": 72,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T16:39:37"
+      },
+      {
+        "name": "系统输入法采购",
+        "record_date": "2026-03-03",
+        "content": "确认采购搜狗输入法\n【进展】【4.8更新】催促对方返回合同；同步进行测试",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-03-21",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 73,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-30T16:17:15"
+      },
+      {
+        "name": "外部测试供应商合作",
+        "record_date": "2026-03-02",
+        "content": "建联多家测试供应商同步测试产品",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:40",
+            "content": "【5.22更新】用例输出工具提交给测试部门进行反馈",
+            "status": "待确认"
+          }
+        ],
+        "id": 74,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T16:40:26"
+      },
+      {
+        "name": "发布会相关客户邀请",
+        "record_date": "2026-03-06",
+        "content": "发布会相关客户邀请名单\n【进展】",
+        "status": "paused",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-29 01:48",
+            "content": "【4.29更新】暂无具体推动内容，待发布会重新确定细节",
+            "status": "等待",
+            "id": "1780249738562-2jqy5s"
+          }
+        ],
+        "id": 75,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T17:49:09"
+      },
+      {
+        "name": "首发期物料",
+        "record_date": "2026-05-31",
+        "content": "围绕销售的线上线下物料\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-16 01:44",
+            "content": "【3.16】线上预热期物料已经沟通完毕，首发期物料本周完成需求对接。 线下物料今天和爱心总对接。",
+            "status": "正常",
+            "id": "1780249449149-p453bi"
+          },
+          {
+            "time": "2026-03-23 01:44",
+            "content": "【3.23】线下物料需确定酒店后，根据产地输出。 ",
+            "status": "正常",
+            "id": "1780249449672-pj4ccd"
+          },
+          {
+            "time": "2026-04-13 01:44",
+            "content": "【4.13】待服务商设计（非常紧急）",
+            "status": "正常",
+            "id": "1780249450258-e5mv5d"
+          },
+          {
+            "time": "2026-04-20 01:44",
+            "content": "【4.20】我们输出主KV等服务商到位再出全案。",
+            "status": "正常",
+            "id": "1780249450785-nqzsre"
+          },
+          {
+            "time": "2026-05-18 01:44",
+            "content": "【518】整体物料的VI和SI，和爱心总沟通？ ",
+            "status": "正常",
+            "id": "1780249451374-4s50p4"
+          },
+          {
+            "time": "2026-05-25 01:44",
+            "content": "【5.25】本周无进度",
+            "status": "等待",
+            "id": "1780249466975-vesphh"
+          }
+        ],
+        "id": 76,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T18:01:18"
+      },
+      {
+        "name": "整体预算和策略",
+        "record_date": "2026-05-31",
+        "content": "分季度和效果的年度预算\n【进展】【3.23】已经完成并通过\n【3.16】317输出并邀约赫总",
+        "status": "completed",
+        "urgency": "high",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 77,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T08:10:52"
+      },
+      {
+        "name": "Wwise使用音频外包人员派驻开发",
+        "record_date": "2026-05-31",
+        "content": "外部团队一般无Wwise开发能力。准备请音频外包供应商派遣人员去开发团队派驻开发\n【进展】【0413】0625批次产品wwise方案均已确认。【0407】1、0510批次5个产品核对Wwise解决方案，需要兼顾单人与多人游戏体验；2、0625批次需要使用Wwise的CP产品共8个，本周确认Wwise实现方案【0331】0510批次5个产品已分别联系指派Wwise供应商。本周内会和伟森提音频功能具体需求\n【0324】决定安排音频公司去游戏cp方协助制作",
+        "status": "completed",
+        "urgency": "low",
+        "department": "游戏",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 31,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 78,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-30T16:17:15"
+      },
+      {
+        "name": "产品价值梳理",
+        "record_date": "2026-05-31",
+        "content": "产品核心3卖点3噱头5场景\n【进展】【4.13】已经输出\n【3.23】已经梳理出5大卖点20个噱头和5个场景，本周讨论后输出完整版",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 79,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T08:12:09"
+      },
+      {
+        "name": "游戏单独贩卖价格",
+        "record_date": "2026-05-31",
+        "content": "每个非免费游戏的单独定价体系",
+        "status": "completed",
+        "urgency": "low",
+        "department": "综合",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 80,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-30T16:17:15"
+      },
+      {
+        "name": "遥控器问题列表",
+        "record_date": "2026-05-31",
+        "content": "1）电池参数、规格/协议、充放电数据；\n2）蜂鸣器声音大小不一致；\n3）扳机键易触发优化；\n【进展】【4月7日更新】威达上周已经出具了电池方面的技术报告",
+        "status": "completed",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 11:14",
+            "content": " 【进展】【4月7日更新】威达上周已经出具了电池方面的技术报告",
+            "status": "正常"
+          }
+        ],
+        "id": 81,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T08:09:14"
+      },
+      {
+        "name": "后台运营数据",
+        "record_date": "2026-05-31",
+        "content": "采用AI生成方式开发后台运营数据系统\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "产品",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 87,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 22:51",
+            "content": "【5月18日】正在接入中",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-22 22:51",
+            "content": "【5月22日】本周数数宣讲平台使用教学。人员招聘需加紧",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 22:51",
+            "content": "【5月5日】已经拿到埋点方案。V2版本完成埋点",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 22:51",
+            "content": "【4月27日】已拉起，本周提供埋点方案",
+            "status": "正常"
+          }
+        ],
+        "id": 82,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T14:52:03"
+      },
+      {
+        "name": "品牌形像设计",
+        "record_date": "2026-05-31",
+        "content": "完成品牌视觉形像设计\n【进展】已有初步方案，后续继续完善方案",
+        "status": "completed",
+        "urgency": "low",
+        "department": "品牌",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 19,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 83,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-30T16:17:15"
+      },
+      {
+        "name": "实习生暑期项目（快鱼）",
+        "record_date": "2026-05-31",
+        "content": "对接实习生资源公司，接受各类实习生实习\n【进展】【5.25】今日入职1位，2位待入职\n【5.5】已推进3位学生流程中，合同双章已盖\n【4.20】合同流程中\n【4.7】（注意）以大类招生后，学生进入企业后再由导师分配任务，岗位需求更新中\n【3.31】需求已汇总，本周与供应商沟通招生落地细节\n先收集内容需求，与对方对接",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-31 02:03",
+            "content": "【3.31】需求已汇总，本周与供应商沟通招生落地细节\n先收集内容需求，与对方对接",
+            "status": "正常",
+            "id": "1780250606019-fzfi3u"
+          },
+          {
+            "time": "2026-04-07 02:03",
+            "content": "【4.7】（注意）以大类招生后，学生进入企业后再由导师分配任务，岗位需求更新中",
+            "status": "正常",
+            "id": "1780250606504-9xpyet"
+          },
+          {
+            "time": "2026-04-20 02:03",
+            "content": "【4.20】合同流程中",
+            "status": "正常",
+            "id": "1780250607086-hp2jra"
+          },
+          {
+            "time": "2026-05-05 02:03",
+            "content": "【5.5】已推进3位学生流程中，合同双章已盖",
+            "status": "正常",
+            "id": "1780250607557-2mdoza"
+          },
+          {
+            "time": "2026-06-25 02:03",
+            "content": "【5.25】今日入职1位，2位待入职",
+            "status": "正常",
+            "id": "1780250619525-hkvr2z"
+          }
+        ],
+        "id": 84,
+        "created_at": "2026-05-30T16:17:15",
+        "updated_at": "2026-05-31T18:05:27"
+      },
+      {
+        "name": "平台AI交互应用",
+        "record_date": "2026-05-31",
+        "content": "在平台上利用AI视觉技术，智能化和用户交互",
+        "status": "planned",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-11 20:22",
+            "content": "【进展】确定一个开始时间，预计620后",
+            "status": "等待"
+          }
+        ],
+        "id": 85,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T12:23:35"
+      },
+      {
+        "name": "展会相关供应商筹备",
+        "record_date": "2026-03-28",
+        "content": "现场内外执行/电商物料/视频制作\n【进展】【4.13更新】提交两家执行方给到招标办，后续招标跟进",
+        "status": "completed",
+        "urgency": "high",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-10",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 86,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-30T16:17:16"
+      },
+      {
+        "name": "4 个新玩法策划案",
+        "record_date": "2026-05-31",
+        "content": "【进展】www.taozi888.site/des_game/\n策划案详细文档+风格确定的美术需求细化完成\n发布到供应商管理系统\n文档+mvp+原画设计",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 87,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-30T16:17:16"
+      },
+      {
+        "name": "未来办公场地租赁建设项",
+        "record_date": "2026-05-31",
+        "content": "筛选未来3年办公场所，2000平，最好上下两层可扩\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 55,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-03-23 02:05",
+            "content": "【3.23】上周五下午现场查看周边场地8+",
+            "status": "正常",
+            "id": "1780250739620-3qtpxx"
+          },
+          {
+            "time": "2026-03-31 02:05",
+            "content": "【3.31】本周三下午现场查看周边场地10+",
+            "status": "正常",
+            "id": "1780250740152-gumsi8"
+          },
+          {
+            "time": "2026-04-20 02:05",
+            "content": "【4.20】所有场地已勘察完毕，待确定政府补贴细节及最终决策",
+            "status": "正常",
+            "id": "1780250740739-xpr99o"
+          },
+          {
+            "time": "2026-05-05 02:05",
+            "content": "【5.5】报告初稿已完成，本周过报告内容细节",
+            "status": "正常",
+            "id": "1780250741277-6nqtaq"
+          },
+          {
+            "time": "2026-05-11 02:05",
+            "content": "【5.11】上周六下午现场查看创维前海物业场地，本周完成报告",
+            "status": "正常",
+            "id": "1780250741781-n2bgsp"
+          },
+          {
+            "time": "2026-05-18 02:05",
+            "content": "【5.18】分析报告已完成",
+            "status": "正常",
+            "id": "1780250756749-i987wa"
+          },
+          {
+            "time": "2026-05-25 02:05",
+            "content": "【5.25】待本周确认结果",
+            "status": "正常",
+            "id": "1780250758044-28p8x5"
+          }
+        ],
+        "id": 88,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T18:07:23"
+      },
+      {
+        "name": "大厅桌面使用Unity重构",
+        "record_date": "2026-04-20",
+        "content": "大厅改用Unity重构，增强大厅交互视觉效果\n",
+        "status": "planned",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 20:11",
+            "content": "【4.20】提起讨论事项",
+            "status": "等待"
+          }
+        ],
+        "id": 89,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T12:12:01"
+      },
+      {
+        "name": "新招聘平台沟通",
+        "record_date": "2026-05-31",
+        "content": "智面玄赏、鱼泡新平台接入\n【进展】【3.31】两个平台均可开始使用，会先拿研发、美术岗位测试使用",
+        "status": "completed",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 90,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T08:16:21"
+      },
+      {
+        "name": "游戏准备识别优化",
+        "record_date": "2026-05-31",
+        "content": "游戏的准备动作识别环节的一致性和优化",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-13 02:24",
+            "content": "【0413】已要求0625前所有产品当前版本均接入sdk4.1并按标准妥善处置游戏准备环节骨骼识别。各版本返回确认中。",
+            "status": "正常",
+            "id": "1780251850545-uau344"
+          },
+          {
+            "time": "2026-04-20 02:24",
+            "content": "【0420】0510批次产品的游戏准备环节基本都已按标准执行",
+            "status": "正常",
+            "id": "1780251851029-5im3hr"
+          },
+          {
+            "time": "2026-05-11 02:24",
+            "content": "【0511】首批20个产品当前状态见表：510游戏版本详情",
+            "status": "正常",
+            "id": "1780251851579-8uiem3"
+          }
+        ],
+        "id": 91,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T18:24:47"
+      },
+      {
+        "name": "收集用户行为数据上报",
+        "record_date": "2026-05-31",
+        "content": "收集用户的各种特征和行为数据上报后台\n",
+        "status": "planned",
+        "urgency": "low",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 02:28",
+            "content": "【0420】SDK中算法暂未支持性别年龄等识别，预估在620之后",
+            "status": "正常",
+            "id": "1780252097754-w7huf1"
+          }
+        ],
+        "id": 92,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T18:28:27"
+      },
+      {
+        "name": "SDK的开发和CP接入支持",
+        "record_date": "2026-05-23",
+        "content": "SDK 4.2.3版本的开发和测试",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-17",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 20:50",
+            "content": "【5.22】下周三完成sdk4.2.3版本开发，交付asr和高光时刻接口",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 20:50",
+            "content": "【5.6】需要投入人力协助CP进行接入",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 20:50",
+            "content": "【4.27】需要关注CP的接入情况",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 20:50",
+            "content": "【4.20】SDK4.2已经发布，510之后高光时刻和新功能开发以及数数平台接入，620之前完成全部功能打磨4",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 20:51",
+            "content": "【4.13】SDK4.1已经发布，目前还存在bug待解决",
+            "status": "正常"
+          }
+        ],
+        "id": 93,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T12:52:00"
+      },
+      {
+        "name": "收集异常识别问题",
+        "record_date": "2026-05-31",
+        "content": "从CP放收集异常识别问题汇总给算法方面\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "平台运营部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 13,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 00:33",
+            "content": "【0420】上周主要针对SDK4.2收集问题，目前主要问题集中在人脸识别方面，已出优化版本，待CP反馈",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-13 00:33",
+            "content": "【4.13】本周汇总表格，针对sdk4.1",
+            "status": "正常"
+          }
+        ],
+        "id": 94,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T16:34:05"
+      },
+      {
+        "name": "制定售后维修条款",
+        "record_date": "2026-05-31",
+        "content": "根据创维的经验制定产品的售后维修条款\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 11,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:31",
+            "content": "【5月22日】首轮沟通完成。本周拉安时达一起沟通。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 23:31",
+            "content": "【4月27日】客服团队和维修团队已建联",
+            "status": "正常"
+          }
+        ],
+        "id": 95,
+        "created_at": "2026-05-30T16:17:16",
+        "updated_at": "2026-05-31T15:31:32"
+      },
+      {
+        "name": "彩电私域用户管理",
+        "record_date": "2026-04-13",
+        "content": "彩电历史积淀的1300w私域用户的运营开发\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 11,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:51",
+            "content": "【5月22日】已与对方领导沟通完成，活动大纲和渠道资产已敲定",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 23:51",
+            "content": "【5月5日】本周邀请对方来公司体验产品和沟通初案",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-15 23:51",
+            "content": "4月15日首轮沟通拿到可用位置，推广方案本周沟通。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 23:51",
+            "content": "本周再走访几个非京东mall店",
+            "status": "正常"
+          }
+        ],
+        "id": 96,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T15:52:13"
+      },
+      {
+        "name": "发布会邀请函",
+        "record_date": "2026-04-06",
+        "content": "编写邀请函及介绍\n【进展】【4.14更新】完成邀请函",
+        "status": "completed",
+        "urgency": "high",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-17",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 97,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-30T16:17:17"
+      },
+      {
+        "name": "销售流程的标准化",
+        "record_date": "2026-05-31",
+        "content": "CRM打通、客服对接、售后对接、FAQ等一系列走通流程的问题\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 18,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-13 00:12",
+            "content": "【4.13】创维的财务不懂零售对帐，且无hc，要求业务自己对帐。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 00:12",
+            "content": "【4.20】上周CRM系统电商端流程已经沟通完毕，本周还需要沟通客服流程。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 00:12",
+            "content": "【5.11】客服端与CRM系统对接已经给出了方案，等待修改落地。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:12",
+            "content": "【518】客服的SOP、FAQ、售后政策的对接等，都已经输出初版，本周完成和创维及产品的对接。 ",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:12",
+            "content": "【5.25】上周已经和创维开会，针对保修存在几个疑虑：1 摇臂不保修？2 配件只保修半年？这些对于消费者来说容易产生客诉和公关危机。 ",
+            "status": "正常"
+          }
+        ],
+        "id": 98,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T16:13:00"
+      },
+      {
+        "name": "产品售价",
+        "record_date": "2026-05-31",
+        "content": "确定产品最终售价",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 01:46",
+            "content": "【5.25】未完成，本周3前输出 ",
+            "status": "正常",
+            "id": "1780249561656-my6q8b"
+          },
+          {
+            "time": "2026-04-13 01:46",
+            "content": "【4.13】待确认价格线上和线下版本",
+            "status": "正常",
+            "id": "1780249562137-k7vg8k"
+          },
+          {
+            "time": "2026-04-20 01:46",
+            "content": "【4.20】线上线下同价，售价待定。",
+            "status": "正常",
+            "id": "1780249562741-byagd0"
+          },
+          {
+            "time": "2026-06-26 01:46",
+            "content": "已经输出最新售价版本，赫总已经确认",
+            "status": "正常",
+            "id": "1780249598202-6m82hy"
+          }
+        ],
+        "id": 99,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T17:47:16"
+      },
+      {
+        "name": "创维销售",
+        "record_date": "2026-05-31",
+        "content": "创维销售的利用\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 87,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-11 02:01",
+            "content": "【5.11】\n1 已经完成从刷单、到ugc在到门店收集和直播四个方面的落地方案，今天给到爱心总并讨论。 \n2 创维社群的运营，已经和ollie输出了需求，并得到了相对应的资源回复，后续追踪落地。 \n3 真珍对接的，sap系统接入情况。",
+            "status": "正常",
+            "id": "1780250495445-hnstr8"
+          },
+          {
+            "time": "2026-05-25 02:01",
+            "content": "【5.25】创维+的社群的运营支持已经获取，璐璐总同同意，后续和Ollie沟通如何利用，并输出运营内容规划。 ",
+            "status": "正常",
+            "id": "1780250495922-yhkvep"
+          },
+          {
+            "time": "2026-05-18 02:01",
+            "content": "【5.18】已经交给爱心总 ",
+            "status": "正常",
+            "id": "1780250496512-47encf"
+          }
+        ],
+        "id": 100,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T18:02:06"
+      },
+      {
+        "name": "北师大合作项目",
+        "record_date": "2026-04-13",
+        "content": "与北师大心理学院合作项目\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:40",
+            "content": "【5.22更新】北师大心理、教育、AI学院合作，市场部已提供初步方案，25日召开电话会议确认细节后准备签约",
+            "status": "正常"
+          }
+        ],
+        "id": 101,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T16:42:06"
+      },
+      {
+        "name": "公司知识库体系建设",
+        "record_date": "2026-05-31",
+        "content": "【进展】1等组织架构2改为和项目管理系统融合成向量数据库",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "AI研发组",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 9,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 102,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T08:16:42"
+      },
+      {
+        "name": "品牌策略-更新品牌企划方案",
+        "record_date": "2026-05-31",
+        "content": "正在根据当前进展进行调研与整合更新品牌方案\n",
+        "status": "in_progress",
+        "urgency": "urgent",
+        "department": "公共设计组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 25,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:41",
+            "content": "【525】上周出差导致进度延迟本周完成",
+            "status": "延迟"
+          },
+          {
+            "time": "2026-05-18 23:41",
+            "content": "【5.18】关于品牌策略部分细节本周需要重新对齐下，本周应该可以完成",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 23:41",
+            "content": "【5.11】上周与策略供应商对齐新的发布节点，又讨论了一版名称策略，基于结论目前整合中，包括品牌策略、包装、后续规划安排等，尽快整合给出",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-06 23:41",
+            "content": "【5.06】基于调研，本周整合更新品牌方案，统一品牌侧的执行用法等细节",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 23:41",
+            "content": "【4.27】通过平台及营销侧的用户调研活动（产品用研、小红书活动等）与用户接触进行品牌调研（花名、用户产品概念认知）同期整合更新品牌方",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 23:42",
+            "content": "【4.20】4.17品牌策略汇报，基于此推进细节，重点有品牌传播性花名，落地性细节工作依据新的时间计划重新规划",
+            "status": "正常"
+          }
+        ],
+        "id": 103,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T15:42:57"
+      },
+      {
+        "name": "员工体检福利（卓正）",
+        "record_date": "2026-05-31",
+        "content": "医疗体检福利合作及流程建立\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 02:08",
+            "content": "【4.20】合同流程中，员工基础套餐公司承担，加项及家属可自费享受优惠价，核心团队成员加项也由公司承担费用",
+            "status": "正常",
+            "id": "1780250881072-dyo3ed"
+          },
+          {
+            "time": "2026-05-05 02:08",
+            "content": "【5.5】合同流程中，待完成比价优劣势对比后汇报",
+            "status": "正常",
+            "id": "1780250881626-fghtgn"
+          },
+          {
+            "time": "2026-05-11 02:08",
+            "content": "【5.11】本周四与Simon拜访沟通商务合作意向",
+            "status": "正常",
+            "id": "1780250882142-t6g113"
+          },
+          {
+            "time": "2026-05-18 02:08",
+            "content": "【5.18】分析报告已完成",
+            "status": "正常",
+            "id": "1780250882707-gbkrnk"
+          },
+          {
+            "time": "2026-05-25 02:08",
+            "content": "【5.25】待本周确认结果",
+            "status": "正常",
+            "id": "1780250898564-ox7juz"
+          }
+        ],
+        "id": 104,
+        "created_at": "2026-05-30T16:17:17",
+        "updated_at": "2026-05-31T18:09:01"
+      },
+      {
+        "name": "与气功协会合作八段锦等",
+        "record_date": "2026-04-20",
+        "content": "【进展】",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 02:26",
+            "content": "【0420】已就合作方案与体育总局气功协会做过两轮沟通。本周内会再出细案，包括“功法段位认证”等对方期望的功能。预计五一后去北京拜访，敲定合作细节",
+            "status": "正常",
+            "id": "1780252007104-kguoyl"
+          },
+          {
+            "time": "2026-04-27 02:26",
+            "content": "【0427】1、已提交最新合作提案；2、体育总局另一个校园主题系列活动“奔跑吧少年”提出可考虑将我们的游戏机中的适合游戏当作活动中的休闲竞技项目，已初步进行沟通。3、预计5月中旬去北京拜访敲定合作细节",
+            "status": "正常",
+            "id": "1780252007571-2gedp4"
+          },
+          {
+            "time": "2026-05-11 02:26",
+            "content": "【0511】授权费用，对方等我们开价",
+            "status": "正常",
+            "id": "1780252008105-6hgu0a"
+          },
+          {
+            "time": "2026-05-18 02:26",
+            "content": "【0518】拍摄询价：拍摄加后期处理约3万元全包，除开教练费用",
+            "status": "正常",
+            "id": "1780252008659-bzjk12"
+          }
+        ],
+        "id": 105,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T18:27:38"
+      },
+      {
+        "name": "公租房申请及租赁",
+        "record_date": "2026-05-31",
+        "content": "政府公租房福利合作\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 60,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-20 02:09",
+            "content": "【4.20】政府已分配最终房型，今天（周一）去现场查看，本月需确定并完成签约",
+            "status": "正常",
+            "id": "1780250954451-e5du8h"
+          },
+          {
+            "time": "2026-05-05 02:09",
+            "content": "【5.5】3套房钥匙已拿到，租赁合同已完成签署，待确定最终入住人",
+            "status": "正常",
+            "id": "1780250954963-5o1rk4"
+          },
+          {
+            "time": "2026-05-11 02:09",
+            "content": "【5.11】意向收集中",
+            "status": "正常",
+            "id": "1780250955457-6m3abc"
+          },
+          {
+            "time": "2026-05-25 02:09",
+            "content": "【5.25】名单已基本确认，待与员工最终沟通确认",
+            "status": "正常",
+            "id": "1780250955967-xculwv"
+          }
+        ],
+        "id": 106,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T18:09:57"
+      },
+      {
+        "name": "广州咏声IP授权",
+        "record_date": "2026-04-06",
+        "content": "获取猪猪侠授权\n【进展】【5.7更新】合同签署完毕",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 107,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-30T16:17:18"
+      },
+      {
+        "name": "V3版本白皮书制定",
+        "record_date": "2026-04-20",
+        "content": "确定620平台的开发内容\n",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 28,
+        "is_long_term": false,
+        "estimated_end_date": "2026-04-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:28",
+            "content": "【5月22日】需求评估已完成，本周进入开发周期",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 23:28",
+            "content": "【5月5日】本周评估需求，劳动节前完成需求评估。主要内容包括：高光时刻，自动续费，主界面优化调整。",
+            "status": "正常"
+          }
+        ],
+        "id": 108,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T15:28:43"
+      },
+      {
+        "name": "服务公众号搭建",
+        "record_date": "2026-04-20",
+        "content": "面向购机用户，提供服务与社区功能\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 45,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:08",
+            "content": "【5月22日】运营公众号搭建和内容制备，需要7月游戏发布计划。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 00:08",
+            "content": "【5月5日】规划中",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-20 00:08",
+            "content": "【4月20日】已经完成首轮规划，但是需要跟进620新时间点重新规划",
+            "status": "正常"
+          }
+        ],
+        "id": 109,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T16:08:50"
+      },
+      {
+        "name": "公司AI竞赛",
+        "record_date": "2026-05-31",
+        "content": "【进展】审核并确认AI竞赛报名",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "AI研发组",
+        "owner_name": "sunner",
+        "related_name": null,
+        "completion": 15,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 110,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T18:31:16"
+      },
+      {
+        "name": "品牌HC建设",
+        "record_date": "2026-05-31",
+        "content": "根据业务需求规划品牌测人力HC\n",
+        "status": "in_progress",
+        "urgency": "urgent",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 80,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 22:57",
+            "content": "【525】本周开始面试，并筛选新简历",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 22:58",
+            "content": "方案已经同步佳佳，这周给出当前具体招聘细则，已完成，跟进后续招聘面试，以及协调内部人员来开展工作，目前优先级很高",
+            "status": "正常"
+          }
+        ],
+        "id": 111,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T14:59:06"
+      },
+      {
+        "name": "游戏矩阵子品牌",
+        "record_date": "2026-04-27",
+        "content": "给各类游戏设定子品牌\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-06 20:52",
+            "content": "【进展】【0506】部分子品牌已提交美术设计",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 20:53",
+            "content": "【0427】子品牌讨论悦动产品矩阵子品牌规划",
+            "status": "正常"
+          }
+        ],
+        "id": 112,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T12:53:31"
+      },
+      {
+        "name": "展销模式版本方案规划",
+        "record_date": "2026-05-31",
+        "content": "完成展销模式方案规划",
+        "status": "completed",
+        "urgency": "high",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 76,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:29",
+            "content": "【5月22日】开发已完成，展示视频需求本周拉起启动",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 23:29",
+            "content": "【5月5日】展架模式廖斌已完成设计，安排V2版本P0开发。",
+            "status": "正常"
+          }
+        ],
+        "id": 113,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T15:29:40"
+      },
+      {
+        "name": "0510内部测试计划",
+        "record_date": "2026-05-31",
+        "content": "0510开始300人规模内部测试计划",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 74,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:30",
+            "content": "【进展】【5月22日】1、疑难问题已梳理。启动TAPD跟进。2、整理游戏上线运营验收规范。3、预整理运营阶段更新checklist表。4、测试的延长计划",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 23:30",
+            "content": "【5月5日】发机流程待细节推敲。5月9日宣讲。5月11日开始发机器。5月13日正式开测。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 23:30",
+            "content": "【4月27日】关键事项待确认",
+            "status": "待确认"
+          }
+        ],
+        "id": 114,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T15:30:49"
+      },
+      {
+        "name": "发布会-创意方案流程细化",
+        "record_date": "2026-05-31",
+        "content": "细化发布会的创意方案",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 00:05",
+            "content": "【525】服务商大概率确认，本周三会更新发布会流程细节内部讨论",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:05",
+            "content": "【518】本周二与潘帅彭晓伟去考察服务商，确认实力，以推进服务商的确认",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 00:05",
+            "content": "【进展】细化调优中，发布会时间更新后，量级与规模、形式都可能会调整，会再做出相应调整",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-05 00:05",
+            "content": "已安排新来的视频导演rex跟进此事项，并且在供应商确认后让其与供应商对接细化工作",
+            "status": "正常"
+          }
+        ],
+        "id": 115,
+        "created_at": "2026-05-30T16:17:18",
+        "updated_at": "2026-05-31T16:06:32"
+      },
+      {
+        "name": "IP产品分成规则",
+        "record_date": "2026-05-31",
+        "content": "讨论确定关于IP类产品如何计算分成规则",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 29,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:37",
+            "content": "【5月22日】无进展",
+            "status": "阻塞"
+          },
+          {
+            "time": "2026-05-05 00:37",
+            "content": "【5月5日】先给了基于内容包的分成规则和推算，供孩之宝签约。基于月卡的分成规则规划中。",
+            "status": "正常"
+          },
+          {
+            "time": "2026-04-27 00:37",
+            "content": "【4月27日】本周发起讨论",
+            "status": "正常"
+          }
+        ],
+        "id": 116,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T16:39:11"
+      },
+      {
+        "name": "动态PPT工作流",
+        "record_date": "2026-05-31",
+        "content": "将平面PPT动态化",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 49,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 00:43",
+            "content": "【518】周二审核讨论最新效果",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 00:43",
+            "content": "上周已经完成初步测试实现PPT封面动画动态呈现，这周会继续完善，以安排视频导演rex负责跟进，目前有一版方案，目前",
+            "status": "正常"
+          }
+        ],
+        "id": 117,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T16:44:05"
+      },
+      {
+        "name": "长图形式的对外产品介绍",
+        "record_date": "2026-05-31",
+        "content": "配合邀请函使用的详情页\n【进展】经过持续修改与调优，已完成所需求版本，接下是发布会需要的产品手册三折页等其他相关物料内容，内容会以此为参照进行调优",
+        "status": "completed",
+        "urgency": "high",
+        "department": "品牌",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 118,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-30T16:17:19"
+      },
+      {
+        "name": "生成品牌宣传视频工作流",
+        "record_date": "2026-05-31",
+        "content": "快捷开发品牌宣传视频\n【进展】可以开始应用",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 119,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T08:10:26"
+      },
+      {
+        "name": "NFC卡打样需求",
+        "record_date": "2026-04-01",
+        "content": "共计4家供应商同时跟进\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 90,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:42",
+            "content": "【5.22更新】钥匙卡协议签署完毕；NFC卡2家合同签署完毕归档；隽思条件确认，等待合同邮寄；姚记放弃",
+            "status": "正常"
+          }
+        ],
+        "id": 120,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T16:42:29"
+      },
+      {
+        "name": "飞书迁移",
+        "record_date": "2026-05-31",
+        "content": "内部办公迁移飞书，企业微信主用于与数字沟通\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 51,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-05 02:12",
+            "content": "【5.5】待确认是否需要购买企业标准版，目前储存容量已不足10%，免费版不支持单独购买，标准版收费折后540元/人/年（原价600元/人/年），100人就是54000的年费https://bytedance.larkoffice.com/wiki/YcxYwOTqqiwqRLkQMc4cJJvgnfc?from=from_copylink",
+            "status": "正常",
+            "id": "1780251120469-nfe1b0"
+          },
+          {
+            "time": "2026-05-11 02:12",
+            "content": "【5.11】已确认购买专业版，优惠八折，提前近1个月开始使用，争取今明两天启用后补流程",
+            "status": "正常",
+            "id": "1780251121011-urtvvb"
+          },
+          {
+            "time": "2026-05-25 02:12",
+            "content": "【5.25】合同流程中，法务、财务审核",
+            "status": "正常",
+            "id": "1780251121557-5vdjki"
+          }
+        ],
+        "id": 121,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T18:12:36"
+      },
+      {
+        "name": "小红书好物节参展",
+        "record_date": "2026-05-31",
+        "content": "品牌物料、调研等\n【进展】第一次对外的产品展示，基础物料搭建，观众接待、调研",
+        "status": "completed",
+        "urgency": "urgent",
+        "department": "品牌",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 122,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-30T16:17:19"
+      },
+      {
+        "name": "创维电视的兼容识别和专门适配",
+        "record_date": "2026-05-31",
+        "content": "沟通创维电视方面，对游戏机增加专门的适配模式",
+        "status": "planned",
+        "urgency": "low",
+        "department": "产品",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-04-27 20:23",
+            "content": "和彩电方面沟通，解决可能存在的适配问题，同时增加专门的识别适配功能，先与彩电方面沟通需求\n",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-07 20:24",
+            "content": "【5.7更新】跟谢总，勇哥初步讨论过，三星电视对盒子的响应确实如此，后续针对创维电视的适配再讨论一个方案",
+            "status": "正常"
+          }
+        ],
+        "id": 123,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T12:24:59"
+      },
+      {
+        "name": "品牌建设-官号矩阵",
+        "record_date": "2026-05-31",
+        "content": "建设官方社交媒体账号矩阵，包括抖音、小红书、公众号、视频号",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 23:34",
+            "content": "目前在前端后端都有官号，对各平台官号梳理，协调统一好功能分类等\n【进展】矩阵已完成初步梳理，涉及多部门共同使用与维护，要营销与平台同学同步更新对齐信息，通过《新媒体矩阵登记表》进行管理，本周一内部会议对齐。抖音、小红书、公众号、视频号已经完成注册上线",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-22 23:34",
+            "content": "【525】本周有时间的话对一下内容进度",
+            "status": "待讨论"
+          }
+        ],
+        "id": 124,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T15:35:12"
+      },
+      {
+        "name": "品牌UX-线上",
+        "record_date": "2026-05-31",
+        "content": "品牌产品体验与场景管理，系统、游戏内容等环节侧的品牌植入工作，通过体验去整合方案，时间调整后现在可以提上进程\n【进展】先做梳理讨论，排期中",
+        "status": "planned",
+        "urgency": "low",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 125,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T12:57:55"
+      },
+      {
+        "name": "品牌UX线上-品牌声音",
+        "record_date": "2026-05-31",
+        "content": "创作品牌声音元素\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 35,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 00:30",
+            "content": "【525】主旋律已经有了，今天确定具体放入系统的版本",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:30",
+            "content": "【518】上周收到4版BGM Demo，结合多方意见已输出新的反馈方案，需要完善开机相关流程中所有音效，",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 00:30",
+            "content": "对接内部制作人伟森启动制作，本周拿到初版demo，先从开机动画切入，波哥在跟进动画，开机动画确认后进行音乐工作安排",
+            "status": "正常"
+          }
+        ],
+        "id": 126,
+        "created_at": "2026-05-30T16:17:19",
+        "updated_at": "2026-05-31T16:31:29"
+      },
+      {
+        "name": "小屏动画和开机动画的运营替换规划",
+        "record_date": "2026-05-31",
+        "content": "在机器的小屏和游戏的开机动画实现可运营替换的内容，并制定运营替换的工作流程",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 41,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:06",
+            "content": "【5.25】已经确定技术可行，本周开始技术实现，同步小屏动画一起开始实现；",
+            "status": "正常"
+          }
+        ],
+        "id": 127,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T15:06:18"
+      },
+      {
+        "name": "公司内部seedance2.0页面",
+        "record_date": "2026-05-31",
+        "content": "公司内部部署接口，可扩展权限\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 65,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 00:45",
+            "content": "【518】目前推进合同付款阶段，申请域名中",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:45",
+            "content": "【525】已上线，待合同和付款落地",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-04 00:45",
+            "content": "【进展】预计5.10前部署；",
+            "status": "正常"
+          }
+        ],
+        "id": 128,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T16:46:11"
+      },
+      {
+        "name": "组建动画类型产品的内容生成团队",
+        "record_date": "2026-05-31",
+        "content": "组建一个针对动画类型产品的内容创作生成小组\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "游戏研发部",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 52,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 02:13",
+            "content": "【525】上周已经到岗，首要解决舞蹈实现问题：\n1.跳帧\n2.色彩变色\n3.音乐卡点",
+            "status": "正常",
+            "id": "1780251214849-1z654u"
+          },
+          {
+            "time": "2026-05-18 02:13",
+            "content": "【518】本周团队负责人到岗",
+            "status": "正常",
+            "id": "1780251219371-7igaum"
+          }
+        ],
+        "id": 129,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T18:13:59"
+      },
+      {
+        "name": "发布会-窝总演讲环节及物料准备",
+        "record_date": "2026-05-31",
+        "content": "涉及到产品、视频、演讲内容展示等\n【进展】根据发布会新调整情况而定，随流程细化调优节奏推进",
+        "status": "planned",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 47,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 130,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-06-01T04:35:53"
+      },
+      {
+        "name": "酒店模式的开发和商谈",
+        "record_date": "2026-05-31",
+        "content": "开发适合酒店亲子房的商业版本，并与酒店洽谈沟通合作模式",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 18,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-06 00:38",
+            "content": "【0506】酒店模式已经完成初稿大纲，等待细节沟通",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-22 00:38",
+            "content": "【进展】【5月22日】无进展",
+            "status": "阻塞"
+          }
+        ],
+        "id": 131,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T16:38:58"
+      },
+      {
+        "name": "成立设计中台",
+        "record_date": "2026-05-31",
+        "content": "整合组建一个公共的设计部门\n【进展】【0506】确认guoki负责部门的人员名单和相关工作规划",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "综合",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 132,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-30T16:17:20"
+      },
+      {
+        "name": "剧集模式产品制作资源",
+        "record_date": "2026-05-01",
+        "content": "剧集产品资源列表\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 00:42",
+            "content": "【5.25】本周必须有具体进展",
+            "status": "阻塞"
+          },
+          {
+            "time": "2026-05-21 00:43",
+            "content": "【5.21更新】了解目前市场上漫剧制作以及成本问题",
+            "status": "正常"
+          }
+        ],
+        "id": 133,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T16:43:19"
+      },
+      {
+        "name": "玩具生产商资源",
+        "record_date": "2026-05-01",
+        "content": "拥有设计枪支的经验厂商\n",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": "2026-07-31",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 23:41",
+            "content": "【5.22更新】与申华沟通后，采取找到对应设计公司，然后让设计公司监督生产的模式",
+            "status": "正常"
+          }
+        ],
+        "id": 134,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T15:41:23"
+      },
+      {
+        "name": "IP合作方合作整理",
+        "record_date": "2026-05-01",
+        "content": "确认市场营销素材使用情况\n【进展】【5.18更新】所有厂商确认条件，素材需要给到审核后可用于市场营销",
+        "status": "completed",
+        "urgency": "high",
+        "department": "商务",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-31",
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 135,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-30T16:17:20"
+      },
+      {
+        "name": "品牌UX线下-展销模式营销视频",
+        "record_date": "2026-05-31",
+        "content": "用于线下营销场景，基于产品硬件互动待机时候展示，或直接视频展示",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 54,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:48",
+            "content": "【525】上周需求Ollie已经给到爱心总",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 23:48",
+            "content": "【5.18】上周进一步对齐需求，在现主视频基础上可以复用",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-11 23:48",
+            "content": "【5.11】上周已对接创意方向，本周给到初版的策划方案",
+            "status": "正常"
+          }
+        ],
+        "id": 136,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T15:48:28"
+      },
+      {
+        "name": "销售服务商落地",
+        "record_date": "2026-05-31",
+        "content": "KOL的塞选和考核，直播间的搭建，快闪店的配合等\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 28,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-11 01:49",
+            "content": "【5.11】\n1 整体对接流程的沟通，避免出现越过创想悦动直接和创维对焦的情况。 \n2 服务商整体方案落地性不强，过于理想化，需要反复沟通帮助他们理解产品前期的困难性，做好备案",
+            "status": "正常",
+            "id": "1780249780959-q24nqi"
+          },
+          {
+            "time": "2026-05-18 01:49",
+            "content": "【518】景心方案调整，聚焦核心达人板块种草销售，100个koc的前期体验官，团购门店价值梳理；亿玛PPT格式优化，下周一在视频会议；两家合计方案招标办已审批通过，下周发合同执行。              ",
+            "status": "正常",
+            "id": "1780249781463-qat23h"
+          },
+          {
+            "time": "2026-05-25 01:49",
+            "content": "【5.25】\n1 景心输出了新的方案，前置费问题耽误合同进度，已解决，本周服务组织组织人员到位，直播间定于佛山，账号本周开设好。",
+            "status": "正常",
+            "id": "1780249781974-1896ak"
+          }
+        ],
+        "id": 137,
+        "created_at": "2026-05-30T16:17:20",
+        "updated_at": "2026-05-31T17:50:22"
+      },
+      {
+        "name": "IP的应用需求",
+        "record_date": "2026-05-31",
+        "content": "所有IP在销售单的应用：抖音、京东、小红书、直播间、线下销售等\n【进展】【5.18】已经输出给到Simon\n【5.11】今天输出给到Simon",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 83,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 138,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T08:12:42"
+      },
+      {
+        "name": "建设销售端反馈机制",
+        "record_date": "2026-05-31",
+        "content": "销售端、服务商和用户的问题反馈、判断、跟进和修复",
+        "status": "planned",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-11 02:22",
+            "content": "【5.11】小红书体验端问题已发群待反馈",
+            "status": "正常",
+            "id": "1780251757997-22ckee"
+          }
+        ],
+        "id": 139,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T18:22:46"
+      },
+      {
+        "name": "品牌UX-线下",
+        "record_date": "2026-05-31",
+        "content": "品牌线下体验与场景管理，包括且不限于发布会、快闪店、展会、摊位、线下活动、各层级各类型营销门店等所有线下场景的品牌体验\n【进展】先做梳理讨论，排期中",
+        "status": "planned",
+        "urgency": "low",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 29,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 140,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T12:58:01"
+      },
+      {
+        "name": "下一代芯片需求讨论",
+        "record_date": "2026-05-31",
+        "content": "下个armlogic供应商提出下一代游戏机的芯片规格需求\n【进展】供应链的段总提出组织和供应商提前开始讨论下一代游戏机芯片的开发需求",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 10,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 10:13",
+            "content": "供应链的段总提出组织和供应商提前开始讨论下一代游戏机芯片的开发需求",
+            "status": "正常"
+          }
+        ],
+        "id": 141,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T12:15:13"
+      },
+      {
+        "name": "社群运营",
+        "record_date": "2026-05-31",
+        "content": "如何增加粉丝，运营粉丝，发展KOC和最终销售\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 32,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:47",
+            "content": "【5.25】本周无进度",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 23:47",
+            "content": "【5.18】美的一个7年社群运营经验的已经同意入职，预计月底到岗。",
+            "status": "正常"
+          }
+        ],
+        "id": 142,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T15:47:40"
+      },
+      {
+        "name": "营销部游戏体验反馈",
+        "record_date": "2026-05-31",
+        "content": "每天半小时，针对游戏和产品，给出针对性bug的发现和体验建议\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "营销销售部",
+        "owner_name": "Jack",
+        "related_name": null,
+        "completion": 19,
+        "is_long_term": true,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 01:50",
+            "content": "【5.25】https://docs.qq.com/sheet/DTnhOWmZWU09GWk5L",
+            "status": "正常",
+            "id": "1780249846666-ffvtbl"
+          },
+          {
+            "time": "2026-05-18 01:50",
+            "content": "【5.18】给策划输出了多款游戏建议",
+            "status": "正常",
+            "id": "1780249846922-fkubz9"
+          }
+        ],
+        "id": 143,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T18:10:26"
+      },
+      {
+        "name": "513测试复盘会议",
+        "record_date": "2026-05-31",
+        "content": "本轮测试结束后要组织一次全项目的复盘会议\n【进展】已完成",
+        "status": "completed",
+        "urgency": "urgent",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 100,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 144,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T05:47:22"
+      },
+      {
+        "name": "发明专利申请",
+        "record_date": "2026-05-31",
+        "content": "申请发明专利",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "申华",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 20:28",
+            "content": "【5.25更新】开始填申请表，预计5.26给一版",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 20:28",
+            "content": "【5.18】跟数字张鑫总讨论跟进",
+            "status": "正常"
+          }
+        ],
+        "id": 145,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T12:29:04"
+      },
+      {
+        "name": "展销模式开发",
+        "record_date": "2026-05-23",
+        "content": "开发适合商场和展会展示的展销模式",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": "2026-05-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-13 22:23",
+            "content": "【513】预计可以提前一周完成",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-28 22:23",
+            "content": "人员变动，项目需要延迟",
+            "status": "延迟"
+          }
+        ],
+        "id": 146,
+        "created_at": "2026-05-30T16:17:21",
+        "updated_at": "2026-05-31T14:24:11"
+      },
+      {
+        "name": "品牌宣传2B-GameJam天津站活动现场产品展示",
+        "record_date": "2026-05-31",
+        "content": "出差参加2B-GameJam天津站现场活动",
+        "status": "completed",
+        "urgency": "high",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 44,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:16",
+            "content": "合作CP主办为我们安排了免费展示区域、电视以及当地资源对接，需要安排两个易拉宝 【进展】对外2B场合展示产品收集信息，沟通GameJam承办，激活独立游戏圈相关资源，对接天津区域资源。展会总结：洞察：家长是否也能玩（例如男性向射击、女性向瑜伽等）决定了家长对产品价值的认知和付费意愿；无论是否被种草，线下体验的感受将最大化的决定销售转化，线下部分要更被重视，合作意愿：仙剑的制作人在做银发游戏生态布局，希望能结合我们的产品，建议：苹果提出如果我们硬件成本高，未来商业主要靠内容生态，建议可以出支持iPhone的app版本（试玩尝新lite版本，能拿到苹果推荐的话，个人感觉可以考虑），罗斯基从硬件价格门槛角度提出考虑面向低端消费者可以考虑只摄像头的便宜版本用云游戏做内容和算力（可能与我们的定位相悖），资源：专为游戏服务的法务（硬件版权保护：实用新型专利注册、稳定性评价报告）独立游戏开发者转为活动服务商（拼命玩三郎）VAST的Tripo Studio用AI生成三D资产，独立之光Tony，纸上游戏工坊，业内专门研究游戏0-1的部分，计划6月初来深圳，有邀请其来拜访，游戏玩法体验方面可以做一些交流，会有帮助",
+            "status": "正常"
+          }
+        ],
+        "id": 147,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T15:17:46"
+      },
+      {
+        "name": "广州亚洲乐园及景点博览会",
+        "record_date": "2026-05-31",
+        "content": "半天参会\n【进展】收集了很多线下源头供应商的手册和信息，为发布会、线下活动的提供储备",
+        "status": "completed",
+        "urgency": "medium",
+        "department": "品牌",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 148,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-30T16:17:22"
+      },
+      {
+        "name": "品牌建设-周边规划与需求",
+        "record_date": "2026-05-31",
+        "content": "用于发布会及运营活动中的品牌礼品\n",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 31,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:57",
+            "content": "【525】上周已经完成了规划与优先级排序，这周和Ollie等相关同事确认下并提交需求",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 23:57",
+            "content": "【进展】本周内完成规划与需求提交，优先安排执行周期短的类别，尽可能安排需要开模的类别，需要设计与商务的支持，以及需要确认此部分预算归属",
+            "status": "正常"
+          }
+        ],
+        "id": 149,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T15:57:26"
+      },
+      {
+        "name": "品牌宣传物料内容规划与需求",
+        "record_date": "2026-05-31",
+        "content": "宣传手册、折页、宣传单等用于正式对外时的外宣内容类物料的设计规划和需求提出\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 20,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-28 00:31",
+            "content": "在品牌策略更新版PPT基础上进行具体内容规划与安排，如果时间来不及就同步安排，计划本月内完成内容确认，因为目前还没有品牌策划，可能还是需要营销和运营的文案同事来协助",
+            "status": "正常"
+          }
+        ],
+        "id": 150,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-06-01T04:36:54"
+      },
+      {
+        "name": "品牌UX-线下-SI规划",
+        "record_date": "2026-05-31",
+        "content": "线下展示包括品牌店、快闪店、线下活动搭建等产销呈现",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 31,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 00:32",
+            "content": "上周与爱心总招聘的接口人郁鑫沟通了线下UX中SI部分的规划思路，对方会去做具体规划方案，待其进一方案反馈",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-25 00:32",
+            "content": "【525】与窝总一起对了方向，需要郁鑫给出更具体的场地数据，本周碰的话，基于展会上的洞察会提出新的建议",
+            "status": "正常"
+          }
+        ],
+        "id": 151,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T16:32:48"
+      },
+      {
+        "name": "品牌异业合作-线下渠道-奈尔宝",
+        "record_date": "2026-05-31",
+        "content": "配合营销考察奈尔宝两家门店，沟通合作模式与落地方案\n",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 43,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 00:32",
+            "content": "【525】待营销确认进度，会考虑其发布会场地",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:32",
+            "content": "【进展】奈尔宝自称为室内迪士尼，用户高度重合，现场场地属性一致，在条件合适的情况下，可以考虑做各类深度联动，甚至作为发布会场地也可以考虑，可以省去很多气氛搭建，",
+            "status": "正常"
+          }
+        ],
+        "id": 152,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T16:33:22"
+      },
+      {
+        "name": "品牌PR-舆情管理-竞品关注",
+        "record_date": "2026-05-31",
+        "content": "关注与我们业务相关的行业动态与未来舆情\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 9,
+        "is_long_term": true,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:34",
+            "content": "【进展】发现天津元气悦动科技有限公司，科大讯飞投资，在做2B相关的体感、体育业务，业务中有很多区域学校的中标、自有IP形象的著作权申请，已反馈给商务同事，建议评估下与我方的未来交叉关系",
+            "status": "正常"
+          }
+        ],
+        "id": 153,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T18:32:04"
+      },
+      {
+        "name": "品牌PR-专家背书资源应用规划",
+        "record_date": "2026-05-31",
+        "content": "应simon专家沟通需求，需要提供未来规划\n",
+        "status": "planned",
+        "urgency": "medium",
+        "department": "品牌宣传组",
+        "owner_name": "Leon",
+        "related_name": null,
+        "completion": 25,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 02:19",
+            "content": "【525】上周提交了部分需求建议，计划本周内与对方会议",
+            "status": "正常",
+            "id": "1780251567754-37cjhq"
+          },
+          {
+            "time": "2026-05-22 02:19",
+            "content": "需要与营销商务同事一起讨论可能的应用场景与复用性后确认，",
+            "status": "正常",
+            "id": "1780251573109-25nyym"
+          }
+        ],
+        "id": 154,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T18:19:50"
+      },
+      {
+        "name": "中华气功协会合作项目",
+        "record_date": "2026-05-01",
+        "content": "确定我方合作意向\n",
+        "status": "planned",
+        "urgency": "low",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 60,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 01:47",
+            "content": "【5.22更新】目前对方给与条件待我方确认",
+            "status": "待确认",
+            "id": "1780249652354-atmwec"
+          }
+        ],
+        "id": 155,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T17:47:55"
+      },
+      {
+        "name": "团结引擎去水印采购需求",
+        "record_date": "2026-05-18",
+        "content": "打包去水印的商务条件沟通\n【进展】【5.22更新】目前等待周一对方给我方协议确认具体条件\n【5.25】讨论尽快去上海和unity方面当面沟通",
+        "status": "in_progress",
+        "urgency": "urgent",
+        "department": "商务合作部",
+        "owner_name": "simon",
+        "related_name": null,
+        "completion": 40,
+        "is_long_term": false,
+        "estimated_end_date": "2026-06-30",
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 10:19",
+            "content": "目前等待周一对方给我方协议确认具体条件",
+            "status": "待确认"
+          },
+          {
+            "time": "2026-05-25 10:20",
+            "content": "决定是否要去上海和unity方面当面沟通",
+            "status": "等待"
+          }
+        ],
+        "id": 156,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T16:53:23"
+      },
+      {
+        "name": "内测游戏上线",
+        "record_date": "2026-05-31",
+        "content": "完成内测计划游戏上线计划",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "游戏研发部",
+        "owner_name": "Noice",
+        "related_name": null,
+        "completion": 70,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 23:48",
+            "content": "【0525】目前还缺卡丁车、萝卜蹲、萌鸡、流光庭径、超级飞侠5个产品未上线。预计本周内全部上线",
+            "status": "正常"
+          }
+        ],
+        "id": 157,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T18:31:35"
+      },
+      {
+        "name": "内容增值业务分销",
+        "record_date": "2026-05-31",
+        "content": "沟通分销机制和开发分销系统",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 18,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-22 00:09",
+            "content": "【5月22日】销售代表的CRM使用指导计划，本周宣讲",
+            "status": "正常"
+          },
+          {
+            "time": "2026-05-18 00:09",
+            "content": "【5月18日】已与对方就规则达成一致，本周启动开发",
+            "status": "正常"
+          }
+        ],
+        "id": 158,
+        "created_at": "2026-05-30T16:17:22",
+        "updated_at": "2026-05-31T16:09:58"
+      },
+      {
+        "name": "26年端午福利",
+        "record_date": "2026-05-31",
+        "content": "员工+赠礼福利区分意见\n",
+        "status": "in_progress",
+        "urgency": "low",
+        "department": "人资行政组",
+        "owner_name": "Jenny",
+        "related_name": null,
+        "completion": 30,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 02:12",
+            "content": "【5.25】已有备选方案待讨论确认",
+            "status": "待确认",
+            "id": "1780251171580-7aodi3"
+          }
+        ],
+        "id": 159,
+        "created_at": "2026-05-30T16:17:23",
+        "updated_at": "2026-05-31T18:13:20"
+      },
+      {
+        "name": "增量更新方案",
+        "record_date": "2026-05-31",
+        "content": "开发增量更新功能",
+        "status": "planned",
+        "urgency": "low",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 161,
+        "created_at": "2026-05-30T16:17:23",
+        "updated_at": "2026-05-31T08:10:16"
+      },
+      {
+        "name": "美术供应商创作概览",
+        "record_date": "2026-05-31",
+        "content": "给美术cp使用的创作方向需求指导",
+        "status": "in_progress",
+        "urgency": "medium",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 162,
+        "created_at": "2026-05-30T16:17:23",
+        "updated_at": "2026-05-31T13:05:12"
+      },
+      {
+        "name": "官网改版",
+        "record_date": "2026-05-20",
+        "content": "对外官网整体改版，包含首页/产品/案例三大模块；本周完成视觉评审，下周进入前端开发阶段，需协调设计与后端接口排期，预计 6 月中旬上线灰度。",
+        "status": "in_progress",
+        "urgency": "high",
+        "department": "公共设计组",
+        "owner_name": "Guoki",
+        "related_name": null,
+        "completion": 75,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-18 10:11",
+            "content": "本周完成视觉评审，下周进入前端开发阶段，需协调设计与后端接口排期，预计 6 月中旬上线灰度。",
+            "status": "正常"
+          }
+        ],
+        "id": 163,
+        "created_at": "2026-05-30T17:12:03",
+        "updated_at": "2026-05-31T07:11:40"
+      },
+      {
+        "name": "移动端APP",
+        "record_date": "2026-05-18",
+        "content": "因支付合规材料待补充，项目暂停一周，等待法务确认后恢复。",
+        "status": "paused",
+        "urgency": "urgent",
+        "department": "平台运营部",
+        "owner_name": "Ollie",
+        "related_name": null,
+        "completion": 50,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": null,
+        "id": 164,
+        "created_at": "2026-05-30T17:12:03",
+        "updated_at": "2026-05-31T05:54:58"
+      },
+      {
+        "name": "数据中台一期",
+        "record_date": "2026-05-22",
+        "content": "立项中（请松哥补充完善内容）",
+        "status": "planned",
+        "urgency": "medium",
+        "department": "基础产品部",
+        "owner_name": "Ericsong",
+        "related_name": null,
+        "completion": 5,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-25 11:17",
+            "content": "内部立项审查中",
+            "status": "正常"
+          }
+        ],
+        "id": 165,
+        "created_at": "2026-05-30T17:12:03",
+        "updated_at": "2026-05-31T12:33:29"
+      },
+      {
+        "name": "测试项目123",
+        "record_date": "2026-06-01",
+        "content": "这是一个用于测试的项目",
+        "status": "planned",
+        "urgency": "high",
+        "department": "公司核心组",
+        "owner_name": "walker",
+        "related_name": null,
+        "completion": 0,
+        "is_long_term": false,
+        "estimated_end_date": null,
+        "actual_end_date": null,
+        "progress_log": [
+          {
+            "time": "2026-05-05 01:16",
+            "content": "测试项目需要讨论",
+            "status": "待讨论",
+            "id": "1780247802596-zocork"
+          },
+          {
+            "time": "2026-05-31 01:17",
+            "content": "三天以后再说",
+            "status": "待讨论",
+            "id": "1780247873590-1wmnxw",
+            "reply_to": "1780247802596-zocork"
+          },
+          {
+            "time": "2026-06-01 01:17",
+            "content": "现在没有进展没有",
+            "status": "正常",
+            "id": "1780247825302-evt65j"
+          },
+          {
+            "time": "2026-06-01 01:17",
+            "content": "12345678",
+            "status": "正常",
+            "id": "1780247837657-mnng8l"
+          },
+          {
+            "time": "2026-05-11 01:27",
+            "content": "需要确认",
+            "status": "待确认",
+            "id": "1780248432686-zbzoym"
+          },
+          {
+            "time": "2026-06-01 01:27",
+            "content": "好的确认了",
+            "status": "待确认",
+            "id": "1780248449668-uo9rha",
+            "reply_to": "1780248432686-zbzoym"
+          },
+          {
+            "time": "2026-06-01 16:42",
+            "content": "又不行了",
+            "status": "正常",
+            "id": "1780303350483-5ehzln",
+            "annotations": [
+              {
+                "id": "ann-1780307809763-8b43e7",
+                "author_name": "刘丹",
+                "content": "怎么又不行了？",
+                "created_at": "2026-06-01 09:56:49",
+                "replies": []
+              }
+            ]
+          },
+          {
+            "time": "2026-06-01 16:42",
+            "content": "真的不行",
+            "status": "正常",
+            "id": "1780303369596-ifhado",
+            "annotations": [
+              {
+                "id": "ann-1780306192940-vfjzn7",
+                "author_name": "刘丹",
+                "content": "再试试行不",
+                "created_at": "2026-06-01 09:29:52",
+                "replies": [
+                  {
+                    "id": "ann-1780306216109-c4mdbg",
+                    "author_name": "刘丹",
+                    "content": "必须可以吧",
+                    "created_at": "2026-06-01 09:30:16"
+                  },
+                  {
+                    "id": "ann-1780306243561-ob02ki",
+                    "author_name": "刘丹",
+                    "content": "我能说话不",
+                    "created_at": "2026-06-01 09:30:43"
+                  },
+                  {
+                    "id": "ann-1780307835667-gmd0bi",
+                    "author_name": "刘丹",
+                    "content": "说不清楚",
+                    "created_at": "2026-06-01 09:57:15"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "time": "2026-06-01 17:54",
+            "content": "进展报告",
+            "status": "正常",
+            "id": "1780307643977-9xapxd",
+            "attachments": [
+              {
+                "url": "https://vcnh9b93ttlx.feishu.cn/docx/IsRIdYZs2oknGqxRcRpcVCFjnYd?from=from_copylink",
+                "title": "攻坚周报",
+                "added_at": "2026-06-01 10:09:54"
+              }
+            ]
+          },
+          {
+            "time": "2026-06-01 18:10",
+            "content": "搞定！！！",
+            "status": "正常",
+            "id": "1780308655442-vmpjwh"
+          },
+          {
+            "time": "2026-06-01 18:14",
+            "content": "再试试呗",
+            "status": "正常",
+            "id": "1780308842721-bjeb57"
+          },
+          {
+            "time": "2026-06-01 21:34",
+            "content": "完了，发不了了",
+            "status": "正常",
+            "id": "1780320862854-sqgcp4"
+          }
+        ],
+        "id": 166,
+        "created_at": "2026-05-31T17:16:42",
+        "updated_at": "2026-06-01T13:35:11"
+      }
+    ],
+    "tasks": [],
+    "risks": [],
+    "events": []
+  }
+}

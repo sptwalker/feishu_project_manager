@@ -61,6 +61,8 @@ export interface ProgressEntry {
   reply_to?: string | null
   annotations?: Annotation[] | null
   attachments?: DocumentAttachment[] | null
+  // 仅前端编辑态使用的临时标记：标识本次编辑会话中新增（点"添加一条"）的行，用于显示"周会记录："标签。不持久化到后端。
+  _isNew?: boolean
 }
 
 export interface MeetingState {
