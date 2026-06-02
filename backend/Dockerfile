@@ -9,7 +9,10 @@ WORKDIR /app/backend
 
 # 先装依赖（利用层缓存）
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip config set global.index-url https://repo.huaweicloud.com/repository/pypi/simple && \
+    pip config set global.trusted-host repo.huaweicloud.com && \
+    pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # 复制应用代码到 /app/backend
 COPY . /app/backend
