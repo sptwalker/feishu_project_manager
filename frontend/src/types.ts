@@ -184,3 +184,12 @@ export interface Token {
   refresh_token: string
   token_type: string
 }
+
+export interface OperationLog {
+  id: number
+  user_name: string
+  action: string
+  target?: string | null
+  description: string
+  occurred_at: string
+}

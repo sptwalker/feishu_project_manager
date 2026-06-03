@@ -172,3 +172,8 @@ def build_meeting_open_card(session: int, public_url: str,
             "并在下次周会上集中汇报。")
     return build_notification_card(f"周会模式已开启 · 第 {session} 次", [body], HEADER_GREEN)
 
+
+def build_meeting_reminder_card(session: int, body: str) -> Dict[str, Any]:
+    """周会自动催更卡片（发核心组群）。标题同开启卡片，正文为催更文案。"""
+    return build_notification_card(f"周会模式已开启 · 第 {session} 次", [body], HEADER_GREEN)
+

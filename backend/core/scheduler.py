@@ -70,6 +70,21 @@ def _build_scheduler() -> AsyncIOScheduler:
                         minute=settings.AUTO_MEETING_MINUTE),
             id="auto_open_meeting", replace_existing=True,
         )
+        # 周会自动催更①/②（每周五/周日 14:00）；运行时由 DB 开关 + active 守卫控制是否真发
+        scheduler.add_job(
+            scheduler_jobs.job_meeting_reminder_one,
+            CronTrigger(day_of_week=settings.AUTO_REMINDER1_DAY,
+                        hour=settings.AUTO_REMINDER_HOUR,
+                        minute=settings.AUTO_REMINDER_MINUTE),
+            id="meeting_reminder_one", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_meeting_reminder_two,
+            CronTrigger(day_of_week=settings.AUTO_REMINDER2_DAY,
+                        hour=settings.AUTO_REMINDER_HOUR,
+                        minute=settings.AUTO_REMINDER_MINUTE),
+            id="meeting_reminder_two", replace_existing=True,
+        )
     return scheduler
 
 

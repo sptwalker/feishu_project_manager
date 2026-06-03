@@ -24,6 +24,9 @@
       <el-tab-pane label="其他设置" name="other">
         <OtherSettings />
       </el-tab-pane>
+      <el-tab-pane label="系统日志" name="logs">
+        <SystemLog />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -33,6 +36,7 @@ import { ref } from 'vue'
 import UserManagement from '@/components/UserManagement.vue'
 import DepartmentManagement from '@/components/DepartmentManagement.vue'
 import OtherSettings from '@/components/OtherSettings.vue'
+import SystemLog from '@/components/SystemLog.vue'
 
 const activeTab = ref('users')
 </script>

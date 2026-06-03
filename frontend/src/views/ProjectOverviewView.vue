@@ -10,12 +10,12 @@
         <el-autocomplete
           v-model="keyword"
           :fetch-suggestions="querySearch"
-          placeholder="搜索项目名称 / 负责人 / 部门"
+          placeholder="搜索项目 / 负责人 / 部门 / 进展 / 批注…"
           clearable
           :prefix-icon="Search"
           :trigger-on-focus="false"
           value-key="value"
-          style="width: 260px; margin-right: 60px"
+          style="width: 300px; margin-right: 60px"
           @select="onSelectSuggestion"
         >
           <template #default="{ item }">
@@ -219,24 +219,78 @@ function getDepartmentShortName(deptName?: string | null) {
   return findDepartment(deptName)?.short_name || ''
 }
 
-/* 智能补齐搜索：按 项目名 / 负责人 / 部门(全称或简称) 匹配，下拉候选含副信息 */
+/* 汇总一个项目的全部可搜索文本：名称/说明/部门(全称+简称)/负责人/相关人/
+   状态与优先级(中英)/全部进展(内容+状况)/全部批注与回复(内容+作者)。
+   缓存到 WeakMap，避免每次按键重复拼接大字符串。 */
+const _searchBlobCache = new WeakMap<Project, string>()
+function projectSearchBlob(p: Project): string {
+  const cached = _searchBlobCache.get(p)
+  if (cached) return cached
+  const parts: string[] = [
+    p.name,
+    p.content || '',
+    p.department || '',
+    getDepartmentShortName(p.department),
+    p.owner_name || '',
+    p.related_name || '',
+    p.status, statusLabel(p.status),
+    p.urgency, urgText(p.urgency),
+  ]
+  for (const e of (p.progress_log ?? [])) {
+    parts.push(e.content || '', e.status || '')
+    for (const a of (e.annotations ?? [])) {
+      parts.push(a.content || '', a.author_name || '')
+      for (const r of (a.replies ?? [])) {
+        parts.push(r.content || '', r.author_name || '')
+      }
+    }
+  }
+  const blob = parts.join('\n').toLowerCase()
+  _searchBlobCache.set(p, blob)
+  return blob
+}
+
+/* 项目是否命中关键词（覆盖项目全部信息内容） */
+function projectMatchesKeyword(p: Project, kw: string): boolean {
+  if (!kw) return true
+  return projectSearchBlob(p).includes(kw)
+}
+
+/* 命中位置标注：用于下拉候选副信息，说明匹配到哪类内容 */
+function matchHint(p: Project, kw: string): string {
+  if (!kw) return ''
+  const inText = (s?: string | null) => (s || '').toLowerCase().includes(kw)
+  if (inText(p.name)) return ''
+  if (inText(p.owner_name)) return '负责人'
+  if (inText(p.department) || getDepartmentShortName(p.department).toLowerCase().includes(kw)) return '部门'
+  if (inText(p.content)) return '说明'
+  for (const e of (p.progress_log ?? [])) {
+    if (inText(e.content) || inText(e.status)) return '进展'
+    for (const a of (e.annotations ?? [])) {
+      if (inText(a.content) || inText(a.author_name)) return '批注'
+      for (const r of (a.replies ?? [])) {
+        if (inText(r.content) || inText(r.author_name)) return '批注'
+      }
+    }
+  }
+  return '其他'
+}
+
+/* 智能补齐搜索：覆盖项目全部信息内容，下拉候选含副信息 + 命中位置 */
 interface SearchSuggestion { value: string; meta: string }
 function querySearch(q: string, cb: (results: SearchSuggestion[]) => void) {
   const kw = (q || '').trim().toLowerCase()
   const matched = projects.value
-    .filter((p) => {
-      if (!kw) return true
-      const short = getDepartmentShortName(p.department).toLowerCase()
-      return p.name.toLowerCase().includes(kw)
-        || (p.owner_name || '').toLowerCase().includes(kw)
-        || (p.department || '').toLowerCase().includes(kw)
-        || short.includes(kw)
-    })
+    .filter((p) => projectMatchesKeyword(p, kw))
     .slice(0, 10)
-    .map((p) => ({
-      value: p.name,
-      meta: [getDepartmentShortName(p.department) || p.department, p.owner_name].filter(Boolean).join(' · '),
-    }))
+    .map((p) => {
+      const where = matchHint(p, kw)
+      const base = [getDepartmentShortName(p.department) || p.department, p.owner_name].filter(Boolean).join(' · ')
+      return {
+        value: p.name,
+        meta: where ? `${base}　· 命中${where}` : base,
+      }
+    })
   cb(matched)
 }
 
@@ -318,14 +372,7 @@ function stalledMetaOf(lastTime: string): { days: number; color: string; bold: b
 
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
-  const list = projects.value.filter((p) => {
-    if (!kw) return true
-    const short = getDepartmentShortName(p.department).toLowerCase()
-    return p.name.toLowerCase().includes(kw)
-      || (p.owner_name || '').toLowerCase().includes(kw)
-      || (p.department || '').toLowerCase().includes(kw)
-      || short.includes(kw)
-  })
+  const list = projects.value.filter((p) => projectMatchesKeyword(p, kw))
   return [...list]
     .sort((a, b) =>
       cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))

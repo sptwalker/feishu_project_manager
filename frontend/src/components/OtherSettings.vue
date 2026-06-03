@@ -55,12 +55,18 @@
       <h3 class="card-title">周会自动开启</h3>
       <p class="tip muted" style="margin-top:0">
         开启后，每周四（工作日）14:00 若周会未开启，系统将自动开启新一轮周会并通知核心群。
+        自动催更开启后，每周五、周日 14:00 在核心群发进展更新催办（仅周会进行中时发送）。
       </p>
       <div class="calibrate" style="border-top:none; padding-top:0">
         <span class="ilabel">自动开启</span>
         <el-switch v-model="autoOpen" :disabled="!isAdmin || savingAutoOpen" @change="saveAutoOpen" />
         <span class="muted hint">{{ autoOpen ? '已开启（每周四自动）' : '已关闭（仅手动开启）' }}</span>
         <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+      </div>
+      <div class="calibrate" style="border-top:none; padding-top:var(--sp-2)">
+        <span class="ilabel">自动催更</span>
+        <el-switch v-model="autoReminder" :disabled="!isAdmin || savingAutoReminder" @change="saveAutoReminder" />
+        <span class="muted hint">{{ autoReminder ? '已开启（每周五、周日自动催更）' : '已关闭' }}</span>
       </div>
     </section>
 
@@ -222,6 +228,33 @@ async function saveAutoOpen(val: boolean) {
   }
 }
 
+/* 周会自动催更：每周五/周日自动在核心群催更的运行时开关 */
+const autoReminder = ref(false)
+const savingAutoReminder = ref(false)
+
+async function loadAutoReminder() {
+  try {
+    const r = await settingsApi.getAutoReminder()
+    autoReminder.value = r.enabled
+  } catch {
+    // 读取失败保持关闭
+  }
+}
+
+async function saveAutoReminder(val: boolean) {
+  savingAutoReminder.value = true
+  try {
+    const r = await settingsApi.setAutoReminder(val)
+    autoReminder.value = r.enabled
+    ElMessage.success(r.enabled ? '已开启周会自动催更' : '已关闭周会自动催更')
+  } catch {
+    autoReminder.value = !val  // 失败回滚开关状态
+    ElMessage.error('保存失败（需要管理员权限）')
+  } finally {
+    savingAutoReminder.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -233,6 +266,7 @@ async function load() {
   await loadStallDays()
   await loadCoreChatId()
   await loadAutoOpen()
+  await loadAutoReminder()
 }
 
 async function save() {

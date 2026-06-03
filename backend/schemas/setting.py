@@ -64,3 +64,13 @@ class AutoOpenMeetingResponse(BaseModel):
 class AutoOpenMeetingUpdate(BaseModel):
     """切换周四自动开周会开关"""
     enabled: bool = Field(..., description="是否启用周四自动开周会")
+
+
+class AutoReminderResponse(BaseModel):
+    """周会自动催更开关状态"""
+    enabled: bool = Field(False, description="是否启用周会自动催更（每周五/周日）")
+
+
+class AutoReminderUpdate(BaseModel):
+    """切换周会自动催更开关"""
+    enabled: bool = Field(..., description="是否启用周会自动催更")

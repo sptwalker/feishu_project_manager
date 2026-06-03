@@ -10,6 +10,7 @@ from backend.services.reminder_service import ReminderService
 from backend.services.report_service import ReportService
 from backend.services.project_followup_service import ProjectFollowupService
 from backend.services.auto_meeting_service import AutoMeetingService
+from backend.services.meeting_reminder_service import MeetingReminderService
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +56,13 @@ async def job_project_followups() -> int:
 async def job_auto_open_meeting() -> int:
     """每周四自动开启周会（工作日判断 + 开启 + 发群通知）"""
     return await _run_with_session(AutoMeetingService.auto_open_if_due, "auto_open_meeting")
+
+
+async def job_meeting_reminder_one() -> int:
+    """周会自动催更①（每周五）：进展更新条数排名前三"""
+    return await _run_with_session(MeetingReminderService.send_reminder_one, "meeting_reminder_one")
+
+
+async def job_meeting_reminder_two() -> int:
+    """周会自动催更②（每周日）：待更新数量排名前三"""
+    return await _run_with_session(MeetingReminderService.send_reminder_two, "meeting_reminder_two")

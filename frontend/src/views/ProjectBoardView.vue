@@ -3,7 +3,7 @@
     <div class="page-head">
       <div>
         <h1 class="page-title">项目看板</h1>
-        <p class="muted">掌握所有项目的进度与风险</p>
+        <p class="muted">{{ subtitle }}</p>
       </div>
     </div>
 
@@ -164,8 +164,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Grid, List } from '@element-plus/icons-vue'
-import { projectApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency } from '@/types'
+import { projectApi, userApi, departmentApi } from '@/api/resources'
+import type { Project, ProjectStatus, ProjectUrgency, User, Department } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor, isOverdue, progressStatusColor,
   PENDING_STATUSES, completionGradient,
@@ -176,6 +176,25 @@ import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 const allProjects = ref<Project[]>([])
 const loading = ref(false)
 const viewMode = ref<'grid' | 'list'>('grid')
+
+/* 首页副标题动态统计：部门数 / 项目经理(含管理员)数 / 最新登录用户 */
+const users = ref<User[]>([])
+const departments = ref<Department[]>([])
+const subtitle = computed(() => {
+  const deptCount = departments.value.length
+  const managerCount = users.value.filter(
+    (u) => u.role === 'project_manager' || u.role === 'admin',
+  ).length
+  const withLogin = users.value.filter((u) => u.last_login_at)
+  let who = '—'
+  if (withLogin.length) {
+    const latest = withLogin.reduce((a, b) =>
+      (a.last_login_at || '') > (b.last_login_at || '') ? a : b)
+    const t = (latest.last_login_at || '').replace('T', ' ').slice(0, 16)
+    who = `${latest.name}（${t}）`
+  }
+  return `目前本系统管理涵盖全公司 ${deptCount} 个部门，${managerCount} 位项目经理，最新登录的用户是 ${who}。`
+})
 
 /* 详情抽屉 */
 const detailVisible = ref(false)
@@ -413,8 +432,22 @@ async function loadProjects() {
   }
 }
 
+async function loadMeta() {
+  try {
+    const [us, ds] = await Promise.all([
+      userApi.list({ limit: 200 }),
+      departmentApi.list({ limit: 100 }),
+    ])
+    users.value = us
+    departments.value = ds
+  } catch {
+    // 副标题统计为可选增强，失败时优雅降级
+  }
+}
+
 onMounted(() => {
   loadProjects()
+  loadMeta()
 })
 </script>
 

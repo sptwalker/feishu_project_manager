@@ -79,6 +79,10 @@ class AuthService:
             # 每次登录确保：初始管理员若被降级或被导入覆盖，自动恢复为管理员
             user = UserService.ensure_initial_admin(db, user, initial_admin_ids)
 
+        # 记录登录操作日志（失败不影响登录）
+        from backend.services.operation_log_service import OperationLogService
+        OperationLogService.log(db, user=user, action="login", description="登录了系统")
+
         # 4. 生成 JWT tokens（sub 必须为字符串，否则 JWT 校验会失败）
         access_token = create_access_token(data={"sub": str(user.id)})
         refresh_token = create_refresh_token(data={"sub": str(user.id)})

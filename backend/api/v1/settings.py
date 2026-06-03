@@ -10,6 +10,7 @@ from backend.schemas.setting import (
     FollowupStallDaysResponse, FollowupStallDaysUpdate,
     CoreGroupChatIdResponse, CoreGroupChatIdUpdate,
     AutoOpenMeetingResponse, AutoOpenMeetingUpdate,
+    AutoReminderResponse, AutoReminderUpdate,
 )
 from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
 from backend.services.project_followup_service import (
@@ -108,3 +109,23 @@ def set_auto_open_meeting(
     """切换周四自动开周会开关（仅管理员；改后立即生效无需重启）"""
     SettingsService.set_auto_open_meeting_enabled(db, payload.enabled)
     return AutoOpenMeetingResponse(enabled=SettingsService.get_auto_open_meeting_enabled(db))
+
+
+@router.get("/settings/auto-reminder", response_model=AutoReminderResponse)
+def get_auto_reminder(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取周会自动催更开关状态（所有登录用户可读）"""
+    return AutoReminderResponse(enabled=SettingsService.get_auto_reminder_enabled(db))
+
+
+@router.put("/settings/auto-reminder", response_model=AutoReminderResponse)
+def set_auto_reminder(
+    payload: AutoReminderUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """切换周会自动催更开关（仅管理员；改后立即生效无需重启）"""
+    SettingsService.set_auto_reminder_enabled(db, payload.enabled)
+    return AutoReminderResponse(enabled=SettingsService.get_auto_reminder_enabled(db))

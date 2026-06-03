@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -116,6 +116,12 @@ export const settingsApi = {
   setAutoOpenMeeting(enabled: boolean) {
     return api.put<{ enabled: boolean }>('/settings/auto-open-meeting', { enabled }).then((r) => r.data)
   },
+  getAutoReminder() {
+    return api.get<{ enabled: boolean }>('/settings/auto-reminder').then((r) => r.data)
+  },
+  setAutoReminder(enabled: boolean) {
+    return api.put<{ enabled: boolean }>('/settings/auto-reminder', { enabled }).then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },
@@ -144,5 +150,11 @@ export const meetingApi = {
   },
   send(session: number) {
     return api.post<MeetingSendResult>(`/meeting-records/${session}/send`).then((r) => r.data)
+  },
+}
+
+export const logApi = {
+  list(params: { start?: string; end?: string; limit?: number }) {
+    return api.get<OperationLog[]>('/operation-logs', { params }).then((r) => r.data)
   },
 }

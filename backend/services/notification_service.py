@@ -114,3 +114,13 @@ class NotificationService:
         """周会模式开启通知（发送到核心组群）。operator=None 为系统自动开启，有值为管理员手动开启。"""
         card = feishu_cards.build_meeting_open_card(session, public_url, operator)
         return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")
+
+    @staticmethod
+    async def notify_meeting_reminder(
+        chat_id: Optional[str],
+        session: int,
+        body: str,
+    ) -> bool:
+        """周会自动催更通知（发送到核心组群）。"""
+        card = feishu_cards.build_meeting_reminder_card(session, body)
+        return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")

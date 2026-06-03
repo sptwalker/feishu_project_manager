@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     AUTO_MEETING_HOUR: int = 14               # 自动开启的小时（14:00）
     AUTO_MEETING_MINUTE: int = 0              # 自动开启的分钟
     AUTO_MEETING_RECORDER: str = "Shineleo"   # 自动开启时的默认记录人
+    # 周会自动催更：开启后每周五/周日定时在核心群发进展更新催办（运行时开关存 DB）
+    AUTO_REMINDER1_DAY: str = "fri"           # 第一次催更（开启后约 1 天）
+    AUTO_REMINDER2_DAY: str = "sun"           # 第二次催更（开启后约 3 天，会议前一天）
+    AUTO_REMINDER_HOUR: int = 14              # 催更时间（14:00）
+    AUTO_REMINDER_MINUTE: int = 0
     # 周会周期递进：上次会议日期 + N 天即可进入新周期（替代原“跨自然周”规则）
     NEW_CYCLE_DAYS: int = 3
     # 系统对外访问地址（周会通知文案里引导成员登录更新进展）

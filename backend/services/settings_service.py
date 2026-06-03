@@ -19,6 +19,8 @@ MEETING_BASE_COUNT = "meeting_base_count"
 FEISHU_CORE_GROUP_CHAT_ID_KEY = "feishu_core_group_chat_id"
 # 周四自动开周会的运行时开关（在「系统设置 › 其他设置」配置，改后立即生效无需重启）
 AUTO_OPEN_MEETING_ENABLED_KEY = "auto_open_meeting_enabled"
+# 周会自动催更的运行时开关（每周五/周日自动在核心群催更）
+AUTO_REMINDER_ENABLED_KEY = "auto_reminder_enabled"
 
 # 默认基准：2026-06-01（周一）= 第 22 次
 DEFAULT_BASE_MONDAY = "2026-06-01"
@@ -76,6 +78,16 @@ class SettingsService:
     def set_auto_open_meeting_enabled(db: Session, enabled: bool) -> None:
         """设置周四自动开周会的运行时开关。"""
         SettingsService.set_setting(db, AUTO_OPEN_MEETING_ENABLED_KEY, "true" if enabled else "false")
+
+    @staticmethod
+    def get_auto_reminder_enabled(db: Session) -> bool:
+        """读取周会自动催更的运行时开关（默认关闭）。"""
+        return SettingsService.get_setting(db, AUTO_REMINDER_ENABLED_KEY, "false") == "true"
+
+    @staticmethod
+    def set_auto_reminder_enabled(db: Session, enabled: bool) -> None:
+        """设置周会自动催更的运行时开关（每周五/周日自动催更）。"""
+        SettingsService.set_setting(db, AUTO_REMINDER_ENABLED_KEY, "true" if enabled else "false")
 
     @staticmethod
     def _base(db: Session) -> tuple[date, int]:
