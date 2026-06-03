@@ -3,6 +3,8 @@ from typing import Dict, Any
 import logging
 from backend.core.security import create_access_token, create_refresh_token, verify_token
 from backend.core.feishu import feishu_client
+from backend.core.config import get_settings
+from backend.models.user import UserRole
 from backend.services.user_service import UserService
 from backend.schemas.user import UserCreate
 
@@ -57,6 +59,9 @@ class AuthService:
             raise AuthenticationError(f"Feishu API error: {str(e)}") from e
 
         # 3. 查找或创建用户
+        # 初始管理员名单（飞书 open_id）：用于外网部署后让指定人员自动获得管理员权限
+        initial_admin_ids = get_settings().INITIAL_ADMIN_FEISHU_IDS
+        is_initial_admin = feishu_user_id in initial_admin_ids
         user = UserService.get_by_feishu_id(db, feishu_user_id)
         if not user:
             user_create = UserCreate(
@@ -66,9 +71,13 @@ class AuthService:
                 avatar_url=user_info.get("avatar_url"),
                 department=user_info.get("department_name")
             )
-            user = UserService.create(db, user_create)
+            # 初始管理员首次登录即赋予管理员角色，其余为普通成员
+            initial_role = UserRole.ADMIN if is_initial_admin else UserRole.MEMBER
+            user = UserService.create(db, user_create, role=initial_role)
         else:
             user = UserService.update_last_login(db, user)
+            # 每次登录确保：初始管理员若被降级或被导入覆盖，自动恢复为管理员
+            user = UserService.ensure_initial_admin(db, user, initial_admin_ids)
 
         # 4. 生成 JWT tokens（sub 必须为字符串，否则 JWT 校验会失败）
         access_token = create_access_token(data={"sub": str(user.id)})

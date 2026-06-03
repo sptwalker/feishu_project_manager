@@ -6,7 +6,6 @@
     @update:model-value="onVisible"
   >
     <div v-if="local" class="detail">
-      <span v-if="!createMode && local.record_date" class="record-time">记录于 {{ local.record_date }}</span>
       <el-button
         v-if="!createMode"
         class="edit-btn"
@@ -30,6 +29,8 @@
             {{ urgText(local.urgency) }}
           </span>
           <span v-if="overdue" class="badge overdue">逾期</span>
+          <!-- 记录时间：移到状态/优先级徽章之后，与徽章等间隔排列 -->
+          <span v-if="!createMode && local.record_date" class="record-time">记录于 {{ local.record_date }}</span>
         </div>
       </div>
 
@@ -49,7 +50,7 @@
           <span v-else-if="!isLong" class="num pct">{{ editing ? form.completion : local.completion }}%</span>
         </div>
         <el-slider v-if="editing && !form.is_long_term" v-model="form.completion" :min="0" :max="100" />
-        <div v-else-if="!editing && !local.is_long_term" class="bar"><div class="bar-fill" :style="{ width: local.completion + '%', background: statusColor(local.status) }" /></div>
+        <div v-else-if="!editing && !local.is_long_term" class="bar"><div class="bar-fill" :style="{ width: local.completion + '%', background: barFill(local.status) }" /></div>
       </div>
 
       <!-- 字段网格 -->
@@ -68,7 +69,7 @@
         <div class="f">
           <dt>负责人<span v-if="createMode" class="req">*</span></dt>
           <dd v-if="!editing">{{ local.owner_name || '—' }}</dd>
-          <el-select v-else v-model="form.owner_name" filterable allow-create default-first-option clearable placeholder="选择/输入" size="small">
+          <el-select v-else v-model="form.owner_name" filterable clearable placeholder="选择负责人（项目经理/管理员）" size="small">
             <el-option v-for="o in ownerOptions" :key="o" :label="o" :value="o" />
           </el-select>
         </div>
@@ -123,7 +124,8 @@
                 <td>
                   <div class="content-cell">
                     <span v-if="e.reply_to" class="feedback-tag">反馈：</span>
-                    <span v-else-if="meeting.active && i === progressDraft.length - 1" class="meeting-tag">周会记录：</span>
+                    <!-- 仅本次编辑会话中新增（_isNew）的行才显示标签；已有记录即便数据上带 meeting_session 也不显示 -->
+                    <span v-else-if="meeting.active && e._isNew" class="meeting-tag">周会记录：</span>
                     <el-input v-model="e.content" size="small" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }" placeholder="进展内容" />
                     <el-button
                       v-if="isPending(e.status) && !e.reply_to && !draftHasReply(e)"
@@ -298,7 +300,7 @@ import { useMeetingStore } from '@/stores/meeting'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Close, Delete, Plus, Check, Link, Document } from '@element-plus/icons-vue'
-import { projectApi, departmentApi } from '@/api/resources'
+import { projectApi, departmentApi, userApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
@@ -328,6 +330,9 @@ const annotationAuthor = computed(() => auth.currentUser?.name_en?.trim() || aut
 
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
+// 完成度进度条填充：在状态色上叠加一层从左到右渐隐的白雾，形成同色「左淡右浓」的渐变（兼容 css 变量颜色）
+const barFill = (s: ProjectStatus) =>
+  `linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0)), ${statusColor(s)}`
 const urgText = (u: ProjectUrgency) => urgencyLabel[u]
 const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const progressColor = (s: string) => progressStatusColor[s] || 'var(--c-ink-3)'
@@ -418,9 +423,29 @@ const stalled = computed<{ days: number; color: string; bold: boolean } | null>(
   return { days, color, bold }
 })
 
-const ownerOptions = computed(() => uniq([...(props.owners || []), form.owner_name as string, local.value?.owner_name || '']))
+/* 负责人候选：用户管理中「项目经理 + 管理员」的英文名（与账号关联）；
+   另把当前项目负责人原值并入，保证存量值（历史中文名）仍能回显 */
+const managerNames = ref<string[]>([])
+const ownerOptions = computed(() => uniq([
+  local.value?.owner_name || '',
+  form.owner_name as string,
+  ...managerNames.value,
+]))
 function uniq(arr: (string | undefined | null)[]): string[] {
   return [...new Set(arr.map((x) => (x || '').trim()).filter(Boolean))]
+}
+
+async function loadManagers() {
+  try {
+    const users = await userApi.list({ limit: 200 })
+    managerNames.value = uniq(
+      users
+        .filter((u) => u.role === 'admin' || u.role === 'project_manager')
+        .map((u) => u.name_en || ''),
+    )
+  } catch {
+    // 静默失败，负责人候选为可选增强
+  }
 }
 
 function toggleEdit() {
@@ -535,9 +560,12 @@ const editingProgress = ref(false)
 const progressDraft = ref<ProgressEntry[]>([])
 const progressWrap = ref<HTMLElement | null>(null)
 
+// 进展记录统一排序：按更新时间从过去到现在升序（编辑态与展示态共用，保证排序一致）
+const byTime = (a: ProgressEntry, b: ProgressEntry) => (a.time || '').localeCompare(b.time || '')
+
 // 时间线：按时间从过去到现在排列
 const timeline = computed<ProgressEntry[]>(() =>
-  [...(local.value?.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || '')),
+  [...(local.value?.progress_log ?? [])].sort(byTime),
 )
 
 const isPending = (s?: string) => PENDING_STATUSES.includes((s || '') as typeof PENDING_STATUSES[number])
@@ -708,13 +736,17 @@ function blankProject(): Project {
 
 function enterProgressEdit() {
   if (!local.value) return
-  // 深拷贝以保留 annotations
+  // 深拷贝以保留 annotations，并按更新时间升序排列（与展示态时间线一致）
   progressDraft.value = JSON.parse(JSON.stringify(local.value.progress_log ?? []))
+  progressDraft.value.sort(byTime)
   editingProgress.value = true
 }
 function addRow() {
   const entry: ProgressEntry = { id: genId(), time: nowStr(), content: '', status: '正常' }
-  if (meeting.active) entry.meeting_session = meeting.currentCount
+  if (meeting.active) {
+    entry.meeting_session = meeting.currentCount  // 持久化：标记该记录所属周会次数
+    entry._isNew = true                           // 临时标记：本次会话新增，用于显示"周会记录："标签
+  }
   progressDraft.value.push(entry)
 }
 /* 对未结束事件添加一条反馈：紧随其后插入，继承状况、reply_to 指向原事件 */
@@ -800,6 +832,7 @@ async function loadDepartments() {
 onMounted(() => {
   document.addEventListener('click', onDocClick, true)
   loadDepartments()
+  loadManagers()
   nextTick(() => { recomputeConnectors(); observeTimeline() })
 })
 onBeforeUnmount(() => {
@@ -989,7 +1022,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 <style scoped>
 .detail { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-2) 0; position: relative; }
 .edit-btn { position: absolute; top: 42px; right: 0; z-index: 2; font-size: 16px; }
-.record-time { position: absolute; top: 4px; right: 2px; z-index: 2; font-size: 12px; color: var(--c-ink-3); }
+/* 记录时间：作为徽章行的普通 flex 子项，跟在状态/优先级之后 */
+.record-time { font-size: 12px; color: var(--c-ink-3); }
 .long-term-text { font-weight: 700; color: var(--c-accent); font-size: 14px; }
 .mini-label { font-size: 12px; color: var(--c-ink-3); margin-bottom: 4px; }
 
@@ -1000,7 +1034,7 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .d-title-input { max-width: 420px; }
 .edit-ico { cursor: pointer; color: var(--c-ink-3); font-size: 18px; }
 .edit-ico:hover { color: var(--c-accent); }
-.d-badges { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.d-badges { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 .badge { font-weight: 600; font-size: 12px; padding: 2px 10px; border-radius: var(--r-sm); }
 .badge.overdue { color: var(--c-status-overdue); background: var(--c-status-overdue-soft); }
 
@@ -1077,7 +1111,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .tl-time { font-size: 12px; color: var(--c-ink-3); }
 .tl-status { font-size: 12px; font-weight: 600; }
 .tl-content { font-size: 14px; color: var(--c-ink); line-height: 1.5; white-space: pre-wrap; }
-.meeting-banner { margin-left: auto; color: #1a73e8; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+/* 周会横幅：绝对定位到编辑按钮左侧、与按钮等高对齐 */
+.meeting-banner { position: absolute; top: 42px; right: 132px; height: 40px; display: flex; align-items: center; color: #1a73e8; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; z-index: 2; }
 .content-cell { display: flex; align-items: flex-start; gap: 4px; }
 .meeting-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }
 .feedback-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }

@@ -46,8 +46,53 @@
       </div>
     </div>
 
+    <!-- 滚动信息流：最新进展 / 待处理事项 -->
+    <div v-if="allProjects.length" class="feeds">
+      <section class="feed feed-latest">
+        <h3 class="feed-title">最新项目进展信息</h3>
+        <div class="feed-viewport">
+          <ul v-if="latestFeed.length" class="feed-track">
+            <li
+              v-for="(it, i) in [...latestFeed, ...latestFeed]" :key="i"
+              class="feed-row" @click="openFeedItem(it)"
+            >
+              <span class="fr-proj">【{{ it.projectName }}】</span>
+              <span class="fr-main">
+                <span class="fr-date num">{{ it.time.slice(0, 10) }}</span>
+                <span class="fr-status" :style="{ color: progressColor(it.status) }">【{{ it.status }}】</span>
+                <span class="fr-content">{{ it.content }}</span>
+              </span>
+              <span class="fr-owner">{{ it.ownerName }}</span>
+            </li>
+          </ul>
+          <div v-else class="feed-empty muted">暂无进展记录</div>
+        </div>
+      </section>
+
+      <section class="feed feed-pending">
+        <h3 class="feed-title">待处理事项信息</h3>
+        <div class="feed-viewport">
+          <ul v-if="pendingFeed.length" class="feed-track">
+            <li
+              v-for="(it, i) in [...pendingFeed, ...pendingFeed]" :key="i"
+              class="feed-row" @click="openFeedItem(it)"
+            >
+              <span class="fr-proj">【{{ it.projectName }}】</span>
+              <span class="fr-main">
+                <span class="fr-date num">{{ it.time.slice(0, 10) }}</span>
+                <span class="fr-status" :style="{ color: progressColor(it.status) }">【{{ it.status }}】</span>
+                <span class="fr-content">{{ it.content }}</span>
+              </span>
+              <span class="fr-owner">{{ it.ownerName }}</span>
+            </li>
+          </ul>
+          <div v-else class="feed-empty muted">暂无待处理事项</div>
+        </div>
+      </section>
+    </div>
+
     <div v-loading="loading" class="zones">
-      <section v-for="z in zones" :key="z.key" class="zone" :class="{ 'zone-key': z.key === 'key' }">
+      <section v-for="z in zones" :key="z.key" class="zone" :class="`zone-${z.key}`">
         <div class="zone-head">
           <h3 class="zone-title">{{ z.title }}<span class="zone-count">{{ z.items.length }}</span></h3>
           <span class="zone-desc muted">{{ z.desc }}</span>
@@ -162,6 +207,63 @@ function hasUnclosedPending(p: Project): boolean {
   )
 }
 
+/* ---------- 首页滚动信息流 ---------- */
+type FeedItem = {
+  projectId: number
+  projectName: string
+  ownerName: string
+  time: string
+  status: string
+  content: string
+}
+
+// 截断到 64 字符，超出以省略号代替
+function truncate(s: string, n = 64): string {
+  const t = (s || '').trim()
+  return t.length > n ? t.slice(0, n) + '……' : t
+}
+
+// 最新进展：所有项目所有带时间的进展条目，按 time 倒序取最新 30 条
+const latestFeed = computed<FeedItem[]>(() => {
+  const items: FeedItem[] = []
+  for (const p of allProjects.value) {
+    for (const e of (p.progress_log ?? [])) {
+      if (!e.time) continue
+      items.push({
+        projectId: p.id, projectName: p.name, ownerName: p.owner_name || '—',
+        time: e.time, status: e.status, content: truncate(e.content),
+      })
+    }
+  }
+  return items.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 30)
+})
+
+// 待处理：未闭合 pending 条目（status∈PENDING、无 reply_to、id 未被任何 reply_to 引用），按 time 倒序取 30
+const pendingFeed = computed<FeedItem[]>(() => {
+  const items: FeedItem[] = []
+  for (const p of allProjects.value) {
+    const log = p.progress_log ?? []
+    const replied = new Set(log.filter((e) => e.reply_to).map((e) => e.reply_to))
+    for (const e of log) {
+      if (!e.time) continue
+      if (!(PENDING_STATUSES as readonly string[]).includes(e.status)) continue
+      if (e.reply_to) continue
+      if (e.id && replied.has(e.id)) continue
+      items.push({
+        projectId: p.id, projectName: p.name, ownerName: p.owner_name || '—',
+        time: e.time, status: e.status, content: truncate(e.content),
+      })
+    }
+  }
+  return items.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 30)
+})
+
+// 点击信息条 → 按 projectId 找回 Project 并打开详情
+function openFeedItem(it: FeedItem) {
+  const p = allProjects.value.find((x) => x.id === it.projectId)
+  if (p) openDetail(p)
+}
+
 /* 信息看板统计（全部基于 allProjects 计算） */
 const boardStats = computed(() => {
   const ps = allProjects.value
@@ -234,7 +336,7 @@ const zones = computed(() => {
   const delay = active.filter((p) => (p._latest?.status || '') === '延迟')
   return [
     { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => urgencyColor[p.urgency] },
-    { key: 'wait', title: '等待关注', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
+    { key: 'wait', title: '待处理事件', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
     { key: 'delay', title: '延迟关注', desc: '最新进展：延迟', items: delay, barColor: () => '#FA8C16' },
   ]
 })
@@ -357,6 +459,50 @@ onMounted(() => {
 }
 .chart-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); color: var(--c-ink-2); }
 
+/* 滚动信息流 */
+.feeds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+@media (max-width: 900px) { .feeds { grid-template-columns: 1fr; } }
+.feed {
+  min-width: 0;   /* 关键：防止 nowrap 长文本撑宽 grid 列，确保两区严格各占 50%、与图表区对齐 */
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--shadow-sm);
+}
+.feed-latest { background: #EAF2FE; }   /* 淡蓝 */
+.feed-pending { background: #E6F7F7; }   /* 淡青 */
+.feed-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); color: var(--c-ink-2); }
+.feed-viewport { height: 200px; overflow: hidden; position: relative; }
+.feed-track {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 4px;
+  animation: feed-scroll 60s linear infinite;
+}
+.feed-viewport:hover .feed-track { animation-play-state: paused; }
+@keyframes feed-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+.feed-row {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 13px; line-height: 1.6;
+  cursor: pointer; padding: 2px 4px; border-radius: var(--r-sm);
+}
+.feed-row:hover { background: rgba(255, 255, 255, 0.6); }
+.fr-proj { font-weight: 600; color: var(--c-ink); flex-shrink: 0; white-space: nowrap; }
+/* 中列：日期+状态+内容；内容过长在此换行，续行自动对齐到日期首字（中列左边缘） */
+.fr-main { flex: 1; min-width: 0; }
+.fr-date { color: var(--c-ink-3); margin-right: 6px; }
+.fr-status { font-weight: 600; margin-right: 6px; }
+.fr-content { color: var(--c-ink-2); }
+.fr-owner { color: var(--c-ink-3); flex-shrink: 0; white-space: nowrap; }
+.feed-empty { height: 200px; display: grid; place-items: center; font-size: 13px; }
+
 /* 关注分区 */
 .zones { display: flex; flex-direction: column; gap: var(--sp-5); }
 .zone { border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
@@ -364,16 +510,21 @@ onMounted(() => {
 .zone-switch { margin-left: auto; }
 .zone-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: var(--sp-2); position: relative; }
 /* 重点项目标题下方衬托半透明渐变红（右深左浅），不挡文字 */
-.zone-key .zone-title::after {
+.zone-key .zone-title::after,
+.zone-wait .zone-title::after,
+.zone-delay .zone-title::after {
   content: '';
   position: absolute;
   left: -6px; right: -6px; bottom: -3px;
   height: 9px;
-  background: linear-gradient(90deg, rgba(192, 57, 43, 0) 0%, rgba(192, 57, 43, 0.28) 100%);
   border-radius: 999px;
   z-index: -1;
   pointer-events: none;
 }
+/* 左浓右淡，三色：重点=红 / 待处理事件=粉 / 延迟关注=琥珀 */
+.zone-key .zone-title::after { background: linear-gradient(90deg, rgba(192, 57, 43, 0.28) 0%, rgba(192, 57, 43, 0) 100%); }
+.zone-wait .zone-title::after { background: linear-gradient(90deg, rgba(232, 127, 176, 0.32) 0%, rgba(232, 127, 176, 0) 100%); }
+.zone-delay .zone-title::after { background: linear-gradient(90deg, rgba(230, 162, 60, 0.32) 0%, rgba(230, 162, 60, 0) 100%); }
 .zone-count {
   font-size: 13px; font-weight: 600; color: var(--c-accent);
   background: var(--c-accent-soft); padding: 1px 9px; border-radius: 999px;

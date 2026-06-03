@@ -165,6 +165,65 @@ class FeishuClient:
             raise FeishuAPIError(f"Feishu API error on POST {path}: {data.get('msg')}")
         return data.get("data", {})
 
+    async def create_document(self, title: str) -> str:
+        """创建飞书云文档（docx），返回 document_id。需要 docx:document 权限。"""
+        data = await self._post_authed(
+            "/docx/v1/documents",
+            json_body={"title": title[:800]},
+        )
+        doc = data.get("document", {})
+        document_id = doc.get("document_id")
+        if not document_id:
+            raise FeishuAPIError("create_document 未返回 document_id")
+        return document_id
+
+    @staticmethod
+    def _run(content: str, bold: bool = False, color: Optional[int] = None) -> Dict[str, Any]:
+        """构造一个 text_run 文本片段，可加粗/上色。color 为飞书字体色枚举(1-7)。"""
+        run: Dict[str, Any] = {"text_run": {"content": content}}
+        style: Dict[str, Any] = {}
+        if bold:
+            style["bold"] = True
+        if color:
+            style["text_color"] = color
+        if style:
+            run["text_run"]["text_element_style"] = style
+        return run
+
+    @staticmethod
+    def text_block(content: str) -> Dict[str, Any]:
+        """构造一个文本段落块（block_type=2）"""
+        return {
+            "block_type": 2,
+            "text": {"elements": [FeishuClient._run(content)]},
+        }
+
+    @staticmethod
+    def rich_block(runs: List[tuple]) -> Dict[str, Any]:
+        """构造含多片段的文本段落块。runs: [(content, bold?, color?), ...]"""
+        els = []
+        for r in runs:
+            content = r[0]
+            bold = r[1] if len(r) > 1 else False
+            color = r[2] if len(r) > 2 else None
+            els.append(FeishuClient._run(content, bold, color))
+        return {"block_type": 2, "text": {"elements": els}}
+
+    @staticmethod
+    def heading_block(content: str, level: int = 1) -> Dict[str, Any]:
+        """构造标题块。level 1/2/3 → heading1/2/3（block_type 3/4/5）"""
+        bt = {1: 3, 2: 4, 3: 5}.get(level, 3)
+        key = f"heading{level}"
+        return {"block_type": bt, key: {"elements": [FeishuClient._run(content)]}}
+
+    async def append_document_blocks(self, document_id: str,
+                                     blocks: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """向文档根节点追加块（block_id 用 document_id 表示根）。需要 docx:document 权限。"""
+        return await self._post_authed(
+            f"/docx/v1/documents/{document_id}/blocks/{document_id}/children",
+            json_body={"children": blocks},
+        )
+
     async def send_message(self, receive_id: str, msg_type: str, content: Dict[str, Any],
                            receive_id_type: str = "user_id") -> Dict[str, Any]:
         """发送消息（im/v1/messages），content 会被序列化为 JSON 字符串"""

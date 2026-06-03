@@ -62,6 +62,16 @@ class Settings(BaseSettings):
     FEISHU_REPORT_RECEIVER_ID: str = ""
     # 项目进展催办的目标飞书群（chat_id，为空则不发送）
     FEISHU_PROJECT_GROUP_CHAT_ID: str = ""
+    # 周会纪要分享的核心组群（chat_id，为空则不发送）
+    FEISHU_CORE_GROUP_CHAT_ID: str = ""
+    # 飞书文档链接前缀（租户域名，如 https://xxx.feishu.cn；用于拼 docx 链接）
+    FEISHU_DOC_URL_PREFIX: str = "https://feishu.cn"
+
+    # 初始管理员：这些飞书 open_id 的用户登录时自动确保为管理员
+    # 用途：外网全新部署后，无需手动改库即可让指定人员成为管理员去配置系统
+    # 注意：open_id 仅对同一个飞书自建应用（同 FEISHU_APP_ID）恒定，换应用需更新此项
+    # 默认：刘丹
+    INITIAL_ADMIN_FEISHU_IDS: list[str] = ["ou_bf1b517ee3c1a8d508e1c0947aa6f5a9"]
 
     # 前端配置
     FRONTEND_URL: str = "http://localhost:3000"

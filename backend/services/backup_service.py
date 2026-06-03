@@ -18,6 +18,7 @@ from backend.models.task import Task
 from backend.models.risk import Risk
 from backend.models.event import Event
 from backend.models.system_setting import SystemSetting
+from backend.models.meeting_record import MeetingRecord
 
 SNAPSHOT_VERSION = 1
 
@@ -30,6 +31,7 @@ EXPORT_ORDER: list[tuple[str, type]] = [
     ("tasks", Task),
     ("risks", Risk),
     ("events", Event),
+    ("meeting_records", MeetingRecord),
 ]
 
 
