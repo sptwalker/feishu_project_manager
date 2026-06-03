@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 import httpx
@@ -218,11 +219,23 @@ class FeishuClient:
 
     async def append_document_blocks(self, document_id: str,
                                      blocks: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """向文档根节点追加块（block_id 用 document_id 表示根）。需要 docx:document 权限。"""
-        return await self._post_authed(
-            f"/docx/v1/documents/{document_id}/blocks/{document_id}/children",
-            json_body={"children": blocks},
-        )
+        """向文档根节点追加块（block_id 用 document_id 表示根）。需要 docx:document 权限。
+
+        飞书「创建块」接口单次最多 50 个子块、且每秒≤3 次，故按 50/批 分批顺序追加；
+        不传 index 默认追加到末尾，多批顺序调用即保证整体内容顺序与 blocks 一致。
+        """
+        BATCH = 50  # 飞书单次创建子块数量上限
+        last: Dict[str, Any] = {}
+        for i in range(0, len(blocks), BATCH):
+            chunk = blocks[i:i + BATCH]
+            last = await self._post_authed(
+                f"/docx/v1/documents/{document_id}/blocks/{document_id}/children",
+                json_body={"children": chunk},
+            )
+            # 限速：每秒≤3 次，非最后一批时批次间留间隔
+            if i + BATCH < len(blocks):
+                await asyncio.sleep(0.4)
+        return last
 
     async def send_message(self, receive_id: str, msg_type: str, content: Dict[str, Any],
                            receive_id_type: str = "user_id") -> Dict[str, Any]:

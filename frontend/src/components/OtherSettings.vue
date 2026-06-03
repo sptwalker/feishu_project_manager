@@ -31,22 +31,55 @@
           </div>
         </div>
 
-        <!-- 校准 -->
+        <!-- 校准（周会进行中时禁用，避免改动正在记录的周会次数导致进展标签错位） -->
         <div class="calibrate">
           <span class="ilabel">校准次数</span>
           <el-input-number
-            v-model="editCount" :min="1" :disabled="!isAdmin" controls-position="right" style="width: 140px"
+            v-model="editCount" :min="1" :disabled="!isAdmin || state.active" controls-position="right" style="width: 140px"
           />
-          <el-button type="primary" :loading="saving" :disabled="!isAdmin || editCount === state.calibration_count" @click="save">
+          <el-button type="primary" :loading="saving" :disabled="!isAdmin || state.active || editCount === state.calibration_count" @click="save">
             保存
           </el-button>
           <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+          <span v-else-if="state.active" class="muted hint">（周会进行中，结束后可校准）</span>
         </div>
         <p class="tip muted">
-          说明：周会次数按自然周递增——同一周内次数不变，跨到新的一周自动 +1。
-          修改"校准次数"将把 {{ state.calibration_monday }} 那一周设为该次数，并以此为基准向后推算。
+          说明：周会周期按"上次会议日期 + {{ state.new_cycle_days ?? 3 }} 天"递进——上轮周会结束满 {{ state.new_cycle_days ?? 3 }} 天后即可开启新一轮周会周期。
+          修改"校准次数"将把下次开启的周会设为该次数。
         </p>
       </template>
+    </section>
+
+    <!-- 周会自动开启：每周四自动开周会的运行时开关（改后立即生效，无需重启/改配置） -->
+    <section class="card">
+      <h3 class="card-title">周会自动开启</h3>
+      <p class="tip muted" style="margin-top:0">
+        开启后，每周四（工作日）14:00 若周会未开启，系统将自动开启新一轮周会并通知核心群。
+      </p>
+      <div class="calibrate" style="border-top:none; padding-top:0">
+        <span class="ilabel">自动开启</span>
+        <el-switch v-model="autoOpen" :disabled="!isAdmin || savingAutoOpen" @change="saveAutoOpen" />
+        <span class="muted hint">{{ autoOpen ? '已开启（每周四自动）' : '已关闭（仅手动开启）' }}</span>
+        <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+      </div>
+    </section>
+
+    <!-- 飞书核心群 chat_id：周会纪要文档链接分享的目标群（所见即所得，留空不发送） -->
+    <section class="card">
+      <h3 class="card-title">飞书核心群 chat_id</h3>
+      <p class="tip muted" style="margin-top:0">
+        周会纪要生成后会把飞书文档链接分享到此核心群。留空则不发送。
+      </p>
+      <div class="calibrate" style="border-top:none; padding-top:0">
+        <span class="ilabel">chat_id</span>
+        <el-input
+          v-model="coreChatId" :disabled="!isAdmin" placeholder="oc_ 开头，留空则不发送" style="width: 280px" clearable
+        />
+        <el-button type="primary" :loading="savingChatId" :disabled="!isAdmin || coreChatId === savedChatId" @click="saveCoreChatId">
+          保存
+        </el-button>
+        <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+      </div>
     </section>
 
     <section class="card">
@@ -133,6 +166,62 @@ async function saveStallDays() {
   }
 }
 
+/* 飞书核心群 chat_id：周会纪要文档链接分享的目标群 */
+const coreChatId = ref('')
+const savedChatId = ref('')
+const savingChatId = ref(false)
+
+async function loadCoreChatId() {
+  try {
+    const r = await settingsApi.getCoreGroupChatId()
+    coreChatId.value = r.chat_id
+    savedChatId.value = r.chat_id
+  } catch {
+    // 读取失败保持空值
+  }
+}
+
+async function saveCoreChatId() {
+  savingChatId.value = true
+  try {
+    const r = await settingsApi.setCoreGroupChatId(coreChatId.value.trim())
+    coreChatId.value = r.chat_id
+    savedChatId.value = r.chat_id
+    ElMessage.success('核心群 chat_id 已保存')
+  } catch {
+    ElMessage.error('保存失败（需要管理员权限）')
+  } finally {
+    savingChatId.value = false
+  }
+}
+
+/* 周会自动开启：每周四自动开周会的运行时开关 */
+const autoOpen = ref(false)
+const savingAutoOpen = ref(false)
+
+async function loadAutoOpen() {
+  try {
+    const r = await settingsApi.getAutoOpenMeeting()
+    autoOpen.value = r.enabled
+  } catch {
+    // 读取失败保持关闭
+  }
+}
+
+async function saveAutoOpen(val: boolean) {
+  savingAutoOpen.value = true
+  try {
+    const r = await settingsApi.setAutoOpenMeeting(val)
+    autoOpen.value = r.enabled
+    ElMessage.success(r.enabled ? '已开启周会自动开启' : '已关闭周会自动开启')
+  } catch {
+    autoOpen.value = !val  // 失败回滚开关状态
+    ElMessage.error('保存失败（需要管理员权限）')
+  } finally {
+    savingAutoOpen.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -142,6 +231,8 @@ async function load() {
     loading.value = false
   }
   await loadStallDays()
+  await loadCoreChatId()
+  await loadAutoOpen()
 }
 
 async function save() {

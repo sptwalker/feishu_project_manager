@@ -76,32 +76,52 @@ def test_compute_count_by_natural_week():
     assert compute_count(date(2026, 6, 15), bm, 22) == 24
 
 
-# ---------- 状态 / 扫描 ----------
+# ---------- 状态 / 事件驱动周期 ----------
 
-def test_meeting_state_scan_and_calibration(db_session):
-    # 上次周会 session=20，本周(21)尚未记录
-    p = Project(name="P1", record_date=date(2026, 1, 1), progress_log=[
-        {"time": "2026-05-18 10:00", "content": "a", "status": "正常", "meeting_session": 20},
-    ])
-    db_session.add(p)
+def test_meeting_state_event_driven_cycle(db_session):
+    """事件驱动周期：以 meeting_records 表的上次会议日期 + NEW_CYCLE_DAYS 判定新周期。"""
+    from backend.models.meeting_record import MeetingRecord
+    # 上次周会 session=22，会议日期 2026-06-01（周一），已归档
+    db_session.add(MeetingRecord(session=22, meeting_date=date(2026, 6, 1),
+                                 status="archived", recorder="x", content_snapshot=[]))
     db_session.commit()
 
-    st = SettingsService.get_meeting_state(db_session, today=date(2026, 5, 31))
-    assert st["this_week_count"] == 21
-    assert st["this_week_recorded"] is False
-    assert st["last_meeting"] == {"date": "2026-05-18 10:00", "count": 20}
-    assert st["calibration_count"] == 21          # 本周未记录 -> 校准本周
-    assert st["calibration_monday"] == "2026-05-25"
+    # 今天周三 2026-06-03（间隔2天 < 3）-> 不可开新周期，不跳号
+    st = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 3))
+    assert st["this_week_count"] == 22
+    assert st["this_week_recorded"] is False        # 无 active 记录
+    assert st["last_meeting"] == {"date": "2026-06-01", "count": 22}
+    assert st["can_open_new_cycle"] is False
+    assert st["next_count"] == 22
 
-    # 追加本周记录 session=21
-    p.progress_log = list(p.progress_log) + [
-        {"time": "2026-05-31 09:00", "content": "b", "status": "正常", "meeting_session": 21},
-    ]
+    # 今天周四 2026-06-04（间隔3天）-> 可开新周期，next=23
+    st2 = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 4))
+    assert st2["can_open_new_cycle"] is True
+    assert st2["days_since_last"] == 3
+    assert st2["next_count"] == 23
+    assert st2["calibration_count"] == 23           # 兼容旧字段=next_count
+
+
+def test_meeting_state_active_blocks_new_cycle(db_session):
+    """存在 active 记录时：this_week_count=该次数、recorded=True、不可开新周期。"""
+    from backend.models.meeting_record import MeetingRecord
+    db_session.add(MeetingRecord(session=23, meeting_date=date(2026, 6, 8),
+                                 status="active", recorder="x", content_snapshot=[]))
     db_session.commit()
-    st2 = SettingsService.get_meeting_state(db_session, today=date(2026, 5, 31))
-    assert st2["this_week_recorded"] is True
-    assert st2["calibration_count"] == 22         # 本周已记录 -> 校准下周
-    assert st2["calibration_monday"] == "2026-06-01"
+    SettingsService.set_active(db_session, True)
+    st = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 11))
+    assert st["active"] is True
+    assert st["this_week_count"] == 23
+    assert st["this_week_recorded"] is True
+    assert st["can_open_new_cycle"] is False
+
+
+def test_meeting_state_empty_table_fallback_to_base(db_session):
+    """无任何 meeting_record -> 回退 base 锚点(2026-06-01, 22)作为上次周会。"""
+    st = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 4))
+    assert st["last_meeting"]["count"] == 22
+    assert st["can_open_new_cycle"] is True
+    assert st["next_count"] == 23
 
 
 def test_set_count_resets_base(db_session):
@@ -156,5 +176,59 @@ def test_set_count_non_admin_403(db_session):
     try:
         r = client.put("/api/v1/settings/meeting/count", json={"count": 25})
         assert r.status_code == 403
+    finally:
+        _cleanup()
+
+
+# ---------- 核心群 chat_id ----------
+
+def test_get_core_chat_id_default_empty(db_session):
+    """未配置时 GET 返回空字符串（纯 DB，不依赖 .env）"""
+    member = _make_user(db_session, "m1")
+    client = _client(db_session, member)
+    try:
+        r = client.get("/api/v1/settings/core-group-chat-id")
+        assert r.status_code == 200
+        assert r.json()["chat_id"] == ""
+    finally:
+        _cleanup()
+
+
+def test_put_then_get_core_chat_id(db_session):
+    """管理员 PUT 后 GET 回读一致"""
+    admin = _make_user(db_session, "admin1", role=UserRole.ADMIN)
+    client = _client(db_session, admin)
+    try:
+        r = client.put("/api/v1/settings/core-group-chat-id", json={"chat_id": "oc_abc123"})
+        assert r.status_code == 200
+        assert r.json()["chat_id"] == "oc_abc123"
+        r2 = client.get("/api/v1/settings/core-group-chat-id")
+        assert r2.json()["chat_id"] == "oc_abc123"
+    finally:
+        _cleanup()
+
+
+def test_put_core_chat_id_non_admin_403(db_session):
+    """普通成员无权设置 chat_id"""
+    member = _make_user(db_session, "m1")
+    client = _client(db_session, member)
+    try:
+        r = client.put("/api/v1/settings/core-group-chat-id", json={"chat_id": "oc_x"})
+        assert r.status_code == 403
+    finally:
+        _cleanup()
+
+
+def test_put_empty_clears_core_chat_id(db_session):
+    """PUT 空字符串清空 DB 值，GET 返回空字符串"""
+    admin = _make_user(db_session, "admin1", role=UserRole.ADMIN)
+    client = _client(db_session, admin)
+    try:
+        client.put("/api/v1/settings/core-group-chat-id", json={"chat_id": "oc_abc"})
+        r = client.put("/api/v1/settings/core-group-chat-id", json={"chat_id": ""})
+        assert r.status_code == 200
+        assert r.json()["chat_id"] == ""
+        r2 = client.get("/api/v1/settings/core-group-chat-id")
+        assert r2.json()["chat_id"] == ""
     finally:
         _cleanup()

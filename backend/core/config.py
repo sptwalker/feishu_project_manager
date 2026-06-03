@@ -55,6 +55,18 @@ class Settings(BaseSettings):
     PROJECT_FOLLOWUP_MINUTE: int = 30
     WEEKLY_REPORT_DAY: str = "mon"   # 周报：周一
     WEEKLY_REPORT_HOUR: int = 9      # 周报：09:00
+
+    # 周会定时自动开启（独立开关，不依赖 SCHEDULER_ENABLED）
+    AUTO_OPEN_MEETING_ENABLED: bool = False   # 每周四自动开周会总开关
+    AUTO_MEETING_DAY: str = "thu"             # 自动开启的星期（cron day_of_week）
+    AUTO_MEETING_HOUR: int = 14               # 自动开启的小时（14:00）
+    AUTO_MEETING_MINUTE: int = 0              # 自动开启的分钟
+    AUTO_MEETING_RECORDER: str = "Shineleo"   # 自动开启时的默认记录人
+    # 周会周期递进：上次会议日期 + N 天即可进入新周期（替代原“跨自然周”规则）
+    NEW_CYCLE_DAYS: int = 3
+    # 系统对外访问地址（周会通知文案里引导成员登录更新进展）
+    SYSTEM_PUBLIC_URL: str = "https://pms.youdoogo.com/"
+
     # 提醒阈值
     REMINDER_DUE_SOON_DAYS: int = 3  # 临期：N 天内到期
     FOLLOWUP_STALE_DAYS: int = 3     # 进度跟催：进行中且 N 天未更新
@@ -63,6 +75,7 @@ class Settings(BaseSettings):
     # 项目进展催办的目标飞书群（chat_id，为空则不发送）
     FEISHU_PROJECT_GROUP_CHAT_ID: str = ""
     # 周会纪要分享的核心组群（chat_id，为空则不发送）
+    # 注：已迁移到「系统设置 › 其他设置」(DB)，send_meeting 不再读此项；保留定义仅作兼容
     FEISHU_CORE_GROUP_CHAT_ID: str = ""
     # 飞书文档链接前缀（租户域名，如 https://xxx.feishu.cn；用于拼 docx 链接）
     FEISHU_DOC_URL_PREFIX: str = "https://feishu.cn"

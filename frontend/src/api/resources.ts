@@ -104,6 +104,18 @@ export const settingsApi = {
   setFollowupStallDays(days: number) {
     return api.put<{ days: number }>('/settings/followup-stall-days', { days }).then((r) => r.data)
   },
+  getCoreGroupChatId() {
+    return api.get<{ chat_id: string }>('/settings/core-group-chat-id').then((r) => r.data)
+  },
+  setCoreGroupChatId(chat_id: string) {
+    return api.put<{ chat_id: string }>('/settings/core-group-chat-id', { chat_id }).then((r) => r.data)
+  },
+  getAutoOpenMeeting() {
+    return api.get<{ enabled: boolean }>('/settings/auto-open-meeting').then((r) => r.data)
+  },
+  setAutoOpenMeeting(enabled: boolean) {
+    return api.put<{ enabled: boolean }>('/settings/auto-open-meeting', { enabled }).then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },

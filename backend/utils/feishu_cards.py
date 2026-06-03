@@ -156,3 +156,19 @@ def build_meeting_doc_card(session: int, meeting_date: str, recorder: str,
             {"tag": "div", "text": {"tag": "lark_md", "content": "\n".join(lines)}},
         ],
     }
+
+
+def build_meeting_open_card(session: int, public_url: str,
+                            operator: str = None) -> Dict[str, Any]:
+    """周会模式开启通知卡片（发核心组群）。
+    operator=None 表示系统自动开启（文案A）；有值表示管理员手动开启（文案C）。"""
+    cycle = f"现在已经进入了第{session}次的新周会周期"
+    if operator:
+        head = f"管理员{operator}开启了核心项目管理系统的周会模式，{cycle}"
+    else:
+        head = f"请注意：核心项目管理系统的周会模式已开启，{cycle}"
+    body = (f"{head}，请各部门和项目负责人及时登录{public_url}"
+            "更新自己负责项目的最新进展信息，现在的所有更新内容将被自动收录到新周会记录中，"
+            "并在下次周会上集中汇报。")
+    return build_notification_card(f"周会模式已开启 · 第 {session} 次", [body], HEADER_GREEN)
+

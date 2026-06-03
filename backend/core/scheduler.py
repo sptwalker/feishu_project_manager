@@ -26,47 +26,59 @@ def _build_scheduler() -> AsyncIOScheduler:
     settings = get_settings()
     scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
 
-    scheduler.add_job(
-        scheduler_jobs.job_overdue_task_reminders,
-        CronTrigger(hour=settings.REMINDER_HOUR, minute=0),
-        id="overdue_task_reminders", replace_existing=True,
-    )
-    scheduler.add_job(
-        scheduler_jobs.job_due_soon_reminders,
-        CronTrigger(hour=settings.REMINDER_HOUR, minute=5),
-        id="due_soon_reminders", replace_existing=True,
-    )
-    scheduler.add_job(
-        scheduler_jobs.job_milestone_reminders,
-        CronTrigger(hour=settings.REMINDER_HOUR, minute=10),
-        id="milestone_reminders", replace_existing=True,
-    )
-    scheduler.add_job(
-        scheduler_jobs.job_progress_followups,
-        CronTrigger(hour=settings.FOLLOWUP_HOUR, minute=0),
-        id="progress_followups", replace_existing=True,
-    )
-    scheduler.add_job(
-        scheduler_jobs.job_weekly_report,
-        CronTrigger(day_of_week=settings.WEEKLY_REPORT_DAY,
-                    hour=settings.WEEKLY_REPORT_HOUR, minute=0),
-        id="weekly_report", replace_existing=True,
-    )
-    scheduler.add_job(
-        scheduler_jobs.job_project_followups,
-        CronTrigger(hour=settings.PROJECT_FOLLOWUP_HOUR,
-                    minute=settings.PROJECT_FOLLOWUP_MINUTE),
-        id="project_followups", replace_existing=True,
-    )
+    # 常规提醒/跟催/周报作业：受 SCHEDULER_ENABLED 控制
+    if settings.SCHEDULER_ENABLED:
+        scheduler.add_job(
+            scheduler_jobs.job_overdue_task_reminders,
+            CronTrigger(hour=settings.REMINDER_HOUR, minute=0),
+            id="overdue_task_reminders", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_due_soon_reminders,
+            CronTrigger(hour=settings.REMINDER_HOUR, minute=5),
+            id="due_soon_reminders", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_milestone_reminders,
+            CronTrigger(hour=settings.REMINDER_HOUR, minute=10),
+            id="milestone_reminders", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_progress_followups,
+            CronTrigger(hour=settings.FOLLOWUP_HOUR, minute=0),
+            id="progress_followups", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_weekly_report,
+            CronTrigger(day_of_week=settings.WEEKLY_REPORT_DAY,
+                        hour=settings.WEEKLY_REPORT_HOUR, minute=0),
+            id="weekly_report", replace_existing=True,
+        )
+        scheduler.add_job(
+            scheduler_jobs.job_project_followups,
+            CronTrigger(hour=settings.PROJECT_FOLLOWUP_HOUR,
+                        minute=settings.PROJECT_FOLLOWUP_MINUTE),
+            id="project_followups", replace_existing=True,
+        )
+
+    # 周会定时自动开启：独立开关，与上面互不依赖
+    if settings.AUTO_OPEN_MEETING_ENABLED:
+        scheduler.add_job(
+            scheduler_jobs.job_auto_open_meeting,
+            CronTrigger(day_of_week=settings.AUTO_MEETING_DAY,
+                        hour=settings.AUTO_MEETING_HOUR,
+                        minute=settings.AUTO_MEETING_MINUTE),
+            id="auto_open_meeting", replace_existing=True,
+        )
     return scheduler
 
 
 def start_scheduler() -> Optional[AsyncIOScheduler]:
-    """启动调度器（受 SCHEDULER_ENABLED 控制）。返回调度器实例或 None。"""
+    """启动调度器（SCHEDULER_ENABLED 或 AUTO_OPEN_MEETING_ENABLED 任一开启即启动）。返回实例或 None。"""
     global _scheduler
     settings = get_settings()
-    if not settings.SCHEDULER_ENABLED:
-        logger.info("Scheduler disabled (SCHEDULER_ENABLED=False); not starting")
+    if not (settings.SCHEDULER_ENABLED or settings.AUTO_OPEN_MEETING_ENABLED):
+        logger.info("Scheduler disabled (both SCHEDULER_ENABLED and AUTO_OPEN_MEETING_ENABLED are False); not starting")
         return None
     if _scheduler is not None and _scheduler.running:
         return _scheduler

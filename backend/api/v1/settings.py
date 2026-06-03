@@ -8,8 +8,10 @@ from backend.models.user import User
 from backend.schemas.setting import (
     MeetingStateResponse, MeetingActiveUpdate, MeetingCountUpdate,
     FollowupStallDaysResponse, FollowupStallDaysUpdate,
+    CoreGroupChatIdResponse, CoreGroupChatIdUpdate,
+    AutoOpenMeetingResponse, AutoOpenMeetingUpdate,
 )
-from backend.services.settings_service import SettingsService
+from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
 from backend.services.project_followup_service import (
     get_stall_days_threshold, SETTING_FOLLOWUP_STALL_DAYS,
 )
@@ -66,3 +68,43 @@ def set_followup_stall_days(
     """设置项目进展停滞催办天数阈值（仅管理员）"""
     SettingsService.set_setting(db, SETTING_FOLLOWUP_STALL_DAYS, str(payload.days))
     return FollowupStallDaysResponse(days=get_stall_days_threshold(db))
+
+
+@router.get("/settings/core-group-chat-id", response_model=CoreGroupChatIdResponse)
+def get_core_group_chat_id(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取周会纪要核心群 chat_id（所有登录用户可读）"""
+    return CoreGroupChatIdResponse(chat_id=SettingsService.get_core_group_chat_id(db) or "")
+
+
+@router.put("/settings/core-group-chat-id", response_model=CoreGroupChatIdResponse)
+def set_core_group_chat_id(
+    payload: CoreGroupChatIdUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """设置周会纪要核心群 chat_id（仅管理员；空字符串=清空，留空则不发送）"""
+    SettingsService.set_setting(db, FEISHU_CORE_GROUP_CHAT_ID_KEY, payload.chat_id.strip())
+    return CoreGroupChatIdResponse(chat_id=SettingsService.get_core_group_chat_id(db) or "")
+
+
+@router.get("/settings/auto-open-meeting", response_model=AutoOpenMeetingResponse)
+def get_auto_open_meeting(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取周四自动开周会开关状态（所有登录用户可读）"""
+    return AutoOpenMeetingResponse(enabled=SettingsService.get_auto_open_meeting_enabled(db))
+
+
+@router.put("/settings/auto-open-meeting", response_model=AutoOpenMeetingResponse)
+def set_auto_open_meeting(
+    payload: AutoOpenMeetingUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """切换周四自动开周会开关（仅管理员；改后立即生效无需重启）"""
+    SettingsService.set_auto_open_meeting_enabled(db, payload.enabled)
+    return AutoOpenMeetingResponse(enabled=SettingsService.get_auto_open_meeting_enabled(db))

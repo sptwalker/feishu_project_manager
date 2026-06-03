@@ -16,6 +16,8 @@ from backend.schemas.meeting_record import (
 from backend.schemas.setting import MeetingStateResponse
 from backend.services.meeting_record_service import MeetingRecordService
 from backend.services.settings_service import SettingsService
+from backend.services.notification_service import NotificationService
+from backend.core.config import get_settings
 
 router = APIRouter()
 
@@ -40,15 +42,27 @@ def get_meeting_record(
 
 
 @router.post("/meeting-records/open", response_model=MeetingRecordResponse)
-def open_meeting(
+async def open_meeting(
     payload: MeetingOpenRequest,
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """开启周会（管理员）：确认计次/记录人/会议日期后开启，自动结束上一次未归档的周会"""
-    return MeetingRecordService.open_meeting(
+    """开启周会（管理员）：确认计次/记录人/会议日期后开启，自动结束上一次未归档的周会。
+    若本次开启进入了新周期，向飞书核心群发开启通知（文案C，带管理员名）。"""
+    # 开启前先判断是否进入新周期（开启后 active 会变 True，故需在前面取）
+    is_new_cycle = SettingsService.get_meeting_state(db)["can_open_new_cycle"]
+    detail = MeetingRecordService.open_meeting(
         db, payload.session, payload.recorder, payload.meeting_date, created_by=current_admin.id,
     )
+    if is_new_cycle:
+        # 进入新周期：通知核心群（best-effort，失败不影响开启）
+        chat_id = SettingsService.get_core_group_chat_id(db)
+        await NotificationService.notify_meeting_open(
+            chat_id, session=payload.session,
+            public_url=get_settings().SYSTEM_PUBLIC_URL,
+            operator=current_admin.name,
+        )
+    return detail
 
 
 @router.post("/meeting-records/close", response_model=MeetingStateResponse)

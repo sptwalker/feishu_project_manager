@@ -75,6 +75,11 @@ export interface MeetingState {
   last_meeting: { date: string; count: number } | null
   calibration_count: number
   calibration_monday: string
+  // 事件驱动周期（上次会议日期 + new_cycle_days 天进入新周期）
+  can_open_new_cycle?: boolean
+  next_count?: number
+  days_since_last?: number | null
+  new_cycle_days?: number
 }
 
 export interface MeetingItem {

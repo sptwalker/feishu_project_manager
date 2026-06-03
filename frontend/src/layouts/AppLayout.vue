@@ -130,18 +130,17 @@ function onCommand(cmd: string) {
 async function onToggleMeeting(val: string | number | boolean) {
   const next = Boolean(val)
   if (next) {
-    // 开启：取最新状态，判断是否跨周（本周未记录且存在更早的上次会议）
+    // 开启：取最新状态，判断是否进入新周期（上次会议日期 + N 天后）
     await meeting.load()
     const st = meeting.state
-    const session = st?.calibration_count ?? meeting.currentCount ?? 1
-    const crossWeek = !!st && !st.this_week_recorded && !!st.last_meeting
-      && st.last_meeting.count < (st.calibration_count ?? 0)
-    if (crossWeek) {
+    const session = st?.next_count ?? st?.calibration_count ?? meeting.currentCount ?? 1
+    const newCycle = !!st && !!st.can_open_new_cycle
+    if (newCycle) {
       try {
         await ElMessageBox.confirm(
-          '本周尚未开过周会，现在开启周会模式将结束上周周会记录，并刷新周会记录窗口。是否继续？',
-          '开启新一周周会',
-          { type: 'warning', confirmButtonText: '继续', cancelButtonText: '取消' },
+          `上轮周会已经结束超过${st?.new_cycle_days ?? 3}天，现在开启周会模式将进入新的第${session}次周会周期，新周会记录将开启。`,
+          '开启新周期周会',
+          { type: 'warning', confirmButtonText: '确认开启', cancelButtonText: '取消' },
         )
       } catch {
         return  // 用户取消，开关回弹

@@ -9,6 +9,7 @@ from backend.db.session import SessionLocal
 from backend.services.reminder_service import ReminderService
 from backend.services.report_service import ReportService
 from backend.services.project_followup_service import ProjectFollowupService
+from backend.services.auto_meeting_service import AutoMeetingService
 
 logger = logging.getLogger(__name__)
 
@@ -49,3 +50,8 @@ async def job_weekly_report() -> int:
 
 async def job_project_followups() -> int:
     return await _run_with_session(ProjectFollowupService.send_project_followups, "project_followups")
+
+
+async def job_auto_open_meeting() -> int:
+    """每周四自动开启周会（工作日判断 + 开启 + 发群通知）"""
+    return await _run_with_session(AutoMeetingService.auto_open_if_due, "auto_open_meeting")

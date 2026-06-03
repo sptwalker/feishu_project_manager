@@ -187,9 +187,8 @@ class MeetingRecordService:
             db.rollback()
             raise
 
-        # 3. 开启周会模式 + 校准次数到 session
+        # 3. 开启周会模式（次数以 meeting_records 表为真相源，不再写 base 锚点，避免双写打架）
         SettingsService.set_active(db, True)
-        SettingsService.set_count(db, session)
         return MeetingRecordService.get_session_detail(db, session)
 
     @staticmethod
@@ -275,7 +274,8 @@ class MeetingRecordService:
                 db.rollback()
 
         # 4. 分享到核心组群
-        chat_id = settings.FEISHU_CORE_GROUP_CHAT_ID or None
+        # chat_id 改为从系统设置(DB)读取，所见即所得；留空则不发送
+        chat_id = SettingsService.get_core_group_chat_id(db)
         sent = await NotificationService.notify_meeting_doc(
             chat_id, session, meeting_date, recorder, doc_url,
         )
