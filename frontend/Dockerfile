@@ -5,7 +5,8 @@ WORKDIR /app
 
 # 安装依赖（使用 lockfile 保证可复现构建）
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm ci
 
 # 构建应用
 COPY . .
