@@ -11,8 +11,10 @@
 """
 import logging
 from typing import Optional
+from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR, EVENT_JOB_MISSED
 from backend.core.config import get_settings
 from backend.services import scheduler_jobs
 
@@ -22,42 +24,74 @@ logger = logging.getLogger(__name__)
 _scheduler: Optional[AsyncIOScheduler] = None
 
 
+def _job_event_listener(event) -> None:
+    """定时任务事件监听：记录每个任务的执行/错过(misfire)/异常，确保不遗漏错失。"""
+    if event.code == EVENT_JOB_MISSED:
+        # 错过触发（如容器在触发时刻不可用）。配合 misfire_grace_time，宽限期内仍会补跑；
+        # 超过宽限期才会真正丢失，这里 warning 留痕便于追溯。
+        logger.warning("定时任务 [%s] 错过触发（misfire），计划时间=%s", event.job_id, event.scheduled_run_time)
+    elif event.code == EVENT_JOB_ERROR:
+        logger.error("定时任务 [%s] 执行异常: %s", event.job_id, event.exception)
+    else:  # EVENT_JOB_EXECUTED
+        logger.info("定时任务 [%s] 执行完成，计划时间=%s，返回=%s",
+                    event.job_id, event.scheduled_run_time, event.retval)
+
+
 def _build_scheduler() -> AsyncIOScheduler:
     settings = get_settings()
-    scheduler = AsyncIOScheduler(timezone=settings.TIMEZONE)
+    # 显式用 ZoneInfo 作为时区：APScheduler 3.x 下 CronTrigger 不显式带 timezone 时会回退到
+    # 容器本地时区(UTC)，导致 hour=14 实际按 UTC 触发(=北京 22:00)。故所有 trigger 统一带此 tz。
+    tz = ZoneInfo(settings.TIMEZONE)
+
+    def _cron(**kw) -> CronTrigger:
+        return CronTrigger(timezone=tz, **kw)
+
+    # 全局防漏：coalesce 合并堆积的多次触发为一次；misfire_grace_time 给错过的任务补执行宽限期。
+    # 对所有 job 生效（常规提醒/跟催/周报 + 周会自动开启/催更）。
+    scheduler = AsyncIOScheduler(
+        timezone=tz,
+        job_defaults={
+            "coalesce": True,
+            "misfire_grace_time": settings.SCHEDULER_MISFIRE_GRACE_TIME,
+        },
+    )
+    # 注册事件监听器：每次执行/错过/异常都留日志，确保不遗漏错失
+    scheduler.add_listener(
+        _job_event_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED
+    )
 
     # 常规提醒/跟催/周报作业：受 SCHEDULER_ENABLED 控制
     if settings.SCHEDULER_ENABLED:
         scheduler.add_job(
             scheduler_jobs.job_overdue_task_reminders,
-            CronTrigger(hour=settings.REMINDER_HOUR, minute=0),
+            _cron(hour=settings.REMINDER_HOUR, minute=0),
             id="overdue_task_reminders", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_due_soon_reminders,
-            CronTrigger(hour=settings.REMINDER_HOUR, minute=5),
+            _cron(hour=settings.REMINDER_HOUR, minute=5),
             id="due_soon_reminders", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_milestone_reminders,
-            CronTrigger(hour=settings.REMINDER_HOUR, minute=10),
+            _cron(hour=settings.REMINDER_HOUR, minute=10),
             id="milestone_reminders", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_progress_followups,
-            CronTrigger(hour=settings.FOLLOWUP_HOUR, minute=0),
+            _cron(hour=settings.FOLLOWUP_HOUR, minute=0),
             id="progress_followups", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_weekly_report,
-            CronTrigger(day_of_week=settings.WEEKLY_REPORT_DAY,
-                        hour=settings.WEEKLY_REPORT_HOUR, minute=0),
+            _cron(day_of_week=settings.WEEKLY_REPORT_DAY,
+                  hour=settings.WEEKLY_REPORT_HOUR, minute=0),
             id="weekly_report", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_project_followups,
-            CronTrigger(hour=settings.PROJECT_FOLLOWUP_HOUR,
-                        minute=settings.PROJECT_FOLLOWUP_MINUTE),
+            _cron(hour=settings.PROJECT_FOLLOWUP_HOUR,
+                  minute=settings.PROJECT_FOLLOWUP_MINUTE),
             id="project_followups", replace_existing=True,
         )
 
@@ -65,24 +99,24 @@ def _build_scheduler() -> AsyncIOScheduler:
     if settings.AUTO_OPEN_MEETING_ENABLED:
         scheduler.add_job(
             scheduler_jobs.job_auto_open_meeting,
-            CronTrigger(day_of_week=settings.AUTO_MEETING_DAY,
-                        hour=settings.AUTO_MEETING_HOUR,
-                        minute=settings.AUTO_MEETING_MINUTE),
+            _cron(day_of_week=settings.AUTO_MEETING_DAY,
+                  hour=settings.AUTO_MEETING_HOUR,
+                  minute=settings.AUTO_MEETING_MINUTE),
             id="auto_open_meeting", replace_existing=True,
         )
         # 周会自动催更①/②（每周五/周日 14:00）；运行时由 DB 开关 + active 守卫控制是否真发
         scheduler.add_job(
             scheduler_jobs.job_meeting_reminder_one,
-            CronTrigger(day_of_week=settings.AUTO_REMINDER1_DAY,
-                        hour=settings.AUTO_REMINDER_HOUR,
-                        minute=settings.AUTO_REMINDER_MINUTE),
+            _cron(day_of_week=settings.AUTO_REMINDER1_DAY,
+                  hour=settings.AUTO_REMINDER_HOUR,
+                  minute=settings.AUTO_REMINDER_MINUTE),
             id="meeting_reminder_one", replace_existing=True,
         )
         scheduler.add_job(
             scheduler_jobs.job_meeting_reminder_two,
-            CronTrigger(day_of_week=settings.AUTO_REMINDER2_DAY,
-                        hour=settings.AUTO_REMINDER_HOUR,
-                        minute=settings.AUTO_REMINDER_MINUTE),
+            _cron(day_of_week=settings.AUTO_REMINDER2_DAY,
+                  hour=settings.AUTO_REMINDER_HOUR,
+                  minute=settings.AUTO_REMINDER_MINUTE),
             id="meeting_reminder_two", replace_existing=True,
         )
     return scheduler
@@ -99,7 +133,11 @@ def start_scheduler() -> Optional[AsyncIOScheduler]:
         return _scheduler
     _scheduler = _build_scheduler()
     _scheduler.start()
-    logger.info("Scheduler started with %d job(s)", len(_scheduler.get_jobs()))
+    jobs = _scheduler.get_jobs()
+    logger.info("Scheduler started with %d job(s)", len(jobs))
+    # 逐个打印下次触发时间，启动即可确认所有定时任务的调度计划
+    for j in jobs:
+        logger.info("  · 定时任务 [%s] 下次触发=%s", j.id, j.next_run_time)
     return _scheduler
 
 

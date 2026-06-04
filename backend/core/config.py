@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     PROJECT_FOLLOWUP_MINUTE: int = 30
     WEEKLY_REPORT_DAY: str = "mon"   # 周报：周一
     WEEKLY_REPORT_HOUR: int = 9      # 周报：09:00
+    # 定时任务防漏：错过触发后多久内仍补执行（秒）。默认 4 小时——
+    # 容器重启/部署窗口恰好跨过触发时刻时，恢复后仍会补跑一次，避免遗漏。
+    SCHEDULER_MISFIRE_GRACE_TIME: int = 14400
 
     # 周会定时自动开启（独立开关，不依赖 SCHEDULER_ENABLED）
     AUTO_OPEN_MEETING_ENABLED: bool = False   # 每周四自动开周会总开关

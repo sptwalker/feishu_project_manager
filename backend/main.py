@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,15 @@ from backend.api.v1 import meeting_records as meeting_records_api
 from backend.api.v1 import operation_logs as operation_logs_api
 
 settings = get_settings()
+
+# 配置应用日志输出到 stdout（docker logs 可见）。
+# 默认 Python 仅输出 WARNING+，会吞掉调度器启动、定时任务执行/跳过等关键 INFO 日志，
+# 导致定时任务问题无法从日志排查。force=True 覆盖任何已有 root 配置，确保 backend.* 的日志可见。
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    force=True,
+)
 
 
 @asynccontextmanager

@@ -109,6 +109,11 @@ class AuthService:
         if not user:
             raise InvalidTokenError("User not found")
 
+        # 刷新 token 时一并更新最后活跃时间：日常使用靠 token 静默续期维持会话，
+        # 不会重新走飞书登录；若只在 OAuth 登录时更新，last_login_at 会严重滞后。
+        # 在此更新使其反映最近活跃（最多滞后一个 access token 周期）。
+        user = UserService.update_last_login(db, user)
+
         access_token = create_access_token(data={"sub": str(user.id)})
 
         return {

@@ -190,11 +190,24 @@ const subtitle = computed(() => {
   if (withLogin.length) {
     const latest = withLogin.reduce((a, b) =>
       (a.last_login_at || '') > (b.last_login_at || '') ? a : b)
-    const t = (latest.last_login_at || '').replace('T', ' ').slice(0, 16)
-    who = `${latest.name}（${t}）`
+    who = `${latest.name}（${fmtLoginTime(latest.last_login_at)}）`
   }
-  return `目前本系统管理涵盖全公司 ${deptCount} 个部门，${managerCount} 位项目经理，最新登录的用户是 ${who}。`
+  return `目前本系统管理涵盖全公司 ${deptCount} 个部门，${managerCount} 位项目经理，最近活跃的用户是 ${who}。`
 })
+
+/* 格式化最后活跃时间：后端存 UTC（无时区后缀），按 UTC 解析后转北京时间显示，避免差 8 小时 */
+function fmtLoginTime(s?: string | null): string {
+  if (!s) return '—'
+  // 无时区后缀的字符串按 UTC 处理（补 Z），否则 JS 会当本地时区解析导致偏差
+  const iso = /[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return s.replace('T', ' ').slice(0, 16)
+  return d.toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
 
 /* 详情抽屉 */
 const detailVisible = ref(false)

@@ -10,7 +10,7 @@
         <el-autocomplete
           v-model="keyword"
           :fetch-suggestions="querySearch"
-          placeholder="搜索项目 / 负责人 / 部门 / 进展 / 批注…"
+          placeholder="搜索项目 / 负责人 / 相关人 / 部门 / 进展…"
           clearable
           :prefix-icon="Search"
           :trigger-on-focus="false"
@@ -262,6 +262,7 @@ function matchHint(p: Project, kw: string): string {
   const inText = (s?: string | null) => (s || '').toLowerCase().includes(kw)
   if (inText(p.name)) return ''
   if (inText(p.owner_name)) return '负责人'
+  if (inText(p.related_name)) return '相关人'
   if (inText(p.department) || getDepartmentShortName(p.department).toLowerCase().includes(kw)) return '部门'
   if (inText(p.content)) return '说明'
   for (const e of (p.progress_log ?? [])) {
@@ -285,7 +286,10 @@ function querySearch(q: string, cb: (results: SearchSuggestion[]) => void) {
     .slice(0, 10)
     .map((p) => {
       const where = matchHint(p, kw)
-      const base = [getDepartmentShortName(p.department) || p.department, p.owner_name].filter(Boolean).join(' · ')
+      const baseParts = [getDepartmentShortName(p.department) || p.department, p.owner_name]
+      // 命中相关人时，把相关人也带进副信息，便于用户看清匹配原因
+      if (where === '相关人' && p.related_name) baseParts.push(`相关人:${p.related_name}`)
+      const base = baseParts.filter(Boolean).join(' · ')
       return {
         value: p.name,
         meta: where ? `${base}　· 命中${where}` : base,
