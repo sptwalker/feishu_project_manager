@@ -125,6 +125,12 @@
       </el-table-column>
 
       <el-table-column
+        prop="related_name" label="相关人" width="120" align="center" show-overflow-tooltip
+      >
+        <template #default="{ row }">{{ row.related_name || '—' }}</template>
+      </el-table-column>
+
+      <el-table-column
         prop="urgency" label="优先级" width="108" align="center"
         sortable :sort-method="sortUrgency"
         :filters="urgencyFilters" :filter-method="filterUrgency"
