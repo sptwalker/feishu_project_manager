@@ -9,6 +9,7 @@ from backend.api.v1 import settings as settings_api
 from backend.api.v1 import backup as backup_api
 from backend.api.v1 import meeting_records as meeting_records_api
 from backend.api.v1 import operation_logs as operation_logs_api
+from backend.api.v1 import test_reminder as test_reminder_api  # 【临时测试】催更测试，验证后删除
 
 settings = get_settings()
 
@@ -109,6 +110,12 @@ app.include_router(
     operation_logs_api.router,
     prefix="/api/v1",
     tags=["operation_logs"]
+)
+# 【临时测试】催更测试路由，验证完成后删除本段与上方 import 及 test_reminder.py
+app.include_router(
+    test_reminder_api.router,
+    prefix="/api/v1",
+    tags=["test"]
 )
 
 

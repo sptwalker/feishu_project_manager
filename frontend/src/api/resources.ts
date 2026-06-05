@@ -122,6 +122,14 @@ export const settingsApi = {
   setAutoReminder(enabled: boolean) {
     return api.put<{ enabled: boolean }>('/settings/auto-reminder', { enabled }).then((r) => r.data)
   },
+  // 【临时测试】安排一次性测试催更（约3分钟后执行），返回守卫状态；验证后删除
+  testReminder() {
+    return api.post<{
+      ok: boolean; run_at: string; delay_min: number
+      guards: { auto_reminder_enabled: boolean; active_meeting: boolean; core_chat_id_configured: boolean; feishu_notify_enabled: boolean }
+      message: string
+    }>('/settings/test-reminder').then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },
