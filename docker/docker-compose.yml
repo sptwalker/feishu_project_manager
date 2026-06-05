@@ -14,6 +14,9 @@ services:
       # 放在 compose(随 git 管理)而非 .env，确保所有部署(含外网)都生效，无需手改服务器 .env。
       # 注意：这只是让调度器跑起来；是否真正发消息仍受 DB 运行时开关 + FEISHU_NOTIFY_ENABLED 控制。
       AUTO_OPEN_MEETING_ENABLED: "True"
+      # 飞书真实外发总开关：开启后周会催更/纪要/自动开周会通知会真正发到飞书群。
+      # 同样放 compose 以便外网无需改 .env；如需停止真实外发改成 "False" 即可。
+      FEISHU_NOTIFY_ENABLED: "True"
     restart: unless-stopped
     networks:
       - feishu_pm_network
