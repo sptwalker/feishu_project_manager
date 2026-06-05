@@ -104,6 +104,9 @@
         <el-button type="primary" :icon="Check" :loading="saving" @click="onSave">{{ createMode ? '创建项目' : '保存' }}</el-button>
       </div>
 
+      <!-- 项目进展 / 历史修改记录（tab 切换） -->
+      <el-tabs v-model="activeTab" class="detail-tabs">
+        <el-tab-pane label="进展详情" name="progress">
       <!-- 项目进展详情 -->
       <div ref="progressWrap" class="progress-block">
         <div class="prog-title">
@@ -236,6 +239,22 @@
           --- 已超过 <span class="stalled-banner-days" :style="{ color: stalled.color }">{{ stalled.days }}</span> 天没有进展反馈 ---
         </div>
       </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="历史修改记录" name="history">
+          <!-- 该项目所有编辑/操作日志（时间·编辑人·内容），持久化于操作日志，按项目过滤 -->
+          <div v-loading="historyLoading" class="history-block">
+            <div v-if="history.length" class="hist-list">
+              <div v-for="h in history" :key="h.id" class="hist-row">
+                <span class="hist-user">{{ h.user_name || '—' }}</span>
+                <span class="hist-time">{{ fmtTime(h.occurred_at) }}</span>
+                <span class="hist-desc">{{ h.description }}</span>
+              </div>
+            </div>
+            <el-empty v-else-if="!historyLoading" description="暂无修改记录" :image-size="60" />
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </div>
 
     <!-- 批注/回复对话框 -->
@@ -301,7 +320,7 @@ import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Close, Delete, Plus, Check, Link, Document } from '@element-plus/icons-vue'
 import { projectApi, departmentApi, userApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment } from '@/types'
+import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, OperationLog } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, progressStatusColor, isOverdue,
@@ -353,6 +372,11 @@ const local = ref<Project | null>(null)
 const editing = ref(false)
 const saving = ref(false)
 
+/* 历史修改记录 tab：当前激活 tab、历史日志列表、加载态 */
+const activeTab = ref<'progress' | 'history'>('progress')
+const history = ref<OperationLog[]>([])
+const historyLoading = ref(false)
+
 const form = reactive<Record<string, unknown>>({
   name: '', content: '', department: '', owner_name: '', related_name: '',
   status: 'planned', urgency: 'medium', completion: 0, is_long_term: false, record_date: '', estimated_end_date: null,
@@ -397,10 +421,40 @@ function sync() {
   progressDraft.value = JSON.parse(JSON.stringify(local.value?.progress_log ?? []))
   editing.value = false
   editingProgress.value = false
+  // 切换项目时重置 tab 到进展、清空历史缓存
+  activeTab.value = 'progress'
+  history.value = []
 }
 
 watch(() => props.project, sync)
 watch(() => props.visible, (v) => { if (v) sync() })
+
+/* 切到「历史修改记录」tab：先把未保存的进展提交落库，再拉取该项目的历史日志 */
+watch(activeTab, async (tab) => {
+  if (tab !== 'history') return
+  if (editingProgress.value) await commitProgress()
+  await loadHistory()
+})
+
+/* 拉取当前项目的历史修改记录（createMode 或无 id 时跳过） */
+async function loadHistory() {
+  const id = local.value?.id
+  if (props.createMode || !id) { history.value = []; return }
+  historyLoading.value = true
+  try {
+    history.value = await projectApi.history(id)
+  } catch {
+    history.value = []
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+/* 历史时间格式化：后端 occurred_at 无时区，按本地展示到分钟 */
+function fmtTime(s?: string | null): string {
+  if (!s) return '—'
+  return s.replace('T', ' ').slice(0, 16)
+}
 
 const overdue = computed(() => !!local.value && isOverdue(local.value.estimated_end_date, local.value.status))
 
@@ -1163,4 +1217,16 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .reply-author { font-weight: 600; font-size: 12px; color: var(--c-ink-2); }
 .reply-time { font-size: 11px; color: var(--c-ink-3); }
 .reply-content { font-size: 12px; color: var(--c-ink-2); line-height: 1.4; white-space: pre-wrap; }
+
+/* 历史修改记录 tab */
+.detail-tabs { margin-top: var(--sp-2); }
+.history-block { min-height: 120px; max-height: 52vh; overflow-y: auto; padding: var(--sp-1) 0; }
+.hist-list { display: flex; flex-direction: column; }
+.hist-row {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  padding: var(--sp-2) 0; border-bottom: 1px solid var(--c-border); font-size: 13px;
+}
+.hist-user { flex-shrink: 0; font-weight: 600; color: #1a73e8; }
+.hist-time { flex-shrink: 0; font-size: 12px; color: var(--c-ink-3); }
+.hist-desc { color: var(--c-ink); line-height: 1.5; word-break: break-all; }
 </style>

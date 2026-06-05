@@ -15,6 +15,7 @@ class OperationLog(BaseModel):
     __tablename__ = "operation_logs"
 
     user_id = Column(Integer, index=True, comment="操作人用户ID（可空）")
+    project_id = Column(Integer, index=True, comment="关联项目ID（用于按项目查询历史；不级联删除，项目删除后日志保留）")
     user_name = Column(String(100), nullable=False, default="", comment="操作人姓名快照")
     action = Column(String(30), nullable=False, comment="动作类型 login/create_project/update_progress/comment/feedback/delete_project/edit_project")
     target = Column(String(200), comment="操作对象（如项目名）")

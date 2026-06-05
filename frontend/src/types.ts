@@ -188,6 +188,7 @@ export interface Token {
 export interface OperationLog {
   id: number
   user_name: string
+  project_id?: number | null
   action: string
   target?: string | null
   description: string

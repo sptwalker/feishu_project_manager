@@ -27,16 +27,19 @@ class OperationLogService:
         action: str,
         description: str,
         target: Optional[str] = None,
+        project_id: Optional[int] = None,
         occurred_at: Optional[datetime] = None,
     ) -> None:
         """写一条操作日志。独立 try/except，失败仅告警不抛出（不影响主操作）。
 
         user 优先取其 name 作为快照；也可直接传 user_name。
+        project_id 关联项目（用于项目历史查询；不级联删除）。
         """
         try:
             name = user_name if user_name is not None else (user.name if user else "")
             row = OperationLog(
                 user_id=user.id if user else None,
+                project_id=project_id,
                 user_name=name or "",
                 action=action,
                 target=target,
@@ -58,9 +61,12 @@ class OperationLogService:
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         limit: int = 1000,
+        project_id: Optional[int] = None,
     ) -> List[OperationLog]:
-        """查询时间范围内的操作日志，按发生时间倒序，限量返回。"""
+        """查询操作日志，按发生时间倒序，限量返回。可按时间范围与项目过滤。"""
         q = db.query(OperationLog)
+        if project_id is not None:
+            q = q.filter(OperationLog.project_id == project_id)
         if start is not None:
             q = q.filter(OperationLog.occurred_at >= start)
         if end is not None:

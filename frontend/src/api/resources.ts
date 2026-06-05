@@ -17,6 +17,10 @@ export const projectApi = {
   remove(id: number) {
     return api.delete(`/projects/${id}`)
   },
+  // 项目历史修改记录（操作日志，按项目过滤）
+  history(id: number) {
+    return api.get<OperationLog[]>(`/projects/${id}/history`).then((r) => r.data)
+  },
 }
 
 export const taskApi = {

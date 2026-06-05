@@ -9,6 +9,8 @@ from backend.models.project import ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
 from backend.services.project_service import ProjectService
 from backend.services.operation_log_service import OperationLogService
+from backend.services.project_diff import build_field_change_desc
+from backend.schemas.operation_log import OperationLogResponse
 from backend.core.permissions import PermissionChecker
 
 router = APIRouter()
@@ -31,6 +33,7 @@ def create_project(
     OperationLogService.log(
         db, user=current_user, action="create_project",
         target=project.name, description=f'新增了项目记录"{project.name}"',
+        project_id=project.id,
     )
     return project
 
@@ -89,6 +92,10 @@ def update_project(
     old_log = copy.deepcopy(project.progress_log or [])
     old_name = project.name
 
+    # 在更新前对比基本字段，生成字段级中文变更描述（用旧值）
+    payload = project_data.model_dump(exclude_unset=True)
+    field_desc = build_field_change_desc(project, payload, old_name)
+
     try:
         project = ProjectService.update(db, project_id, project_data)
     except IntegrityError:
@@ -102,30 +109,35 @@ def update_project(
             detail="Project not found"
         )
 
-    # 记录操作日志：优先按进展变化分类，否则视为普通信息修改
+    # 记录操作日志（带 project_id，供项目历史查询）
     pname = project.name or old_name
-    payload = project_data.model_dump(exclude_unset=True)
     if "progress_log" in payload:
+        # 进展变化：按类型分类记录；未分类到具体动作但进展确有变化时兜底记“更新了进展”
         action, st = OperationLogService.classify_progress_change(old_log, project.progress_log or [])
         if action == "feedback":
             OperationLogService.log(db, user=current_user, action="feedback", target=pname,
-                                    description=f'在项目"{pname}"里反馈了{st}事项')
+                                    description=f'在项目"{pname}"里反馈了{st}事项', project_id=project.id)
         elif action == "update_progress":
             OperationLogService.log(db, user=current_user, action="update_progress", target=pname,
-                                    description=f'在项目"{pname}"里更新了项目进展')
+                                    description=f'在项目"{pname}"里更新了项目进展', project_id=project.id)
         elif action == "comment":
             OperationLogService.log(db, user=current_user, action="comment", target=pname,
-                                    description=f'在项目"{pname}"里进行了评论')
+                                    description=f'在项目"{pname}"里进行了评论', project_id=project.id)
         elif action == "delete_progress":
             OperationLogService.log(db, user=current_user, action="delete_progress", target=pname,
-                                    description=f'在项目"{pname}"里删除了项目进展')
-        elif len(payload) > 1:
-            # 进展无变化但同时改了其它字段
+                                    description=f'在项目"{pname}"里删除了项目进展', project_id=project.id)
+        elif (old_log or []) != (project.progress_log or []):
+            # 进展内容/状态被修改但不属于增/删/批注 → 兜底记“更新了进展”
+            OperationLogService.log(db, user=current_user, action="update_progress", target=pname,
+                                    description=f'在项目"{pname}"里更新了项目进展', project_id=project.id)
+        # 若同一次提交还改了基本字段，再补记一条字段级变更
+        if field_desc:
             OperationLogService.log(db, user=current_user, action="edit_project", target=pname,
-                                    description=f'修改了项目"{pname}"的信息')
-    elif payload:
+                                    description=field_desc, project_id=project.id)
+    elif field_desc:
+        # 仅基本字段变化：记录精确的字段级变更描述
         OperationLogService.log(db, user=current_user, action="edit_project", target=pname,
-                                description=f'修改了项目"{pname}"的信息')
+                                description=field_desc, project_id=project.id)
     return project
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -150,4 +162,21 @@ def delete_project(
     OperationLogService.log(
         db, user=current_user, action="delete_project",
         target=pname, description=f'删除了项目"{pname}"',
+        project_id=project_id,
     )
+
+
+@router.get("/{project_id}/history", response_model=List[OperationLogResponse])
+def get_project_history(
+    project_id: int,
+    limit: int = Query(500, ge=1, le=2000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取某项目的历史修改记录（按发生时间倒序）。登录用户可读。"""
+    if not ProjectService.get_by_id(db, project_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+    return OperationLogService.query(db, project_id=project_id, limit=limit)
