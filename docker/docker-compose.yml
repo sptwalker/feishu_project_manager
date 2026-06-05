@@ -9,6 +9,11 @@ services:
       - backend_data:/data
     env_file:
       - .env
+    environment:
+      # 基础设施开关：让定时任务调度器启动并注册"周会自动开启/催更"任务。
+      # 放在 compose(随 git 管理)而非 .env，确保所有部署(含外网)都生效，无需手改服务器 .env。
+      # 注意：这只是让调度器跑起来；是否真正发消息仍受 DB 运行时开关 + FEISHU_NOTIFY_ENABLED 控制。
+      AUTO_OPEN_MEETING_ENABLED: "True"
     restart: unless-stopped
     networks:
       - feishu_pm_network
