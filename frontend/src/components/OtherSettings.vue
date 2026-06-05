@@ -76,6 +76,23 @@
         </el-button>
         <span class="muted hint">临时测试按钮，用于排查催更是否能正常发出</span>
       </div>
+      <!-- 【临时测试】催更诊断：一键获取完整诊断报告，复制后发给开发；验证完删除本段 -->
+      <div class="calibrate" style="border-top:none; padding-top:var(--sp-2); align-items:flex-start; flex-wrap:wrap">
+        <span class="ilabel">催更诊断</span>
+        <div style="flex:1; min-width:280px">
+          <div style="display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap">
+            <el-button size="small" type="primary" plain :loading="loadingDiag" :disabled="!isAdmin" @click="getDiag">
+              获取诊断信息
+            </el-button>
+            <el-button size="small" :disabled="!diagReport" @click="copyDiag">复制</el-button>
+            <span class="muted hint">先点「测试催更」，约3分钟后再点这里获取结果，复制发给开发</span>
+          </div>
+          <el-input
+            v-if="diagReport" v-model="diagReport" type="textarea" :rows="16" readonly
+            style="margin-top:8px" input-style="font-family:monospace;font-size:12px;white-space:pre"
+          />
+        </div>
+      </div>
     </section>
 
     <!-- 飞书核心群 chat_id：周会纪要文档链接分享的目标群（所见即所得，留空不发送） -->
@@ -286,6 +303,29 @@ async function doTestReminder() {
     ElMessage.error('安排失败（需管理员；且后端调度器需已启动 AUTO_OPEN_MEETING_ENABLED/SCHEDULER_ENABLED）')
   } finally {
     testingReminder.value = false
+  }
+}
+
+/* 【临时测试】获取催更链路诊断报告文本，展示到文本框供复制；验证后删除 */
+const loadingDiag = ref(false)
+const diagReport = ref('')
+async function getDiag() {
+  loadingDiag.value = true
+  try {
+    const r = await settingsApi.getDiagnostics()
+    diagReport.value = r.report
+  } catch {
+    ElMessage.error('获取诊断失败（需要管理员权限）')
+  } finally {
+    loadingDiag.value = false
+  }
+}
+async function copyDiag() {
+  try {
+    await navigator.clipboard.writeText(diagReport.value)
+    ElMessage.success('已复制到剪贴板')
+  } catch {
+    ElMessage.info('复制失败，请在文本框内手动全选复制')
   }
 }
 

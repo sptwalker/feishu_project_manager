@@ -130,6 +130,10 @@ export const settingsApi = {
       message: string
     }>('/settings/test-reminder').then((r) => r.data)
   },
+  // 【临时测试】获取催更链路诊断报告文本；验证后删除
+  getDiagnostics() {
+    return api.get<{ report: string }>('/settings/diagnostics').then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },
