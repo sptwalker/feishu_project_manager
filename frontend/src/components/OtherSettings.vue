@@ -68,31 +68,6 @@
         <el-switch v-model="autoReminder" :disabled="!isAdmin || savingAutoReminder" @change="saveAutoReminder" />
         <span class="muted hint">{{ autoReminder ? '已开启（每周五、周日自动催更）' : '已关闭' }}</span>
       </div>
-      <!-- 【临时测试】点击后约3分钟执行一次催更，用于验证催更链路；验证完删除本段 -->
-      <div class="calibrate" style="border-top:1px dashed var(--c-border); padding-top:var(--sp-2)">
-        <span class="ilabel">测试催更</span>
-        <el-button size="small" type="warning" plain :loading="testingReminder" :disabled="!isAdmin" @click="doTestReminder">
-          立即测试（3分钟后执行一次）
-        </el-button>
-        <span class="muted hint">临时测试按钮，用于排查催更是否能正常发出</span>
-      </div>
-      <!-- 【临时测试】催更诊断：一键获取完整诊断报告，复制后发给开发；验证完删除本段 -->
-      <div class="calibrate" style="border-top:none; padding-top:var(--sp-2); align-items:flex-start; flex-wrap:wrap">
-        <span class="ilabel">催更诊断</span>
-        <div style="flex:1; min-width:280px">
-          <div style="display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap">
-            <el-button size="small" type="primary" plain :loading="loadingDiag" :disabled="!isAdmin" @click="getDiag">
-              获取诊断信息
-            </el-button>
-            <el-button size="small" :disabled="!diagReport" @click="copyDiag">复制</el-button>
-            <span class="muted hint">先点「测试催更」，约3分钟后再点这里获取结果，复制发给开发</span>
-          </div>
-          <el-input
-            v-if="diagReport" v-model="diagReport" type="textarea" :rows="16" readonly
-            style="margin-top:8px" input-style="font-family:monospace;font-size:12px;white-space:pre"
-          />
-        </div>
-      </div>
     </section>
 
     <!-- 飞书核心群 chat_id：周会纪要文档链接分享的目标群（所见即所得，留空不发送） -->
@@ -277,55 +252,6 @@ async function saveAutoReminder(val: boolean) {
     ElMessage.error('保存失败（需要管理员权限）')
   } finally {
     savingAutoReminder.value = false
-  }
-}
-
-/* 【临时测试】点击后安排约3分钟后的一次性催更，并弹窗展示当前4个守卫状态便于诊断；验证后删除 */
-const testingReminder = ref(false)
-async function doTestReminder() {
-  testingReminder.value = true
-  try {
-    const r = await settingsApi.testReminder()
-    const g = r.guards
-    const mark = (b: boolean) => (b ? '✓' : '✗')
-    await ElMessageBox.alert(
-      `已安排，将于约 ${r.run_at}（北京时间）执行一次催更。\n\n` +
-      `当前催更守卫状态（任一为 ✗ 都会导致不发送）：\n` +
-      `${mark(g.auto_reminder_enabled)} 催更开关已开\n` +
-      `${mark(g.active_meeting)} 存在进行中的周会${g.active_meeting ? '' : '（无 → 催更会跳过）'}\n` +
-      `${mark(g.core_chat_id_configured)} 核心群 chat_id 已配置\n` +
-      `${mark(g.feishu_notify_enabled)} 飞书通知总开关已开\n\n` +
-      `请于约3分钟后留意核心群消息与后端日志。`,
-      '测试催更已安排',
-      { type: 'info', confirmButtonText: '知道了', dangerouslyUseHTMLString: false },
-    )
-  } catch {
-    ElMessage.error('安排失败（需管理员；且后端调度器需已启动 AUTO_OPEN_MEETING_ENABLED/SCHEDULER_ENABLED）')
-  } finally {
-    testingReminder.value = false
-  }
-}
-
-/* 【临时测试】获取催更链路诊断报告文本，展示到文本框供复制；验证后删除 */
-const loadingDiag = ref(false)
-const diagReport = ref('')
-async function getDiag() {
-  loadingDiag.value = true
-  try {
-    const r = await settingsApi.getDiagnostics()
-    diagReport.value = r.report
-  } catch {
-    ElMessage.error('获取诊断失败（需要管理员权限）')
-  } finally {
-    loadingDiag.value = false
-  }
-}
-async function copyDiag() {
-  try {
-    await navigator.clipboard.writeText(diagReport.value)
-    ElMessage.success('已复制到剪贴板')
-  } catch {
-    ElMessage.info('复制失败，请在文本框内手动全选复制')
   }
 }
 
