@@ -12,22 +12,22 @@
             <el-button size="large" class="mr-add-btn" @click="createVisible = true">＋ 新增项目</el-button>
           </template>
           <template #title-after>
-            <!-- 项目翻页：本人范围内 ‹ ›；翻到尽头再出现跨汇报人按钮 《 》 -->
+            <!-- 项目翻页：本人范围内 ‹ ›；翻到尽头再出现跨汇报人按钮 ‹‹ ››（同款字符双写，与单项目翻页一致） -->
             <span class="mr-proj-nav">
-              <!-- 向前翻到本人第一个项目后：出现「《」跳上一位汇报人（无上一位则不显示） -->
+              <!-- 向前翻到本人第一个项目后：出现「‹‹」跳上一位汇报人（无上一位则不显示） -->
               <button v-if="store.currentProjectIndexInMember <= 0 && store.currentPresenterIndex > 0"
                 class="mr-proj-arrow mr-proj-arrow-jump" title="上一位汇报人"
-                @click="store.prevPresenterTail()">《</button>
+                @click="store.prevPresenterTail()">‹‹</button>
               <button class="mr-proj-arrow" title="上一个项目"
                 :disabled="store.currentProjectIndexInMember <= 0"
                 @click="store.prevProjectInMember()">‹</button>
               <button class="mr-proj-arrow" title="下一个项目"
                 :disabled="store.currentProjectIndexInMember >= store.currentMemberProjects.length - 1"
                 @click="store.nextProjectInMember()">›</button>
-              <!-- 向后翻到本人最后一个项目后：出现「》」跳下一位汇报人（无下一位则不显示） -->
+              <!-- 向后翻到本人最后一个项目后：出现「››」跳下一位汇报人（无下一位则不显示） -->
               <button v-if="store.currentProjectIndexInMember >= store.currentMemberProjects.length - 1 && store.currentPresenterIndex < store.presenters.length - 1"
                 class="mr-proj-arrow mr-proj-arrow-jump" title="下一位汇报人"
-                @click="store.nextPresenter()">》</button>
+                @click="store.nextPresenter()">››</button>
             </span>
           </template>
         </ProjectDetailContent>
@@ -41,6 +41,9 @@
       </div>
       <div class="mr-set-row">单人提醒阈值（分钟）
         <el-input-number v-model="thresholdM" :min="1" :max="120" />
+      </div>
+      <div class="mr-set-row">声音提醒
+        <el-checkbox v-model="soundEnabled" />
       </div>
       <template #footer>
         <el-button @click="settingsVisible = false">取消</el-button>
@@ -56,7 +59,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElDialog, ElButton, ElInputNumber, ElMessage, ElMessageBox } from 'element-plus'
+import { ElDialog, ElButton, ElInputNumber, ElCheckbox, ElMessage, ElMessageBox } from 'element-plus'
 import MeetingTopBar from '@/components/meeting-report/MeetingTopBar.vue'
 import MeetingReportTree from '@/components/meeting-report/MeetingReportTree.vue'
 import ProjectDetailContent from '@/components/ProjectDetailContent.vue'
@@ -75,6 +78,7 @@ const settingsVisible = ref(false)
 const createVisible = ref(false)
 const totalM = ref(120)
 const thresholdM = ref(5)
+const soundEnabled = ref(true)   // 声音提醒开关：默认开；关闭后不再播放任何逾时提示音
 
 onMounted(async () => {
   await meeting.load()
@@ -88,8 +92,9 @@ onMounted(async () => {
 
 onBeforeUnmount(() => store.stop())
 
-/* 超时蜂鸣（Web Audio，无需音频文件） */
+/* 超时蜂鸣（Web Audio，无需音频文件）；声音提醒关闭时直接跳过 */
 function beep() {
+  if (!soundEnabled.value) return
   try {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const ctx = new Ctx()
@@ -163,8 +168,8 @@ async function onEndMeeting() {
   cursor: pointer; transition: color .15s ease; }
 .mr-proj-arrow:hover:not(:disabled) { color: var(--c-accent, #3954d6); }
 .mr-proj-arrow:disabled { opacity: .3; cursor: not-allowed; }
-/* 跨汇报人翻页（《 》）：与项目内翻页 ‹ › 同字体/颜色；《》字形偏大，字号略收使观感一致 */
-.mr-proj-arrow-jump { font-size: 22px; }
+/* 跨汇报人翻页（‹‹ ››）：与项目内翻页 ‹ › 完全同字符/字体/字号；轻微负字距让双箭头更紧凑 */
+.mr-proj-arrow-jump { letter-spacing: -3px; padding-right: 11px; }
 /* 新增项目按钮：琥珀色，尺寸与「项目编辑」按钮一致（layout-meeting 下 34px） */
 .mr-add-btn { height: 34px; padding: 0 14px; font-size: 14px;
   background: #f59e0b; border-color: #f59e0b; color: #fff; }
