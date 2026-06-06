@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, acceptHMRUpdate } from 'pinia'
 import { ref, computed } from 'vue'
 import { projectApi, departmentApi, settingsApi } from '@/api/resources'
 import type { Project, Department, MeetingReportOrder } from '@/types'
@@ -188,3 +188,9 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     start, stop, resetPerson, saveOrder, findDepartment,
   }
 })
+
+// Pinia HMR 加固：开发模式下修改本 store 文件时正确热替换已实例化的 store，
+// 否则旧逻辑会残留到整页刷新（表现为「改了代码但页面行为没更新」）。
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useMeetingReportStore, import.meta.hot))
+}
