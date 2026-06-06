@@ -5,7 +5,7 @@
     </div>
 
     <div class="head-toolbar">
-      <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消/暂停），其中重要项目 {{ importantCount }} 个，高优先级项目 {{ highPriorityCount }} 个</p>
+      <p class="muted">目前有 {{ trackingCount }} 个跟踪项目（除去已完成/取消），其中重要项目 {{ importantCount }} 个，高优先级项目 {{ highPriorityCount }} 个</p>
       <div class="head-actions">
         <el-autocomplete
           v-model="keyword"
@@ -104,7 +104,7 @@
               </div>
             </template>
             <span class="progress-cell">
-              <span class="prog-main"><span v-if="row._lastStatus" class="prog-status" :style="{ color: progressColor(row._lastStatus) }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
+              <span class="prog-main"><span v-if="row._lastStatus" class="prog-status" :style="{ color: row._lastStatusColor }">【{{ row._lastStatus }}】</span>{{ row._lastProgress || '—' }}</span>
               <span
                 v-for="m in row._pendingMarks" :key="m.status"
                 class="pending-mark" :style="{ color: m.color }" :title="m.status + '（未反馈）'"
@@ -314,22 +314,22 @@ function onSelectSuggestion(item: Record<string, unknown>) {
 /* 表头：文字居中 + 黑色 */
 const headerCellStyle = { textAlign: 'center' as const, color: 'var(--c-ink)', fontWeight: 600 }
 
-/* 计算跟踪项目数量（排除已完成/取消/暂停） */
+/* 计算跟踪项目数量（排除已完成/取消；暂停项目仍计入） */
 const trackingCount = computed(() => {
-  return projects.value.filter(p => !['completed', 'cancelled', 'paused'].includes(p.status)).length
+  return projects.value.filter(p => !['completed', 'cancelled'].includes(p.status)).length
 })
 
-/* 计算重要项目数量（优先级为 urgent） */
+/* 计算重要项目数量（优先级为 urgent，排除已完成/取消；暂停项目仍计入） */
 const importantCount = computed(() => {
   return projects.value.filter(p =>
-    p.urgency === 'urgent' && !['completed', 'cancelled', 'paused'].includes(p.status)
+    p.urgency === 'urgent' && !['completed', 'cancelled'].includes(p.status)
   ).length
 })
 
-/* 计算高优先级项目数量（优先级为 high） */
+/* 计算高优先级项目数量（优先级为 high，排除已完成/取消；暂停项目仍计入） */
 const highPriorityCount = computed(() => {
   return projects.value.filter(p =>
-    p.urgency === 'high' && !['completed', 'cancelled', 'paused'].includes(p.status)
+    p.urgency === 'high' && !['completed', 'cancelled'].includes(p.status)
   ).length
 })
 
@@ -405,6 +405,26 @@ const rows = computed(() => {
       const pendingMarks = (PENDING_STATUSES as readonly string[])
         .filter((s) => openSet.has(s))
         .map((s) => ({ status: s, color: progressColor(s) }))
+      // 最新进展状态显示：最后一条若本身是反馈条、或是已被反馈的待办，则显示"已反馈"；
+      // 颜色沿用其原待办状态色（与详情页时间线反馈节点配色一致），保留"原本是哪类待办"的信息
+      const last = log.length ? log[log.length - 1] : null
+      let lastDisplayStatus = last ? (last.status || '') : ''
+      let lastDisplayColor = lastDisplayStatus ? progressColor(lastDisplayStatus) : ''
+      if (last) {
+        if (last.reply_to) {
+          // 最后一条本身是反馈：取其指向的原事件状态色
+          const origin = log.find((e) => e.id === last.reply_to)
+          lastDisplayStatus = '已反馈'
+          lastDisplayColor = progressColor(origin?.status || last.status || '')
+        } else if (
+          (PENDING_STATUSES as readonly string[]).includes(last.status)
+          && last.id && replied.has(last.id)
+        ) {
+          // 最后一条是已被反馈的待办：显示已反馈，颜色用其自身（原待办）状态色
+          lastDisplayStatus = '已反馈'
+          lastDisplayColor = progressColor(last.status)
+        }
+      }
       return {
         ...p,
         _deptShort: getDepartmentShortName(p.department),
@@ -416,7 +436,8 @@ const rows = computed(() => {
         _stalledCritical: stalled?.critical ?? false,
         _pendingMarks: pendingMarks,
         _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
-        _lastStatus: log.length ? (log[log.length - 1].status || '') : '',
+        _lastStatus: lastDisplayStatus,
+        _lastStatusColor: lastDisplayColor,
         _recentProgress: [...log].slice(-8),
         _hasMore: log.length > 8,
       }
