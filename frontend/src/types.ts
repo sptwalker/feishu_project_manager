@@ -194,3 +194,14 @@ export interface OperationLog {
   description: string
   occurred_at: string
 }
+
+// 周会汇报页：汇报顺序与计时设置
+export interface MeetingReportOrder {
+  departments: string[]
+  members: Record<string, string[]>
+}
+
+export interface MeetingTimerSettings {
+  total_minutes: number
+  person_threshold_minutes: number
+}

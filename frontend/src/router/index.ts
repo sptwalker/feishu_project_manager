@@ -38,6 +38,12 @@ const router = createRouter({
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
       ],
     },
+    {
+      // 周会汇报页：独立顶层路由（不套 AppLayout 侧边栏，全屏汇报模式）
+      path: '/meeting-report',
+      name: 'meeting-report',
+      component: () => import('@/views/MeetingReportView.vue'),
+    },
   ],
 })
 

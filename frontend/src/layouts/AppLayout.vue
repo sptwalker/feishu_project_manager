@@ -58,6 +58,9 @@
             <el-tooltip content="查看周会记录" placement="bottom">
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
+            <el-tooltip v-if="isAdmin" content="进入周会汇报（全屏）" placement="bottom">
+              <el-button class="m-record-btn" type="primary" :icon="Monitor" size="small" circle @click="router.push('/meeting-report')" />
+            </el-tooltip>
           </div>
           <el-dropdown trigger="click" @command="onCommand">
             <span class="user">
@@ -93,7 +96,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document } from '@element-plus/icons-vue'
+import { Document, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMeetingStore } from '@/stores/meeting'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'

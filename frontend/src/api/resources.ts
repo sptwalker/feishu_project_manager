@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -137,6 +137,18 @@ export const settingsApi = {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     ).then((r) => r.data)
   },
+  getMeetingReportOrder() {
+    return api.get<MeetingReportOrder>('/settings/meeting-report-order').then((r) => r.data)
+  },
+  setMeetingReportOrder(order: MeetingReportOrder) {
+    return api.put<MeetingReportOrder>('/settings/meeting-report-order', order).then((r) => r.data)
+  },
+  getMeetingTimer() {
+    return api.get<MeetingTimerSettings>('/settings/meeting-timer').then((r) => r.data)
+  },
+  setMeetingTimer(payload: MeetingTimerSettings) {
+    return api.put<MeetingTimerSettings>('/settings/meeting-timer', payload).then((r) => r.data)
+  },
 }
 
 export const meetingApi = {
@@ -154,6 +166,9 @@ export const meetingApi = {
   },
   send(session: number) {
     return api.post<MeetingSendResult>(`/meeting-records/${session}/send`).then((r) => r.data)
+  },
+  startReport(session: number) {
+    return api.post<MeetingRecordDetail>(`/meeting-records/${session}/start-report`).then((r) => r.data)
   },
 }
 
