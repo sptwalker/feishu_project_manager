@@ -1281,6 +1281,15 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .layout-meeting .hist-desc { font-size: 17px; }
 .layout-meeting .prog-table th,
 .layout-meeting .prog-table td { font-size: 16px; }
+/* 进展编辑态：输入框文字（进展内容/时间/状态）放大两号 */
+.layout-meeting .prog-edit :deep(.el-textarea__inner),
+.layout-meeting .prog-edit :deep(.el-input__inner) { font-size: 17px; }
+/* 状态下拉选项 + 「反馈/文档」按钮 + 标签 同步放大 */
+.layout-meeting .prog-edit :deep(.el-select__placeholder),
+.layout-meeting .prog-edit :deep(.el-button) { font-size: 15px; }
+.layout-meeting .prog-edit .feedback-tag,
+.layout-meeting .prog-edit .meeting-tag { font-size: 15px; }
+.layout-meeting .prog-edit .attach-link { font-size: 15px; }
 .layout-meeting :deep(.el-tabs__item) { font-size: 17px; }
 
 /* 压缩信息区：简要说明（标签+内容同排）与完成度同排；字段三列两排 */
