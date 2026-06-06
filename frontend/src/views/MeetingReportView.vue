@@ -42,7 +42,7 @@
       <div class="mr-set-row">单人提醒阈值（分钟）
         <el-input-number v-model="thresholdM" :min="1" :max="120" />
       </div>
-      <div class="mr-set-row">声音提醒
+      <div class="mr-set-row mr-set-sound">声音提醒
         <el-checkbox v-model="soundEnabled" />
       </div>
       <template #footer>
@@ -161,6 +161,8 @@ async function onEndMeeting() {
 .mr-main { flex: 1; overflow: hidden; padding: 30px 20px 16px; }
 .mr-empty { display: grid; place-items: center; height: 100%; color: var(--c-ink-3); }
 .mr-set-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
+/* 声音提醒：勾选框紧跟文字（不像数字行那样两端分散） */
+.mr-set-sound { justify-content: flex-start; gap: 10px; }
 /* 项目名后的无边框翻页按钮（当前负责人范围内切换上/下一个项目）：加大加深更醒目 */
 .mr-proj-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; vertical-align: middle; }
 .mr-proj-arrow { background: transparent; border: none; padding: 0 8px;
