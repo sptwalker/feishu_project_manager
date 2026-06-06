@@ -29,23 +29,26 @@
         </div>
       </div>
 
-      <!-- 简要说明（对应表格"说明"字段） -->
-      <div class="brief-block">
-        <div class="mini-label">简要说明</div>
-        <div v-if="!editing" class="brief">{{ local.content || '—' }}</div>
-        <el-input v-else v-model="form.content" type="textarea" :rows="2" placeholder="一句话简要说明" />
-      </div>
-
-      <!-- 完成度 / 长期项目 -->
-      <div class="prog-block">
-        <div class="prog-head">
-          <span class="mini-label">完成度</span>
-          <el-checkbox v-if="editing" v-model="form.is_long_term" size="small">长期项目</el-checkbox>
-          <span v-if="isLong && !editing" class="long-term-text">长期项目</span>
-          <span v-else-if="!isLong" class="num pct">{{ editing ? form.completion : local.completion }}%</span>
+      <!-- 简要说明 + 完成度：会议页同排，抽屉仍各占一行（head-row 默认 display:contents） -->
+      <div class="head-row">
+        <!-- 简要说明（对应表格"说明"字段） -->
+        <div class="brief-block">
+          <div class="mini-label">简要说明</div>
+          <div v-if="!editing" class="brief">{{ local.content || '—' }}</div>
+          <el-input v-else v-model="form.content" type="textarea" :rows="2" placeholder="一句话简要说明" />
         </div>
-        <el-slider v-if="editing && !form.is_long_term" v-model="form.completion" :min="0" :max="100" />
-        <div v-else-if="!editing && !local.is_long_term" class="bar"><div class="bar-fill" :style="{ width: local.completion + '%', background: barFill(local.status) }" /></div>
+
+        <!-- 完成度 / 长期项目 -->
+        <div class="prog-block">
+          <div class="prog-head">
+            <span class="mini-label">完成度</span>
+            <el-checkbox v-if="editing" v-model="form.is_long_term" size="small">长期项目</el-checkbox>
+            <span v-if="isLong && !editing" class="long-term-text">长期项目</span>
+            <span v-else-if="!isLong" class="num pct">{{ editing ? form.completion : local.completion }}%</span>
+          </div>
+          <el-slider v-if="editing && !form.is_long_term" v-model="form.completion" :min="0" :max="100" />
+          <div v-else-if="!editing && !local.is_long_term" class="bar"><div class="bar-fill" :style="{ width: local.completion + '%', background: barFill(local.status) }" /></div>
+        </div>
       </div>
 
       <!-- 字段网格 -->
@@ -1096,6 +1099,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .badge.overdue { color: var(--c-status-overdue); background: var(--c-status-overdue-soft); }
 
 .brief { color: var(--c-ink-2); line-height: 1.6; font-size: 14px; }
+/* head-row 默认透明（抽屉：简要说明与完成度仍各占一行）；会议页改为一排 */
+.head-row { display: contents; }
 
 .prog-block { }
 .prog-head { display: flex; align-items: center; justify-content: space-between; }
@@ -1246,4 +1251,48 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .layout-meeting .detail-tabs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .layout-meeting .detail-tabs :deep(.el-tabs__content) { flex: 1; min-height: 0; overflow-y: auto; }
 .layout-meeting .history-block { max-height: none; }
+
+/* 会议页大屏：详情区文字整体加大两号（仅 layout-meeting，不影响抽屉场景） */
+.layout-meeting .d-title { font-size: 25px; }
+.layout-meeting .brief { font-size: 16px; }
+.layout-meeting .mini-label { font-size: 16px; }
+.layout-meeting .badge { font-size: 16px; }
+.layout-meeting .record-time { font-size: 16px; }
+.layout-meeting .long-term-text { font-size: 18px; }
+.layout-meeting .f dt,
+.layout-meeting .f dd { font-size: 17px; }
+.layout-meeting .pct,
+.layout-meeting .num { font-size: 18px; }
+.layout-meeting .hint { font-size: 15px; }
+.layout-meeting .stalled-tag { font-size: 17px; }
+.layout-meeting .tl-time { font-size: 16px; }
+.layout-meeting .tl-status { font-size: 16px; }
+.layout-meeting .tl-content { font-size: 18px; }
+.layout-meeting .ann-author { font-size: 17px; }
+.layout-meeting .ann-time { font-size: 15px; }
+.layout-meeting .ann-content { font-size: 17px; }
+.layout-meeting .reply-author,
+.layout-meeting .reply-time,
+.layout-meeting .reply-content { font-size: 16px; }
+.layout-meeting .hist-user,
+.layout-meeting .hist-time,
+.layout-meeting .hist-desc { font-size: 17px; }
+.layout-meeting .prog-table th,
+.layout-meeting .prog-table td { font-size: 16px; }
+.layout-meeting :deep(.el-tabs__item) { font-size: 17px; }
+
+/* 压缩信息区：简要说明（标签+内容同排）与完成度同排；字段三列两排 */
+.layout-meeting .head-row { display: flex; align-items: flex-start; gap: var(--sp-5); }
+.layout-meeting .brief-block { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.layout-meeting .brief-block .mini-label { flex: none; margin-bottom: 0; }
+.layout-meeting .prog-block { width: 300px; flex: none; }
+.layout-meeting .d-fields { grid-template-columns: repeat(3, 1fr); }
+/* 第一排：部门 / 负责人 / 相关人；第二排：优先级 / 完成情况 / 截止日期
+   （DOM 顺序为 部门,负责人,相关人,完成情况,优先级,截止日期，用 order 交换 4↔5） */
+.layout-meeting .d-fields .f:nth-child(1) { order: 1; }
+.layout-meeting .d-fields .f:nth-child(2) { order: 2; }
+.layout-meeting .d-fields .f:nth-child(3) { order: 3; }
+.layout-meeting .d-fields .f:nth-child(4) { order: 5; }
+.layout-meeting .d-fields .f:nth-child(5) { order: 4; }
+.layout-meeting .d-fields .f:nth-child(6) { order: 6; }
 </style>
