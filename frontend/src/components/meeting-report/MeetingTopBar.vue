@@ -99,9 +99,9 @@ function fmt(total: number): string {
 
 /* 中部单排：部门 | 汇报人 | 个人时间 */
 .mr-center { display: flex; flex-direction: row; align-items: center; gap: 12px; }
-.mr-dept { font-size: 16px; font-weight: 700; }
+.mr-dept { font-size: 18px; font-weight: 700; }
 .mr-sep { color: var(--c-ink-3); font-weight: 300; }
-.mr-nm { font-size: 18px; font-weight: 800; color: var(--c-ink); }
+.mr-nm { font-size: 20px; font-weight: 800; color: var(--c-ink); }
 /* 本人时间：无底色、大字号、分级配色 */
 .mr-person { font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .mr-person.flashing { animation: flash 0.8s steps(2) infinite; }
