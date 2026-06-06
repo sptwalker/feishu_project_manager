@@ -24,7 +24,10 @@
         @dragover.prevent
         @drop="onDeptDrop(di)"
       >
-        <div class="mr-dept-head" :style="{ background: d.color ? `color-mix(in srgb, ${d.color} 16%, #fff)` : 'var(--c-surface-2, #f2f3f5)' }">
+        <!-- 点击部门名：展开/折叠该部门所有负责人的项目列表 -->
+        <div class="mr-dept-head" :style="{ background: d.color ? `color-mix(in srgb, ${d.color} 16%, #fff)` : 'var(--c-surface-2, #f2f3f5)' }"
+          @click="toggleDept(d)">
+          <span class="caret">{{ deptHasExpanded(d) ? '▾' : '▸' }}</span>
           <span class="swatch" :style="{ background: d.color || 'var(--c-ink-3)' }"></span>
           <b>{{ d.dept }}</b>
         </div>
@@ -38,11 +41,13 @@
           @dragover.prevent
           @drop.stop="onMemberDrop(d.dept, mi)"
         >
-          <div class="mr-member-head">
+          <!-- 点击负责人名：展开/折叠他的项目列表 -->
+          <div class="mr-member-head" @click="toggleMember(d.dept, m.name)">
+            <span class="caret">{{ isMemberExpanded(d.dept, m.name) ? '▾' : '▸' }}</span>
             {{ m.name }} ({{ m.projects.length }})
           </div>
-          <!-- 仅当前汇报部门展开项目；其他部门折叠（只显示到负责人）。搜索时全部展开，保证查找结果可点选 -->
-          <template v-if="d.dept === currentDept || !!keyword.trim()">
+          <!-- 展开规则：搜索时全展开；否则取手动状态，默认仅当前汇报部门展开 -->
+          <template v-if="isMemberExpanded(d.dept, m.name)">
             <div
               v-for="p in m.projects"
               :key="p.id"
@@ -74,8 +79,33 @@ const keyword = ref('')
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 
-/* 当前汇报部门：仅该部门在左树展开项目，其他部门折叠到负责人 */
+/* 当前汇报部门：默认仅该部门在左树展开项目，其他部门折叠到负责人 */
 const currentDept = computed(() => store.presenters[store.currentPresenterIndex]?.dept ?? null)
+
+/* 手动展开/折叠状态：key=`部门|负责人`，记录用户点击的结果；未设置的按默认（当前汇报部门展开）显示 */
+const manualExpand = ref<Record<string, boolean>>({})
+const memberKey = (dept: string, member: string) => `${dept}|${member}`
+
+/* 某负责人项目列表是否展开：搜索时强制全展开；其次取手动状态；默认仅当前汇报部门展开 */
+function isMemberExpanded(dept: string, member: string): boolean {
+  if (keyword.value.trim()) return true
+  const key = memberKey(dept, member)
+  if (key in manualExpand.value) return manualExpand.value[key]
+  return dept === currentDept.value
+}
+/* 部门下是否有任一负责人展开（用于部门折叠图标 ▾/▸ 与整组切换判断） */
+function deptHasExpanded(d: { dept: string; members: { name: string }[] }): boolean {
+  return d.members.some((m) => isMemberExpanded(d.dept, m.name))
+}
+/* 点击负责人名：翻转他的项目列表展开/折叠 */
+function toggleMember(dept: string, member: string) {
+  manualExpand.value[memberKey(dept, member)] = !isMemberExpanded(dept, member)
+}
+/* 点击部门名：该部门有任一展开→全部折叠；否则→全部展开 */
+function toggleDept(d: { dept: string; members: { name: string }[] }) {
+  const expand = !deptHasExpanded(d)
+  for (const m of d.members) manualExpand.value[memberKey(d.dept, m.name)] = expand
+}
 
 /* 关键词过滤：命中项目名/负责人/部门即保留该项目；保持分组结构 */
 const filteredGroups = computed(() => {
@@ -153,11 +183,15 @@ async function persist(order: MeetingReportOrder) {
 .mr-empty { padding: 20px; text-align: center; color: var(--c-ink-3); font-size: 13px; }
 .mr-dept { margin-bottom: 6px; }
 .mr-dept-head { display: flex; align-items: center; gap: 6px; padding: 4px 6px;
-  border-radius: 6px; font-weight: 600; cursor: grab; font-size: 20px; }
+  border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 20px; }
+.mr-dept-head:hover { filter: brightness(0.96); }
 .swatch { width: 10px; height: 10px; border-radius: 2px; }
 .mr-member { margin: 4px 0 4px 14px; }
-.mr-member-head { display: flex; align-items: center; gap: 4px; padding: 2px 6px;
-  cursor: grab; color: var(--c-ink-2); font-size: 18px; font-weight: 700; }
+.mr-member-head { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 5px;
+  cursor: pointer; color: var(--c-ink-2); font-size: 18px; font-weight: 700; }
+.mr-member-head:hover { background: var(--c-surface-2, #f2f3f5); }
+/* 展开/折叠指示三角：展开 ▾ / 折叠 ▸，淡色小字 */
+.caret { flex: none; width: 12px; text-align: center; font-size: 11px; color: var(--c-ink-3); user-select: none; }
 .mr-proj { margin-left: 18px; padding: 3px 8px; border-radius: 5px; cursor: pointer;
   font-size: 15px; color: var(--c-ink-2); }
 .mr-proj:hover { background: var(--c-surface-2, #f2f3f5); }
