@@ -90,7 +90,7 @@
         </div>
         <div class="f">
           <dt>优先级<span v-if="createMode" class="req">*</span></dt>
-          <dd v-if="!editing">{{ urgText(local.urgency) }}</dd>
+          <dd v-if="!editing" :style="{ color: urgColor(local.urgency), fontWeight: 600 }">{{ urgText(local.urgency) }}</dd>
           <el-select v-else v-model="form.urgency" size="small">
             <el-option v-for="u in urgencyOptions" :key="u.value" :label="u.label" :value="u.value" />
           </el-select>
@@ -621,10 +621,11 @@ const progressWrap = ref<HTMLElement | null>(null)
 // 进展记录统一排序：按更新时间从过去到现在升序（编辑态与展示态共用，保证排序一致）
 const byTime = (a: ProgressEntry, b: ProgressEntry) => (a.time || '').localeCompare(b.time || '')
 
-// 时间线：按时间从过去到现在排列
-const timeline = computed<ProgressEntry[]>(() =>
-  [...(local.value?.progress_log ?? [])].sort(byTime),
-)
+// 时间线：抽屉按时间正序；会议页倒序（最新更新显示在最上面）
+const timeline = computed<ProgressEntry[]>(() => {
+  const sorted = [...(local.value?.progress_log ?? [])].sort(byTime)
+  return props.layout === 'meeting' ? sorted.reverse() : sorted
+})
 
 const isPending = (s?: string) => PENDING_STATUSES.includes((s || '') as typeof PENDING_STATUSES[number])
 function genId(): string {
@@ -1296,11 +1297,11 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .layout-meeting .prog-edit .attach-link { font-size: 15px; }
 .layout-meeting :deep(.el-tabs__item) { font-size: 17px; }
 
-/* 压缩信息区：简要说明（标签+内容同排）与完成度同排；字段三列两排 */
-.layout-meeting .head-row { display: flex; align-items: flex-start; gap: var(--sp-5); }
-.layout-meeting .brief-block { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+/* 压缩信息区：简要说明跨前两列，完成度落第三列（与下方「相关人」列左对齐）；字段三列两排 */
+.layout-meeting .head-row { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--sp-5); align-items: flex-start; }
+.layout-meeting .brief-block { grid-column: 1 / 3; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .layout-meeting .brief-block .mini-label { flex: none; margin-bottom: 0; }
-.layout-meeting .prog-block { width: 300px; flex: none; }
+.layout-meeting .prog-block { grid-column: 3 / 4; width: auto; }
 .layout-meeting .d-fields { grid-template-columns: repeat(3, 1fr); }
 /* 第一排：部门 / 负责人 / 相关人；第二排：优先级 / 完成情况 / 截止日期
    （DOM 顺序为 部门,负责人,相关人,完成情况,优先级,截止日期，用 order 交换 4↔5） */

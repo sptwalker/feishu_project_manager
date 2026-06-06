@@ -33,10 +33,10 @@ export const urgencyWeight: Record<ProjectUrgency, number> = {
 }
 
 export const urgencyColor: Record<ProjectUrgency, string> = {
-  low: 'var(--c-ink-3)',
-  medium: 'var(--c-status-progress)',
-  high: '#EF8A8A',     // 高优先级：浅红
-  urgent: '#C0392B',   // 重要：深红
+  low: '#1a1a1a',      // 低：黑色
+  medium: '#f59e0b',   // 中：琥珀色
+  high: '#f4511e',     // 高：橙红色
+  urgent: '#c0392b',   // 重要：深红色
 }
 
 export const taskStatusLabel: Record<TaskStatus, string> = {
