@@ -44,7 +44,7 @@
           <span v-else-if="state.active" class="muted hint">（周会进行中，结束后可校准）</span>
         </div>
         <p class="tip muted">
-          说明：周会周期按"上次会议日期 + {{ state.new_cycle_days ?? 3 }} 天"递进——上轮周会结束满 {{ state.new_cycle_days ?? 3 }} 天后即可开启新一轮周会周期。
+          说明：周会周期按"上次周会结束日期 + {{ state.new_cycle_days ?? 3 }} 天"递进——上轮周会结束满 {{ state.new_cycle_days ?? 3 }} 天后即可开启新一轮周会周期。
           修改"校准次数"将把下次开启的周会设为该次数。
         </p>
       </template>
@@ -65,8 +65,9 @@
       </div>
       <div class="calibrate" style="border-top:none; padding-top:var(--sp-2)">
         <span class="ilabel">自动催更</span>
-        <el-switch v-model="autoReminder" :disabled="!isAdmin || savingAutoReminder" @change="saveAutoReminder" />
+        <el-switch v-model="autoReminder" :disabled="!isAdmin || savingAutoReminder || !autoOpen" @change="saveAutoReminder" />
         <span class="muted hint">{{ autoReminder ? '已开启（每周五、周日自动催更）' : '已关闭' }}</span>
+        <span v-if="!autoOpen" class="muted hint">（需先开启「自动开启」）</span>
       </div>
     </section>
 
@@ -219,6 +220,15 @@ async function saveAutoOpen(val: boolean) {
   try {
     const r = await settingsApi.setAutoOpenMeeting(val)
     autoOpen.value = r.enabled
+    // 层级联动：关闭「自动开启」时，「自动催更」依赖其存在，必须同步关闭并持久化
+    if (!r.enabled && autoReminder.value) {
+      try {
+        const rr = await settingsApi.setAutoReminder(false)
+        autoReminder.value = rr.enabled
+      } catch {
+        // 同步关闭催更失败不阻断主流程；下次进入设置页会以后端为准重新加载
+      }
+    }
     ElMessage.success(r.enabled ? '已开启周会自动开启' : '已关闭周会自动开启')
   } catch {
     autoOpen.value = !val  // 失败回滚开关状态
