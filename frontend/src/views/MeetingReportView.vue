@@ -12,7 +12,7 @@
     </div>
 
     <el-dialog v-model="settingsVisible" title="计时设置" width="360px">
-      <div class="mr-set-row">总会议时长（分钟）
+      <div class="mr-set-row">总时长提醒（分钟）
         <el-input-number v-model="totalM" :min="1" :max="600" />
       </div>
       <div class="mr-set-row">单人提醒阈值（分钟）
@@ -42,7 +42,7 @@ const meeting = useMeetingStore()
 const session = ref(0)
 const today = new Date().toISOString().slice(0, 10)
 const settingsVisible = ref(false)
-const totalM = ref(30)
+const totalM = ref(120)
 const thresholdM = ref(5)
 
 onMounted(async () => {
@@ -77,7 +77,6 @@ async function saveSettings() {
   await settingsApi.setMeetingTimer({ total_minutes: totalM.value, person_threshold_minutes: thresholdM.value })
   store.totalMinutes = totalM.value
   store.personThresholdMinutes = thresholdM.value
-  store.totalRemaining = totalM.value * 60
   settingsVisible.value = false
   ElMessage.success('已保存')
 }

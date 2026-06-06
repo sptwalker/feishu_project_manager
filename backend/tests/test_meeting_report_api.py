@@ -81,8 +81,8 @@ def test_report_order_roundtrip(db_session):
 
 
 def test_timer_settings_defaults_and_roundtrip(db_session):
-    """计时设置默认 30/5，写入后读回。"""
-    assert SettingsService.get_meeting_total_minutes(db_session) == 30
+    """计时设置默认 120/5，写入后读回。"""
+    assert SettingsService.get_meeting_total_minutes(db_session) == 120
     assert SettingsService.get_meeting_person_threshold_minutes(db_session) == 5
     SettingsService.set_meeting_total_minutes(db_session, 45)
     SettingsService.set_meeting_person_threshold_minutes(db_session, 8)
@@ -131,7 +131,7 @@ def test_timer_get_defaults_then_put(db_session):
     client = _client(db_session, admin)
     try:
         r = client.get("/api/v1/settings/meeting-timer")
-        assert r.json() == {"total_minutes": 30, "person_threshold_minutes": 5}
+        assert r.json() == {"total_minutes": 120, "person_threshold_minutes": 5}
         r2 = client.put("/api/v1/settings/meeting-timer",
                         json={"total_minutes": 45, "person_threshold_minutes": 8})
         assert r2.status_code == 200

@@ -26,7 +26,7 @@ AUTO_REMINDER_ENABLED_KEY = "auto_reminder_enabled"
 MEETING_REPORT_ORDER_KEY = "meeting_report_order"
 MEETING_TOTAL_MINUTES_KEY = "meeting_total_minutes"
 MEETING_PERSON_THRESHOLD_MINUTES_KEY = "meeting_person_threshold_minutes"
-DEFAULT_MEETING_TOTAL_MINUTES = 30
+DEFAULT_MEETING_TOTAL_MINUTES = 120
 DEFAULT_MEETING_PERSON_THRESHOLD_MINUTES = 5
 
 # 默认基准：2026-06-01（周一）= 第 22 次
@@ -124,7 +124,7 @@ class SettingsService:
 
     @staticmethod
     def get_meeting_total_minutes(db: Session) -> int:
-        """总会议时长（分钟），默认 30。"""
+        """总时长提醒阈值（分钟），默认 120。超过即在前端变色提醒（不强制结束）。"""
         return int(SettingsService.get_setting(
             db, MEETING_TOTAL_MINUTES_KEY, str(DEFAULT_MEETING_TOTAL_MINUTES)))
 

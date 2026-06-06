@@ -22,16 +22,16 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   const loading = ref(false)
 
   // 计时设置
-  const totalMinutes = ref(30)
+  const totalMinutes = ref(120)              // 总时长提醒阈值（分钟）；超过即变色提醒，不强制结束
   const personThresholdMinutes = ref(5)
 
   // 当前选中
   const currentProjectId = ref<number | null>(null)
 
-  // 计时运行时
+  // 计时运行时（均为正向计时，记录已经历时长，单位秒）
   const running = ref(false)
-  const totalRemaining = ref(30 * 60)  // 总剩余秒：默认 30 分钟，load 后按设置覆盖；避免加载前/失败时误判超时变红
-  const personElapsed = ref(0)         // 当前汇报人已用秒
+  const totalElapsed = ref(0)          // 会议已进行总时长
+  const personElapsed = ref(0)         // 当前汇报人已用时长
   let timer: ReturnType<typeof setInterval> | null = null
 
   /* 部门容错映射：按全称或简称匹配部门记录（与总览页一致） */
@@ -115,11 +115,13 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
       order.value = ord
       totalMinutes.value = timerCfg.total_minutes
       personThresholdMinutes.value = timerCfg.person_threshold_minutes
-      totalRemaining.value = totalMinutes.value * 60
-      // 默认选中第一个汇报位的第一个项目
-      const firstDept = grouped.value[0]
-      const firstProj = firstDept?.members[0]?.projects[0]
-      currentProjectId.value = firstProj?.id ?? null
+      // 不在此重置计时（load 可能被「编辑后刷新」再次调用，避免清零正在走的计时）
+      // 选中项目：保留当前选中（若仍存在），否则默认第一个汇报位的第一个项目
+      const stillExists = projects.value.some((p) => p.id === currentProjectId.value)
+      if (!stillExists) {
+        const firstProj = grouped.value[0]?.members[0]?.projects[0]
+        currentProjectId.value = firstProj?.id ?? null
+      }
     } finally {
       loading.value = false
     }
@@ -151,12 +153,12 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   const nextPresenter = () => gotoPresenter(1)
   const prevPresenter = () => gotoPresenter(-1)
 
-  /* 计时：每秒 tick */
+  /* 计时：每秒 tick（正向累加） */
   function start() {
     if (running.value) return
     running.value = true
     timer = setInterval(() => {
-      if (totalRemaining.value > 0) totalRemaining.value -= 1
+      totalElapsed.value += 1
       personElapsed.value += 1
     }, 1000)
   }
@@ -168,7 +170,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
 
   /* 是否超时 */
   const personOvertime = computed(() => personElapsed.value >= personThresholdMinutes.value * 60)
-  const totalOvertime = computed(() => totalRemaining.value <= 0)
+  const totalOvertime = computed(() => totalElapsed.value >= totalMinutes.value * 60)
 
   /* 拖拽后保存顺序 */
   async function saveOrder(next: MeetingReportOrder) {
@@ -180,7 +182,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     projects, departments, order, loading,
     totalMinutes, personThresholdMinutes,
     currentProjectId, currentProject, currentPresenterIndex,
-    running, totalRemaining, personElapsed,
+    running, totalElapsed, personElapsed,
     grouped, presenters, personOvertime, totalOvertime,
     load, selectProject, nextPresenter, prevPresenter,
     start, stop, resetPerson, saveOrder, findDepartment,

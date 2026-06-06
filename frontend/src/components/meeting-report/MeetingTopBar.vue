@@ -1,12 +1,9 @@
 <template>
   <header class="mr-top">
-    <!-- 左：会议信息 + 总时长 -->
+    <!-- 左：会议信息 + 总时间（单行，正向计时） -->
     <div class="mr-left">
-      <div class="mr-left-row">
-        <b class="mr-title">周例会 · 第 {{ session }} 次</b>
-        <span class="mr-total" :class="{ overtime: store.totalOvertime }">总 {{ fmt(store.totalRemaining) }}</span>
-      </div>
-      <span class="mr-date">{{ today }}</span>
+      <span class="mr-meet">周例会 · 第 {{ session }} 次 · {{ today }}</span>
+      <span class="mr-total" :class="{ overtime: store.totalOvertime }">总 {{ fmt(store.totalElapsed) }}</span>
     </div>
 
     <!-- 中：梯形主席台（上宽下窄） -->
@@ -76,18 +73,18 @@ function fmt(total: number): string {
 </script>
 
 <style scoped>
-.mr-top { position: relative; display: flex; justify-content: space-between; align-items: flex-start;
+.mr-top { position: relative; display: flex; justify-content: space-between; align-items: center;
   background: var(--c-surface, #fff); border-bottom: 2px solid var(--c-border, #e4e7ed);
-  min-height: 64px; padding: 10px 16px; z-index: 5; }
-.mr-left-row { display: flex; align-items: center; gap: 12px; }
-.mr-title { font-size: 16px; }
-.mr-date { color: var(--c-ink-3); font-size: 12px; }
-.mr-total { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums;
-  color: #1a7f4b; background: #e3f5ea; padding: 2px 12px; border-radius: 6px; }
-.mr-total.overtime { color: #fff; background: #d23b3b; animation: flash 1s steps(2) infinite; }
+  min-height: 64px; padding: 8px 16px; z-index: 5; }
+.mr-left { display: flex; align-items: center; gap: 14px; }
+.mr-meet { font-size: 16px; font-weight: 700; color: var(--c-ink); }
+.mr-total { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: #1a7f4b; background: #e3f5ea; padding: 3px 14px; border-radius: 6px; }
+/* 总时间超过提醒阈值：暗红数字 + 淡黄背景（不闪烁） */
+.mr-total.overtime { color: #9b1c1c; background: #fdf3c4; }
 @keyframes flash { 50% { opacity: .4; } }
 @media (prefers-reduced-motion: reduce) {
-  .mr-total.overtime, .mr-person.flashing { animation: none; }
+  .mr-person.flashing { animation: none; }
 }
 
 /* 梯形主席台（上宽下窄）：加宽、降高与上框线对齐、文字单排 */

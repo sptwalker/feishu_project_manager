@@ -90,7 +90,7 @@ class MeetingReportOrderUpdate(BaseModel):
 
 class MeetingTimerResponse(BaseModel):
     """周会计时设置"""
-    total_minutes: int = Field(30, ge=1, le=600, description="总会议时长（分钟）")
+    total_minutes: int = Field(120, ge=1, le=600, description="总时长提醒阈值（分钟）")
     person_threshold_minutes: int = Field(5, ge=1, le=120, description="单人提醒阈值（分钟）")
 
 
