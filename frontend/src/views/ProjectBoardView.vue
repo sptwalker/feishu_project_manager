@@ -381,6 +381,8 @@ function cssVar(name: string): string {
 const deptOption = computed(() => {
   const counts: Record<string, number> = {}
   for (const p of allProjects.value) {
+    // 排除已完成/已取消项目，只统计在跟踪的项目
+    if (['completed', 'cancelled'].includes(p.status)) continue
     const key = p.department || '未分配'
     counts[key] = (counts[key] || 0) + 1
   }
@@ -403,6 +405,8 @@ const deptOption = computed(() => {
 const ownerOption = computed(() => {
   const counts: Record<string, number> = {}
   for (const p of allProjects.value) {
+    // 排除已完成/已取消项目，只统计在跟踪的项目
+    if (['completed', 'cancelled'].includes(p.status)) continue
     const key = p.owner_name || '未分配'
     counts[key] = (counts[key] || 0) + 1
   }
