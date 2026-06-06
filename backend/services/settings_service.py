@@ -153,12 +153,14 @@ class SettingsService:
     def get_last_meeting_record(db: Session) -> dict:
         """最近一次周会（按 session 最大）。表为空时回退用 base 锚点作为“上次周会”，
         实现从“自然周”到“事件驱动”的平滑迁移（无需 seed 数据）。
-        返回 {session:int, meeting_date:date, status:str}，恒非 None。"""
+        返回 {session:int, meeting_date:date, status:str, ended_at:datetime|None}，恒非 None。"""
         rec = db.query(MeetingRecord).order_by(MeetingRecord.session.desc()).first()
         if rec:
-            return {"session": rec.session, "meeting_date": rec.meeting_date, "status": rec.status}
+            return {"session": rec.session, "meeting_date": rec.meeting_date,
+                    "status": rec.status, "ended_at": rec.ended_at}
         base_monday, base_count = SettingsService._base(db)
-        return {"session": base_count, "meeting_date": base_monday, "status": "archived"}
+        return {"session": base_count, "meeting_date": base_monday,
+                "status": "archived", "ended_at": None}
 
     @staticmethod
     def get_active_meeting_record(db: Session) -> Optional[MeetingRecord]:
@@ -181,7 +183,7 @@ class SettingsService:
     @staticmethod
     def get_meeting_state(db: Session, today: Optional[date] = None) -> dict:
         """周会状态（事件驱动）：周期次数与“能否开新周期”由 meeting_records 表驱动，
-        表空时回退 base 锚点。新规则：上次会议日期 + NEW_CYCLE_DAYS 天即可进入新周期。"""
+        表空时回退 base 锚点。新规则：上次周会结束日期 + NEW_CYCLE_DAYS 天即可进入新周期。"""
         if today is None:
             today = datetime.now().date()
         base_monday, base_count = SettingsService._base(db)
@@ -194,11 +196,13 @@ class SettingsService:
         # 当前周会次数：进行中则用其 session，否则用最近一次的次数
         current_count = active_rec.session if active_rec else last["session"]
 
-        # 距上次会议日期天数（以会议日期为锚点）
-        last_date = last["meeting_date"]
-        days_since_last = (today - last_date).days if last_date else None
+        # 距上次周会“结束日期”天数（以归档结束时刻 ended_at 为锚点；
+        # 缺失结束时间时回退会议日期，兼容历史记录与校准基准数据）
+        ended_at = last.get("ended_at")
+        basis_date = ended_at.date() if ended_at else last["meeting_date"]
+        days_since_last = (today - basis_date).days if basis_date else None
 
-        # 能否进入新周期：无进行中的周会 且 距上次会议日期 ≥ NEW_CYCLE_DAYS
+        # 能否进入新周期：无进行中的周会 且 距上次周会结束日期 ≥ NEW_CYCLE_DAYS
         can_open_new_cycle = (active_rec is None) and (
             days_since_last is not None and days_since_last >= new_cycle_days
         )
@@ -215,7 +219,7 @@ class SettingsService:
             "this_week_count": current_count,             # 重定义：当前周期次数
             "this_week_recorded": active_rec is not None,  # 重定义：是否正在记录中
             "last_meeting": {
-                "date": last_date.isoformat() if last_date else None,
+                "date": basis_date.isoformat() if basis_date else None,
                 "count": last["session"],
             },
             "calibration_count": next_count,              # 兼容旧字段：前端开启取用的次数
