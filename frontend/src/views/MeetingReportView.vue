@@ -68,7 +68,9 @@ function beep() {
     osc.start(); osc.stop(ctx.currentTime + 0.2)
   } catch { /* 忽略：浏览器限制或不支持 */ }
 }
-watch(() => store.personOvertime, (v, old) => { if (v && !old) beep() })
+// 本人每满 5 分钟蜂鸣一次（300/600/900… 秒）
+watch(() => store.personElapsed, (s) => { if (s > 0 && s % 300 === 0) beep() })
+// 总会议时长归零提醒
 watch(() => store.totalOvertime, (v, old) => { if (v && !old) beep() })
 
 async function saveSettings() {
