@@ -58,8 +58,9 @@
             <el-tooltip content="查看周会记录" placement="bottom">
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
-            <el-tooltip v-if="isAdmin" content="进入周会汇报（全屏）" placement="bottom">
-              <el-button class="m-record-btn" type="primary" :icon="Monitor" size="small" circle @click="router.push('/meeting-report')" />
+            <!-- 进入全屏周会汇报：仅周会模式开启且管理员可见，点击二次确认后进入 -->
+            <el-tooltip v-if="isAdmin && meeting.active" content="进入周会汇报（全屏）" placement="bottom">
+              <el-button class="m-record-btn" type="primary" :icon="Monitor" size="small" circle @click="enterMeetingReport" />
             </el-tooltip>
           </div>
           <el-dropdown trigger="click" @command="onCommand">
@@ -128,6 +129,20 @@ function onCommand(cmd: string) {
   } else if (cmd === 'settings' || cmd === 'profile') {
     router.push({ name: 'settings' })
   }
+}
+
+/* 进入全屏周会汇报页：二次确认后跳转（按钮仅在管理员 + 周会模式开启时可见） */
+async function enterMeetingReport() {
+  try {
+    await ElMessageBox.confirm(
+      '要开周会了？是否要进入全屏会议页面？进入后会议即开始计时！',
+      '进入周会汇报',
+      { type: 'warning', confirmButtonText: '进入', cancelButtonText: '取消' },
+    )
+  } catch {
+    return  // 用户取消
+  }
+  router.push('/meeting-report')
 }
 
 async function onToggleMeeting(val: string | number | boolean) {
