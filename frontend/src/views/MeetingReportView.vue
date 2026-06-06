@@ -148,10 +148,10 @@ async function onEndMeeting() {
 .mr-main { flex: 1; overflow: hidden; padding: 30px 20px 16px; }
 .mr-empty { display: grid; place-items: center; height: 100%; color: var(--c-ink-3); }
 .mr-set-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
-/* 项目名后的无边框翻页按钮（当前负责人范围内切换上/下一个项目） */
-.mr-proj-nav { display: inline-flex; align-items: center; gap: 2px; margin-left: 10px; vertical-align: middle; }
-.mr-proj-arrow { background: transparent; border: none; padding: 0 6px;
-  font-size: 22px; line-height: 1; font-weight: 700; color: var(--c-ink-3);
+/* 项目名后的无边框翻页按钮（当前负责人范围内切换上/下一个项目）：加大加深更醒目 */
+.mr-proj-nav { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; vertical-align: middle; }
+.mr-proj-arrow { background: transparent; border: none; padding: 0 8px;
+  font-size: 30px; line-height: 1; font-weight: 800; color: var(--c-ink-2, #5a6072);
   cursor: pointer; transition: color .15s ease; }
 .mr-proj-arrow:hover:not(:disabled) { color: var(--c-accent, #3954d6); }
 .mr-proj-arrow:disabled { opacity: .3; cursor: not-allowed; }
