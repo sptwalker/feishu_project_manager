@@ -1,5 +1,5 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { projectApi, departmentApi, settingsApi } from '@/api/resources'
 import type { Project, Department, MeetingReportOrder } from '@/types'
 
@@ -7,8 +7,8 @@ import type { Project, Department, MeetingReportOrder } from '@/types'
 export const UNASSIGNED_DEPT = '未分配部门'
 export const UNASSIGNED_OWNER = '未分配'
 
-/* 仅汇报这三种状态：待启动/进行中/暂停 */
-const REPORT_STATUSES = ['planned', 'in_progress', 'paused']
+/* 默认隐藏的项目状态：暂停/已完成/已取消（左侧多选可切换）；进行中/待启动默认显示 */
+const DEFAULT_HIDDEN_STATUSES = ['paused', 'completed', 'cancelled']
 
 export interface MemberGroup { name: string; projects: Project[] }
 export interface DeptGroup { dept: string; color?: string; members: MemberGroup[] }
@@ -20,6 +20,8 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   const departments = ref<Department[]>([])
   const order = ref<MeetingReportOrder>({ departments: [], members: {} })
   const loading = ref(false)
+  // 左侧多选「不显示」：被勾选的状态从列表与翻页中排除（默认隐藏 暂停/已完成/已取消）
+  const hiddenStatuses = ref<string[]>([...DEFAULT_HIDDEN_STATUSES])
 
   // 计时设置
   const totalMinutes = ref(120)              // 总时长提醒阈值（分钟）；超过即变色提醒，不强制结束
@@ -31,7 +33,8 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   // 计时运行时（均为正向计时，记录已经历时长，单位秒）
   const running = ref(false)
   const totalElapsed = ref(0)          // 会议已进行总时长
-  const personElapsed = ref(0)         // 当前汇报人已用时长
+  // 每个汇报位（部门|个人）的累计用时（秒）；会议期间持续累计，切换汇报人不清零
+  const personTimes = ref<Record<string, number>>({})
   let timer: ReturnType<typeof setInterval> | null = null
 
   /* 部门容错映射：按全称或简称匹配部门记录（与总览页一致） */
@@ -56,7 +59,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     // 1. 收集 部门 -> 个人 -> 项目
     const deptMap = new Map<string, Map<string, Project[]>>()
     for (const p of projects.value) {
-      if (!REPORT_STATUSES.includes(p.status)) continue
+      if (hiddenStatuses.value.includes(p.status)) continue
       const dept = (p.department && p.department.trim()) || UNASSIGNED_DEPT
       const owner = (p.owner_name && p.owner_name.trim()) || UNASSIGNED_OWNER
       if (!deptMap.has(dept)) deptMap.set(dept, new Map())
@@ -100,6 +103,49 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     return presenters.value.findIndex((s) => s.dept === dept && s.member === member)
   })
 
+  /* 当前汇报位的唯一键（部门|个人），用于按汇报人累计用时 */
+  const currentPresenterKey = computed<string>(() => {
+    const p = currentProject.value
+    if (!p) return ''
+    const dept = (p.department && p.department.trim()) || UNASSIGNED_DEPT
+    const member = (p.owner_name && p.owner_name.trim()) || UNASSIGNED_OWNER
+    return `${dept}|${member}`
+  })
+  /* 当前汇报人已用时长（秒）= 其在会议期间的累计值 */
+  const personElapsed = computed<number>(() => personTimes.value[currentPresenterKey.value] || 0)
+
+  /* 当前汇报人（部门+个人）名下的项目列表（已按隐藏状态过滤、按顺序） */
+  const currentMemberProjects = computed<Project[]>(() => {
+    const idx = currentPresenterIndex.value
+    if (idx < 0) return []
+    const slot = presenters.value[idx]
+    const dept = grouped.value.find((d) => d.dept === slot.dept)
+    return dept?.members.find((m) => m.name === slot.member)?.projects ?? []
+  })
+  /* 当前项目在「当前汇报人项目列表」中的下标 */
+  const currentProjectIndexInMember = computed<number>(() =>
+    currentMemberProjects.value.findIndex((p) => p.id === currentProjectId.value),
+  )
+  /* 在当前汇报人范围内切换上一个/下一个项目（不重置单人计时；越界忽略） */
+  function gotoProjectInMember(delta: number) {
+    const list = currentMemberProjects.value
+    const i = currentProjectIndexInMember.value
+    const next = i + delta
+    if (i < 0 || next < 0 || next >= list.length) return
+    currentProjectId.value = list[next].id
+  }
+  const nextProjectInMember = () => gotoProjectInMember(1)
+  const prevProjectInMember = () => gotoProjectInMember(-1)
+
+  /* 当前选中项被隐藏/移出可见列表时，自动切到第一个可见项目（避免右侧挂着已隐藏项目） */
+  watch(grouped, (groups) => {
+    if (currentProjectId.value === null) return
+    const visible = new Set(groups.flatMap((d) => d.members.flatMap((m) => m.projects.map((p) => p.id))))
+    if (!visible.has(currentProjectId.value)) {
+      currentProjectId.value = groups[0]?.members[0]?.projects[0]?.id ?? null
+    }
+  })
+
   /* 加载数据：项目 + 部门 + 顺序 + 计时设置 */
   async function load() {
     loading.value = true
@@ -127,13 +173,9 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     }
   }
 
-  /* 选中某项目 */
+  /* 选中某项目（切换汇报人不清零计时，各汇报人用时各自累计） */
   function selectProject(id: number) {
-    if (id === currentProjectId.value) return
-    // 切换汇报人时重置单人计时（仅当所属汇报位变化）
-    const prevIdx = currentPresenterIndex.value
     currentProjectId.value = id
-    if (currentPresenterIndex.value !== prevIdx) personElapsed.value = 0
   }
 
   /* 上一位 / 下一位：跳到相邻汇报位的第一个项目 */
@@ -147,7 +189,6 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     const proj = member?.projects[0]
     if (proj) {
       currentProjectId.value = proj.id
-      personElapsed.value = 0
     }
   }
   const nextPresenter = () => gotoPresenter(1)
@@ -159,14 +200,15 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     running.value = true
     timer = setInterval(() => {
       totalElapsed.value += 1
-      personElapsed.value += 1
+      // 给当前汇报人累加用时（切换汇报人后各自累计、互不清零）
+      const key = currentPresenterKey.value
+      if (key) personTimes.value[key] = (personTimes.value[key] || 0) + 1
     }, 1000)
   }
   function stop() {
     running.value = false
     if (timer) { clearInterval(timer); timer = null }
   }
-  function resetPerson() { personElapsed.value = 0 }
 
   /* 是否超时 */
   const personOvertime = computed(() => personElapsed.value >= personThresholdMinutes.value * 60)
@@ -179,13 +221,15 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   }
 
   return {
-    projects, departments, order, loading,
+    projects, departments, order, loading, hiddenStatuses,
     totalMinutes, personThresholdMinutes,
     currentProjectId, currentProject, currentPresenterIndex,
+    currentMemberProjects, currentProjectIndexInMember,
     running, totalElapsed, personElapsed,
     grouped, presenters, personOvertime, totalOvertime,
     load, selectProject, nextPresenter, prevPresenter,
-    start, stop, resetPerson, saveOrder, findDepartment,
+    nextProjectInMember, prevProjectInMember,
+    start, stop, saveOrder, findDepartment,
   }
 })
 

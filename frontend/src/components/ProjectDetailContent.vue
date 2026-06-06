@@ -13,6 +13,8 @@
       <div class="d-head" :style="{ '--bar': statusColor(local.status) }">
         <div class="d-title-row">
           <span v-if="!editing" class="d-title">{{ local.name }}</span>
+          <!-- 标题后插槽：会议页注入「当前负责人内项目翻页」按钮 -->
+          <slot v-if="!editing" name="title-after" />
           <el-input v-else v-model="form.name" size="large" class="d-title-input" placeholder="请输入项目名称" />
           <span v-if="meeting.active" class="meeting-banner">第{{ meeting.currentCount }}次周会记录中……</span>
         </div>

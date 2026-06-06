@@ -1,12 +1,24 @@
 <template>
   <div class="mr-page">
     <MeetingTopBar :session="session" :today="today"
-      @view-minutes="onViewMinutes" @open-settings="settingsVisible = true" />
+      @view-minutes="onViewMinutes" @open-settings="settingsVisible = true" @end-meeting="onEndMeeting" />
     <div class="mr-body">
       <aside class="mr-aside"><MeetingReportTree /></aside>
       <main class="mr-main">
         <ProjectDetailContent v-if="store.currentProject" :visible="true"
-          :project="store.currentProject" layout="meeting" @updated="store.load()" />
+          :project="store.currentProject" layout="meeting" @updated="store.load()">
+          <template #title-after>
+            <!-- 当前负责人范围内 上一个/下一个项目（无边框） -->
+            <span class="mr-proj-nav">
+              <button class="mr-proj-arrow" title="上一个项目"
+                :disabled="store.currentProjectIndexInMember <= 0"
+                @click="store.prevProjectInMember()">‹</button>
+              <button class="mr-proj-arrow" title="下一个项目"
+                :disabled="store.currentProjectIndexInMember >= store.currentMemberProjects.length - 1"
+                @click="store.nextProjectInMember()">›</button>
+            </span>
+          </template>
+        </ProjectDetailContent>
         <div v-else class="mr-empty">暂无待汇报项目</div>
       </main>
     </div>
@@ -28,7 +40,8 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { ElDialog, ElButton, ElInputNumber, ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ElDialog, ElButton, ElInputNumber, ElMessage, ElMessageBox } from 'element-plus'
 import MeetingTopBar from '@/components/meeting-report/MeetingTopBar.vue'
 import MeetingReportTree from '@/components/meeting-report/MeetingReportTree.vue'
 import ProjectDetailContent from '@/components/ProjectDetailContent.vue'
@@ -36,6 +49,7 @@ import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useMeetingStore } from '@/stores/meeting'
 import { settingsApi, meetingApi } from '@/api/resources'
 
+const router = useRouter()
 const store = useMeetingReportStore()
 const meeting = useMeetingStore()
 
@@ -68,8 +82,13 @@ function beep() {
     osc.start(); osc.stop(ctx.currentTime + 0.2)
   } catch { /* 忽略：浏览器限制或不支持 */ }
 }
-// 本人每满 5 分钟蜂鸣一次（300/600/900… 秒）
-watch(() => store.personElapsed, (s) => { if (s > 0 && s % 300 === 0) beep() })
+// 本人每满 5 分钟蜂鸣一次（仅连续计时触发；切换汇报人导致的跳变不算）
+let lastPersonElapsed = 0
+watch(() => store.personElapsed, (s) => {
+  const isTick = s === lastPersonElapsed + 1
+  lastPersonElapsed = s
+  if (isTick && s > 0 && s % 300 === 0) beep()
+})
 // 总会议时长归零提醒
 watch(() => store.totalOvertime, (v, old) => { if (v && !old) beep() })
 
@@ -89,6 +108,26 @@ async function onViewMinutes() {
     ElMessage.error('生成纪要失败')
   }
 }
+
+/* 结束会议：确认后归档（记录结束时间）+ 关闭周会模式，再离开汇报页 */
+async function onEndMeeting() {
+  try {
+    await ElMessageBox.confirm('确定结束本次周会？将记录结束时间并关闭周会模式。', '结束会议', {
+      type: 'warning', confirmButtonText: '结束会议', cancelButtonText: '取消',
+    })
+  } catch {
+    return  // 用户取消
+  }
+  try {
+    await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 记操作日志
+    store.stop()
+    ElMessage.success('周会已结束')
+  } catch {
+    ElMessage.error('结束会议失败（需要管理员权限）')
+  } finally {
+    router.push('/board')  // 关闭汇报页
+  }
+}
 </script>
 
 <style scoped>
@@ -96,8 +135,15 @@ async function onViewMinutes() {
   background: var(--c-canvas, #f5f6f8); }
 .mr-body { flex: 1; display: flex; min-height: 0; }
 .mr-aside { width: 24%; min-width: 240px; border-right: 1px solid var(--c-border, #e4e7ed);
-  background: var(--c-surface, #fff); padding-top: 30px; }
+  background: var(--c-surface, #fff); padding-top: 8px; }
 .mr-main { flex: 1; overflow: hidden; padding: 30px 20px 16px; }
 .mr-empty { display: grid; place-items: center; height: 100%; color: var(--c-ink-3); }
 .mr-set-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
+/* 项目名后的无边框翻页按钮（当前负责人范围内切换上/下一个项目） */
+.mr-proj-nav { display: inline-flex; align-items: center; gap: 2px; margin-left: 10px; vertical-align: middle; }
+.mr-proj-arrow { background: transparent; border: none; padding: 0 6px;
+  font-size: 22px; line-height: 1; font-weight: 700; color: var(--c-ink-3);
+  cursor: pointer; transition: color .15s ease; }
+.mr-proj-arrow:hover:not(:disabled) { color: var(--c-accent, #3954d6); }
+.mr-proj-arrow:disabled { opacity: .3; cursor: not-allowed; }
 </style>

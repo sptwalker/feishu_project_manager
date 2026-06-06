@@ -27,9 +27,10 @@
         title="下一位" @click="store.nextPresenter()">›</button>
     </div>
 
-    <!-- 右：纪要 + 设置 -->
+    <!-- 右：纪要 + 结束会议 + 设置 -->
     <div class="mr-actions">
       <el-button type="primary" @click="emit('view-minutes')">查看会议纪要</el-button>
+      <el-button class="mr-end-btn" @click="emit('end-meeting')">结束会议</el-button>
       <el-button @click="emit('open-settings')">⚙ 设置</el-button>
     </div>
   </header>
@@ -41,7 +42,7 @@ import { ElButton } from 'element-plus'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 
 defineProps<{ session: number; today: string }>()
-const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void }>()
+const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void; (e: 'end-meeting'): void }>()
 
 const store = useMeetingReportStore()
 const presenter = computed(() => store.presenters[store.currentPresenterIndex] ?? null)
@@ -117,4 +118,7 @@ function fmt(total: number): string {
 .mr-arrow:disabled { opacity: .25; cursor: not-allowed; }
 
 .mr-actions { display: flex; gap: 8px; }
+/* 结束会议：白字灰底 */
+.mr-end-btn { background: #909399; border-color: #909399; color: #fff; }
+.mr-end-btn:hover, .mr-end-btn:focus { background: #7d8085; border-color: #7d8085; color: #fff; }
 </style>

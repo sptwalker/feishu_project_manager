@@ -1,7 +1,16 @@
 <template>
   <div class="mr-tree">
     <div class="mr-search">
-      <el-input v-model="keyword" placeholder="🔍 查找项目 / 负责人 / 部门" clearable size="small" />
+      <el-input v-model="keyword" placeholder="🔍 查找项目 / 负责人 / 部门" clearable size="small" class="mr-search-input" />
+      <div class="mr-filter">
+        <span class="mr-filter-label">不显示：</span>
+        <el-checkbox-group v-model="store.hiddenStatuses" size="small" class="mr-filter-group">
+          <el-checkbox label="completed">已完成</el-checkbox>
+          <el-checkbox label="cancelled">已取消</el-checkbox>
+          <el-checkbox label="paused">暂停</el-checkbox>
+          <el-checkbox label="planned">待启动</el-checkbox>
+        </el-checkbox-group>
+      </div>
       <span class="mr-hint">⇅ 拖拽部门 / 组内拖拽个人 调整汇报顺序</span>
     </div>
 
@@ -15,7 +24,7 @@
         @dragover.prevent
         @drop="onDeptDrop(di)"
       >
-        <div class="mr-dept-head">
+        <div class="mr-dept-head" :style="{ background: d.color ? `color-mix(in srgb, ${d.color} 16%, #fff)` : 'var(--c-surface-2, #f2f3f5)' }">
           <span class="grip">⇅</span>
           <span class="swatch" :style="{ background: d.color || 'var(--c-ink-3)' }"></span>
           <b>{{ d.dept }}</b>
@@ -40,7 +49,7 @@
             :class="{ cur: p.id === store.currentProjectId }"
             @click="store.selectProject(p.id)"
           >
-            • {{ p.name }}
+            <span class="mr-pst" :style="{ color: statusColor(p.status) }">【{{ statusLabel(p.status) }}】</span>{{ p.name }}
           </div>
         </div>
       </div>
@@ -51,12 +60,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ElInput } from 'element-plus'
+import { ElInput, ElCheckbox, ElCheckboxGroup } from 'element-plus'
 import { useMeetingReportStore } from '@/stores/meetingReport'
-import type { MeetingReportOrder } from '@/types'
+import { projectStatusLabel, projectStatusColor } from '@/utils/labels'
+import type { MeetingReportOrder, ProjectStatus } from '@/types'
 
 const store = useMeetingReportStore()
 const keyword = ref('')
+
+/* 项目状态中文标签 / 颜色 */
+const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
+const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 
 /* 关键词过滤：命中项目名/负责人/部门即保留该项目；保持分组结构 */
 const filteredGroups = computed(() => {
@@ -120,21 +134,31 @@ async function persist(order: MeetingReportOrder) {
 
 <style scoped>
 .mr-tree { display: flex; flex-direction: column; height: 100%; }
-.mr-search { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+/* 搜索区：贴近上框线 */
+.mr-search { padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 6px; }
+/* 提示文字加大一号 */
+.mr-search-input :deep(.el-input__inner) { font-size: 15px; }
+.mr-search-input :deep(.el-input__inner::placeholder) { font-size: 15px; }
+.mr-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
+.mr-filter-label { font-size: 12px; color: var(--c-ink-2); font-weight: 600; }
+.mr-filter-group :deep(.el-checkbox) { margin-right: 8px; }
+.mr-filter-group :deep(.el-checkbox__label) { font-size: 12px; padding-left: 4px; }
 .mr-hint { font-size: 11px; color: var(--c-ink-3); }
 .mr-scroll { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
 .mr-empty { padding: 20px; text-align: center; color: var(--c-ink-3); font-size: 13px; }
 .mr-dept { margin-bottom: 6px; }
 .mr-dept-head { display: flex; align-items: center; gap: 6px; padding: 4px 6px;
-  background: var(--c-surface-2, #f2f3f5); border-radius: 6px; font-weight: 600; cursor: grab;
-  font-size: 20px; }
+  border-radius: 6px; font-weight: 600; cursor: grab; font-size: 20px; }
 .swatch { width: 10px; height: 10px; border-radius: 2px; }
 .mr-member { margin: 4px 0 4px 14px; }
 .mr-member-head { display: flex; align-items: center; gap: 4px; padding: 2px 6px;
-  cursor: grab; color: var(--c-ink-2); font-size: 18px; }
+  cursor: grab; color: var(--c-ink-2); font-size: 18px; font-weight: 700; }
 .mr-proj { margin-left: 18px; padding: 3px 8px; border-radius: 5px; cursor: pointer;
   font-size: 15px; color: var(--c-ink-2); }
 .mr-proj:hover { background: var(--c-surface-2, #f2f3f5); }
 .mr-proj.cur { background: var(--c-accent, #3954d6); color: #fff; font-weight: 600; }
+/* 项目名前的状态标签：用状态色；选中行反白时仍可读（继承白字） */
+.mr-pst { font-weight: 700; margin-right: 2px; }
+.mr-proj.cur .mr-pst { color: #fff !important; }
 .grip { color: var(--c-ink-3); cursor: grab; }
 </style>
