@@ -881,6 +881,9 @@ async function loadDepartments() {
 
 onMounted(() => {
   document.addEventListener('click', onDocClick, true)
+  // 初始化本地快照：会议页等「visible 恒 true、挂载时 project 已有值」的场景下，
+  // 不会触发 visible/project 的 watch，需在此主动同步一次，否则 local 为 null、内容空白
+  if (props.project || props.createMode) sync()
   loadDepartments()
   loadManagers()
   nextTick(() => { recomputeConnectors(); observeTimeline() })

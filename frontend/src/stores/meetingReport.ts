@@ -105,7 +105,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     loading.value = true
     try {
       const [ps, ds, ord, timerCfg] = await Promise.all([
-        projectApi.list({ limit: 1000 }),
+        projectApi.list({ limit: 500 }),  // 后端 limit 上限 500；会议仅汇报未完成项目，足够覆盖
         departmentApi.list(),
         settingsApi.getMeetingReportOrder(),
         settingsApi.getMeetingTimer(),

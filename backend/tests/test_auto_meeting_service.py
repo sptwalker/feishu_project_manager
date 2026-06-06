@@ -80,7 +80,7 @@ def test_active_blocks_new_cycle(db_session):
 def test_auto_open_skips_non_workday(db_session, monkeypatch):
     """非工作日 -> 跳过，不建记录"""
     monkeypatch.setattr(auto_meeting_service, "_is_workday_safe", lambda d: False)
-    result = asyncio.get_event_loop().run_until_complete(
+    result = asyncio.run(
         AutoMeetingService.auto_open_if_due(db_session, today=date(2026, 6, 4))
     )
     assert result is False
@@ -93,7 +93,7 @@ def test_auto_open_skips_when_active(db_session, monkeypatch):
     SettingsService.set_auto_open_meeting_enabled(db_session, True)
     _mk_record(db_session, 23, date(2026, 6, 8), status="active")
     SettingsService.set_active(db_session, True)
-    result = asyncio.get_event_loop().run_until_complete(
+    result = asyncio.run(
         AutoMeetingService.auto_open_if_due(db_session, today=date(2026, 6, 4))
     )
     assert result is False
@@ -114,7 +114,7 @@ def test_auto_open_creates_meeting_and_notifies(db_session, monkeypatch):
     )
 
     # today=周四 6-04
-    result = asyncio.get_event_loop().run_until_complete(
+    result = asyncio.run(
         AutoMeetingService.auto_open_if_due(db_session, today=date(2026, 6, 4))
     )
     assert result is True
@@ -146,7 +146,7 @@ def test_auto_open_noop_when_switch_off(db_session, monkeypatch):
     monkeypatch.setattr(auto_meeting_service, "_is_workday_safe", lambda d: True)
     # 不设开关（默认 false）
     _mk_record(db_session, 22, date(2026, 6, 1))
-    result = asyncio.get_event_loop().run_until_complete(
+    result = asyncio.run(
         AutoMeetingService.auto_open_if_due(db_session, today=date(2026, 6, 4))
     )
     assert result is False
