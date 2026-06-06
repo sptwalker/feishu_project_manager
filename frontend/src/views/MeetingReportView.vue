@@ -7,6 +7,10 @@
       <main class="mr-main">
         <ProjectDetailContent v-if="store.currentProject" :visible="true"
           :project="store.currentProject" layout="meeting" @updated="store.load()">
+          <template #header-extra>
+            <!-- 新增项目：复用抽屉的 createMode 新建流程；琥珀色、与项目编辑按钮同尺寸 -->
+            <el-button size="large" class="mr-add-btn" @click="createVisible = true">＋ 新增项目</el-button>
+          </template>
           <template #title-after>
             <!-- 当前负责人范围内 上一个/下一个项目（无边框） -->
             <span class="mr-proj-nav">
@@ -35,6 +39,9 @@
         <el-button type="primary" @click="saveSettings">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 新增项目：复用 ProjectDetailDrawer 的 createMode 新建流程，保存后刷新左树 -->
+    <ProjectDetailDrawer v-model:visible="createVisible" :project="null" create-mode @updated="store.load()" />
   </div>
 </template>
 
@@ -45,6 +52,7 @@ import { ElDialog, ElButton, ElInputNumber, ElMessage, ElMessageBox } from 'elem
 import MeetingTopBar from '@/components/meeting-report/MeetingTopBar.vue'
 import MeetingReportTree from '@/components/meeting-report/MeetingReportTree.vue'
 import ProjectDetailContent from '@/components/ProjectDetailContent.vue'
+import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useMeetingStore } from '@/stores/meeting'
 import { settingsApi, meetingApi } from '@/api/resources'
@@ -56,6 +64,7 @@ const meeting = useMeetingStore()
 const session = ref(0)
 const today = new Date().toISOString().slice(0, 10)
 const settingsVisible = ref(false)
+const createVisible = ref(false)
 const totalM = ref(120)
 const thresholdM = ref(5)
 
@@ -146,4 +155,8 @@ async function onEndMeeting() {
   cursor: pointer; transition: color .15s ease; }
 .mr-proj-arrow:hover:not(:disabled) { color: var(--c-accent, #3954d6); }
 .mr-proj-arrow:disabled { opacity: .3; cursor: not-allowed; }
+/* 新增项目按钮：琥珀色，尺寸与「项目编辑」按钮一致（layout-meeting 下 34px） */
+.mr-add-btn { height: 34px; padding: 0 14px; font-size: 14px;
+  background: #f59e0b; border-color: #f59e0b; color: #fff; }
+.mr-add-btn:hover, .mr-add-btn:focus { background: #d98c08; border-color: #d98c08; color: #fff; }
 </style>

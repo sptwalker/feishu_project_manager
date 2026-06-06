@@ -1,14 +1,17 @@
 <template>
   <div class="detail-content-root" :class="`layout-${props.layout}`">
     <div v-if="local" class="detail">
-      <el-button
-        v-if="!createMode"
-        class="edit-btn"
-        :type="editing ? 'warning' : 'primary'"
-        :icon="editing ? Close : EditPen"
-        size="large"
-        @click="toggleEdit"
-      >{{ editing ? '取消编辑' : '项目编辑' }}</el-button>
+      <div v-if="!createMode" class="edit-btn-group">
+        <el-button
+          class="edit-btn"
+          :type="editing ? 'warning' : 'primary'"
+          :icon="editing ? Close : EditPen"
+          size="large"
+          @click="toggleEdit"
+        >{{ editing ? '取消编辑' : '项目编辑' }}</el-button>
+        <!-- 编辑按钮右侧插槽：会议页注入「新增项目」按钮 -->
+        <slot name="header-extra" />
+      </div>
       <!-- 标题 -->
       <div class="d-head" :style="{ '--bar': statusColor(local.status) }">
         <div class="d-title-row">
@@ -1083,7 +1086,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 
 <style scoped>
 .detail { display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-2) 0; position: relative; }
-.edit-btn { position: absolute; top: 42px; right: 0; z-index: 2; font-size: 16px; }
+.edit-btn-group { position: absolute; top: 42px; right: 0; z-index: 2; display: flex; align-items: center; gap: 8px; }
+.edit-btn { font-size: 16px; }
 /* 记录时间：作为徽章行的普通 flex 子项，跟在状态/优先级之后 */
 .record-time { font-size: 12px; color: var(--c-ink-3); }
 .long-term-text { font-weight: 700; color: var(--c-accent); font-size: 14px; }
@@ -1309,5 +1313,6 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 /* 字段标签不换行（完成情况/截止日期等 4 字标签放大后会折行） */
 .layout-meeting .f dt { width: 76px; white-space: nowrap; }
 /* 项目编辑按钮：缩小并上移，与项目名称高度对齐 */
-.layout-meeting .edit-btn { top: 0; height: 34px; padding: 0 14px; font-size: 14px; }
+.layout-meeting .edit-btn-group { top: 0; }
+.layout-meeting .edit-btn { height: 34px; padding: 0 14px; font-size: 14px; }
 </style>
