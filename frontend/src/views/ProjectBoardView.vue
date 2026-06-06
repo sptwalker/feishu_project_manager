@@ -172,6 +172,7 @@ import {
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const allProjects = ref<Project[]>([])
 const loading = ref(false)
@@ -180,12 +181,15 @@ const viewMode = ref<'grid' | 'list'>('grid')
 /* 首页副标题动态统计：部门数 / 项目经理(含管理员)数 / 最新登录用户 */
 const users = ref<User[]>([])
 const departments = ref<Department[]>([])
+const auth = useAuthStore()
 const subtitle = computed(() => {
   const deptCount = departments.value.length
   const managerCount = users.value.filter(
     (u) => u.role === 'project_manager' || u.role === 'admin',
   ).length
-  const withLogin = users.value.filter((u) => u.last_login_at)
+  // 最近活跃用户排除当前登录者自己（否则自己登录后看到的「最近活跃」永远是自己）
+  const meId = auth.currentUser?.id
+  const withLogin = users.value.filter((u) => u.last_login_at && u.id !== meId)
   let who = '—'
   if (withLogin.length) {
     const latest = withLogin.reduce((a, b) =>
