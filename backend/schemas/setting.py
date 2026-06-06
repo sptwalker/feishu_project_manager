@@ -74,3 +74,27 @@ class AutoReminderResponse(BaseModel):
 class AutoReminderUpdate(BaseModel):
     """切换周会自动催更开关"""
     enabled: bool = Field(..., description="是否启用周会自动催更")
+
+
+class MeetingReportOrderResponse(BaseModel):
+    """周会汇报顺序（部门级 + 个人级）"""
+    departments: list[str] = Field(default_factory=list, description="部门汇报顺序")
+    members: dict[str, list[str]] = Field(default_factory=dict, description="各部门内个人顺序")
+
+
+class MeetingReportOrderUpdate(BaseModel):
+    """更新周会汇报顺序"""
+    departments: list[str] = Field(default_factory=list)
+    members: dict[str, list[str]] = Field(default_factory=dict)
+
+
+class MeetingTimerResponse(BaseModel):
+    """周会计时设置"""
+    total_minutes: int = Field(30, ge=1, le=600, description="总会议时长（分钟）")
+    person_threshold_minutes: int = Field(5, ge=1, le=120, description="单人提醒阈值（分钟）")
+
+
+class MeetingTimerUpdate(BaseModel):
+    """更新周会计时设置"""
+    total_minutes: int = Field(..., ge=1, le=600)
+    person_threshold_minutes: int = Field(..., ge=1, le=120)

@@ -4,6 +4,7 @@
 """
 from datetime import date, datetime, timedelta
 from typing import Optional
+import json
 from sqlalchemy.orm import Session
 
 from backend.models.system_setting import SystemSetting
@@ -21,6 +22,12 @@ FEISHU_CORE_GROUP_CHAT_ID_KEY = "feishu_core_group_chat_id"
 AUTO_OPEN_MEETING_ENABLED_KEY = "auto_open_meeting_enabled"
 # 周会自动催更的运行时开关（每周五/周日自动在核心群催更）
 AUTO_REMINDER_ENABLED_KEY = "auto_reminder_enabled"
+# 周会汇报页：汇报顺序（部门级 + 个人级）与计时设置
+MEETING_REPORT_ORDER_KEY = "meeting_report_order"
+MEETING_TOTAL_MINUTES_KEY = "meeting_total_minutes"
+MEETING_PERSON_THRESHOLD_MINUTES_KEY = "meeting_person_threshold_minutes"
+DEFAULT_MEETING_TOTAL_MINUTES = 30
+DEFAULT_MEETING_PERSON_THRESHOLD_MINUTES = 5
 
 # 默认基准：2026-06-01（周一）= 第 22 次
 DEFAULT_BASE_MONDAY = "2026-06-01"
@@ -88,6 +95,53 @@ class SettingsService:
     def set_auto_reminder_enabled(db: Session, enabled: bool) -> None:
         """设置周会自动催更的运行时开关（每周五/周日自动催更）。"""
         SettingsService.set_setting(db, AUTO_REMINDER_ENABLED_KEY, "true" if enabled else "false")
+
+    # ---------- 周会汇报页：顺序 + 计时设置 ----------
+
+    @staticmethod
+    def get_meeting_report_order(db: Session) -> dict:
+        """读取汇报顺序：{departments:[...], members:{部门:[人,...]}}。未设置/损坏返回空结构。"""
+        raw = SettingsService.get_setting(db, MEETING_REPORT_ORDER_KEY, "")
+        if not raw:
+            return {"departments": [], "members": {}}
+        try:
+            data = json.loads(raw)
+        except (ValueError, TypeError):
+            return {"departments": [], "members": {}}
+        return {
+            "departments": data.get("departments") or [],
+            "members": data.get("members") or {},
+        }
+
+    @staticmethod
+    def set_meeting_report_order(db: Session, departments: list, members: dict) -> None:
+        """保存汇报顺序（部门级 + 个人级）。中文不转义。"""
+        SettingsService.set_setting(
+            db,
+            MEETING_REPORT_ORDER_KEY,
+            json.dumps({"departments": departments, "members": members}, ensure_ascii=False),
+        )
+
+    @staticmethod
+    def get_meeting_total_minutes(db: Session) -> int:
+        """总会议时长（分钟），默认 30。"""
+        return int(SettingsService.get_setting(
+            db, MEETING_TOTAL_MINUTES_KEY, str(DEFAULT_MEETING_TOTAL_MINUTES)))
+
+    @staticmethod
+    def set_meeting_total_minutes(db: Session, minutes: int) -> None:
+        SettingsService.set_setting(db, MEETING_TOTAL_MINUTES_KEY, str(minutes))
+
+    @staticmethod
+    def get_meeting_person_threshold_minutes(db: Session) -> int:
+        """单人汇报提醒阈值（分钟），默认 5。"""
+        return int(SettingsService.get_setting(
+            db, MEETING_PERSON_THRESHOLD_MINUTES_KEY,
+            str(DEFAULT_MEETING_PERSON_THRESHOLD_MINUTES)))
+
+    @staticmethod
+    def set_meeting_person_threshold_minutes(db: Session, minutes: int) -> None:
+        SettingsService.set_setting(db, MEETING_PERSON_THRESHOLD_MINUTES_KEY, str(minutes))
 
     @staticmethod
     def _base(db: Session) -> tuple[date, int]:

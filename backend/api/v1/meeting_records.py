@@ -17,6 +17,7 @@ from backend.schemas.setting import MeetingStateResponse
 from backend.services.meeting_record_service import MeetingRecordService
 from backend.services.settings_service import SettingsService
 from backend.services.notification_service import NotificationService
+from backend.services.operation_log_service import OperationLogService
 from backend.core.config import get_settings
 
 router = APIRouter()
@@ -71,7 +72,14 @@ def close_meeting(
     current_admin: User = Depends(get_current_admin),
 ):
     """关闭周会（管理员）：归档当前进行中的周会并关闭周会模式"""
+    active = SettingsService.get_active_meeting_record(db)
+    session = active.session if active else None
     MeetingRecordService.close_meeting(db)
+    if session is not None:
+        OperationLogService.log(
+            db, user=current_admin, action="meeting_report_end",
+            description=f"结束第 {session} 次周会",
+        )
     return SettingsService.get_meeting_state(db)
 
 
@@ -83,3 +91,18 @@ async def send_meeting_record(
 ):
     """发送会议记录（管理员）：生成飞书文档并分享到核心组群"""
     return await MeetingRecordService.send_meeting(db, session)
+
+
+@router.post("/meeting-records/{session}/start-report", response_model=MeetingRecordResponse)
+def start_meeting_report(
+    session: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """记录周会汇报开始时刻（管理员）。幂等：已开始则不覆盖。"""
+    MeetingRecordService.start_report(db, session)
+    OperationLogService.log(
+        db, user=current_admin, action="meeting_report_start",
+        description=f"开始第 {session} 次周会汇报",
+    )
+    return MeetingRecordService.get_session_detail(db, session)

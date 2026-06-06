@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, JSON
+from sqlalchemy import Column, Integer, String, Date, DateTime, JSON
 from backend.models.base import BaseModel
 
 
@@ -19,6 +19,8 @@ class MeetingRecord(BaseModel):
     content_snapshot = Column(JSON, default=list, comment="结束时落库的各项目进展快照")
     doc_url = Column(String(500), comment="飞书文档链接（发送后回填）")
     created_by = Column(Integer, comment="操作人用户ID（审计用，可空）")
+    started_at = Column(DateTime, nullable=True, comment="汇报会议开始时刻（首次进入汇报模式时写入）")
+    ended_at = Column(DateTime, nullable=True, comment="汇报会议结束时刻（归档时写入）")
 
     def __repr__(self) -> str:
         return f"<MeetingRecord(session={self.session}, date={self.meeting_date}, status={self.status})>"

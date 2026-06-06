@@ -65,3 +65,9 @@ dev_seed.py
 smoke_*.py
 inspect_*.py
 diag_*.py
+
+# Superpowers 视觉伴侣（brainstorm mockups，本地临时文件）
+.superpowers/
+
+# codegraph 本地代码索引（工具产物，不提交）
+.codegraph/

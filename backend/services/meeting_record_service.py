@@ -138,12 +138,14 @@ class MeetingRecordService:
         if rec:
             rec.content_snapshot = snapshot
             rec.status = "archived"
+            rec.ended_at = datetime.now()
         else:
             rec = MeetingRecord(
                 session=session,
                 meeting_date=date.today(),
                 status="archived",
                 content_snapshot=snapshot,
+                ended_at=datetime.now(),
             )
             db.add(rec)
         try:
@@ -190,6 +192,22 @@ class MeetingRecordService:
         # 3. 开启周会模式（次数以 meeting_records 表为真相源，不再写 base 锚点，避免双写打架）
         SettingsService.set_active(db, True)
         return MeetingRecordService.get_session_detail(db, session)
+
+    @staticmethod
+    def start_report(db: Session, session: int) -> Optional[MeetingRecord]:
+        """记录某次周会汇报开始时刻（仅首次写入，幂等）。无该 session 记录返回 None。"""
+        rec = MeetingRecordService._get_record(db, session)
+        if rec is None:
+            return None
+        if rec.started_at is None:
+            rec.started_at = datetime.now()
+            try:
+                db.commit()
+                db.refresh(rec)
+            except Exception:
+                db.rollback()
+                raise
+        return rec
 
     @staticmethod
     def close_meeting(db: Session) -> None:

@@ -11,6 +11,8 @@ from backend.schemas.setting import (
     CoreGroupChatIdResponse, CoreGroupChatIdUpdate,
     AutoOpenMeetingResponse, AutoOpenMeetingUpdate,
     AutoReminderResponse, AutoReminderUpdate,
+    MeetingReportOrderResponse, MeetingReportOrderUpdate,
+    MeetingTimerResponse, MeetingTimerUpdate,
 )
 from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
 from backend.services.project_followup_service import (
@@ -129,3 +131,50 @@ def set_auto_reminder(
     """切换周会自动催更开关（仅管理员；改后立即生效无需重启）"""
     SettingsService.set_auto_reminder_enabled(db, payload.enabled)
     return AutoReminderResponse(enabled=SettingsService.get_auto_reminder_enabled(db))
+
+
+@router.get("/settings/meeting-report-order", response_model=MeetingReportOrderResponse)
+def get_meeting_report_order(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取周会汇报顺序（所有登录用户可读，用于正确排序）"""
+    return MeetingReportOrderResponse(**SettingsService.get_meeting_report_order(db))
+
+
+@router.put("/settings/meeting-report-order", response_model=MeetingReportOrderResponse)
+def set_meeting_report_order(
+    payload: MeetingReportOrderUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """保存周会汇报顺序（仅管理员；拖拽结束即保存）"""
+    SettingsService.set_meeting_report_order(db, payload.departments, payload.members)
+    return MeetingReportOrderResponse(**SettingsService.get_meeting_report_order(db))
+
+
+@router.get("/settings/meeting-timer", response_model=MeetingTimerResponse)
+def get_meeting_timer(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取周会计时设置（所有登录用户可读）"""
+    return MeetingTimerResponse(
+        total_minutes=SettingsService.get_meeting_total_minutes(db),
+        person_threshold_minutes=SettingsService.get_meeting_person_threshold_minutes(db),
+    )
+
+
+@router.put("/settings/meeting-timer", response_model=MeetingTimerResponse)
+def set_meeting_timer(
+    payload: MeetingTimerUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """更新周会计时设置（仅管理员）"""
+    SettingsService.set_meeting_total_minutes(db, payload.total_minutes)
+    SettingsService.set_meeting_person_threshold_minutes(db, payload.person_threshold_minutes)
+    return MeetingTimerResponse(
+        total_minutes=SettingsService.get_meeting_total_minutes(db),
+        person_threshold_minutes=SettingsService.get_meeting_person_threshold_minutes(db),
+    )
