@@ -53,6 +53,9 @@
 
     <!-- 新增项目：复用 ProjectDetailDrawer 的 createMode 新建流程，保存后刷新左树 -->
     <ProjectDetailDrawer v-model:visible="createVisible" :project="null" create-mode @updated="store.load()" />
+
+    <!-- 查看会议纪要：复用「周会记录」弹窗，本地展示本次纪要内容，弹窗内可发送到飞书 -->
+    <MeetingRecordDialog v-model:visible="recordVisible" :session="session" />
   </div>
 </template>
 
@@ -64,6 +67,7 @@ import MeetingTopBar from '@/components/meeting-report/MeetingTopBar.vue'
 import MeetingReportTree from '@/components/meeting-report/MeetingReportTree.vue'
 import ProjectDetailContent from '@/components/ProjectDetailContent.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
+import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useMeetingStore } from '@/stores/meeting'
 import { settingsApi, meetingApi } from '@/api/resources'
@@ -76,6 +80,7 @@ const session = ref(0)
 const today = new Date().toISOString().slice(0, 10)
 const settingsVisible = ref(false)
 const createVisible = ref(false)
+const recordVisible = ref(false)   // 查看会议纪要弹窗（本地展示本次周会记录，飞书发送在弹窗内按钮）
 const totalM = ref(120)
 const thresholdM = ref(5)
 const soundEnabled = ref(true)   // 声音提醒开关：默认开；关闭后不再播放任何逾时提示音
@@ -122,13 +127,10 @@ async function saveSettings() {
   ElMessage.success('已保存')
 }
 
-async function onViewMinutes() {
-  try {
-    const r = await meetingApi.send(session.value)
-    ElMessage[r.ok ? 'success' : 'warning'](r.message)
-  } catch {
-    ElMessage.error('生成纪要失败')
-  }
+/* 查看会议纪要：打开本次周会记录弹窗（本地展示，不依赖飞书）；
+   生成飞书云文档并分享到核心群的功能，保留在弹窗内的「发送会议记录」按钮 */
+function onViewMinutes() {
+  recordVisible.value = true
 }
 
 /* 结束会议：确认后归档（记录结束时间）+ 关闭周会模式，再离开汇报页 */
