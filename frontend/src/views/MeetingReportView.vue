@@ -12,14 +12,22 @@
             <el-button size="large" class="mr-add-btn" @click="createVisible = true">＋ 新增项目</el-button>
           </template>
           <template #title-after>
-            <!-- 当前负责人范围内 上一个/下一个项目（无边框） -->
+            <!-- 项目翻页：本人范围内 ‹ ›；翻到尽头再出现跨汇报人按钮 《 》 -->
             <span class="mr-proj-nav">
+              <!-- 向前翻到本人第一个项目后：出现「《」跳上一位汇报人（无上一位则不显示） -->
+              <button v-if="store.currentProjectIndexInMember <= 0 && store.currentPresenterIndex > 0"
+                class="mr-proj-arrow mr-proj-arrow-jump" title="上一位汇报人"
+                @click="store.prevPresenterTail()">《</button>
               <button class="mr-proj-arrow" title="上一个项目"
                 :disabled="store.currentProjectIndexInMember <= 0"
                 @click="store.prevProjectInMember()">‹</button>
               <button class="mr-proj-arrow" title="下一个项目"
                 :disabled="store.currentProjectIndexInMember >= store.currentMemberProjects.length - 1"
                 @click="store.nextProjectInMember()">›</button>
+              <!-- 向后翻到本人最后一个项目后：出现「》」跳下一位汇报人（无下一位则不显示） -->
+              <button v-if="store.currentProjectIndexInMember >= store.currentMemberProjects.length - 1 && store.currentPresenterIndex < store.presenters.length - 1"
+                class="mr-proj-arrow mr-proj-arrow-jump" title="下一位汇报人"
+                @click="store.nextPresenter()">》</button>
             </span>
           </template>
         </ProjectDetailContent>
@@ -155,6 +163,8 @@ async function onEndMeeting() {
   cursor: pointer; transition: color .15s ease; }
 .mr-proj-arrow:hover:not(:disabled) { color: var(--c-accent, #3954d6); }
 .mr-proj-arrow:disabled { opacity: .3; cursor: not-allowed; }
+/* 跨汇报人翻页（《 》）：与项目内翻页 ‹ › 同字体/颜色；《》字形偏大，字号略收使观感一致 */
+.mr-proj-arrow-jump { font-size: 22px; }
 /* 新增项目按钮：琥珀色，尺寸与「项目编辑」按钮一致（layout-meeting 下 34px） */
 .mr-add-btn { height: 34px; padding: 0 14px; font-size: 14px;
   background: #f59e0b; border-color: #f59e0b; color: #fff; }

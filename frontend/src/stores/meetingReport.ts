@@ -178,21 +178,25 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     currentProjectId.value = id
   }
 
-  /* 上一位 / 下一位：跳到相邻汇报位的第一个项目 */
-  function gotoPresenter(delta: number) {
+  /* 上一位 / 下一位：跳到相邻汇报位的项目
+     landOnLast=true 时落到目标汇报位的「最后一个」项目（向前翻页用，保持连续手感），否则落到第一个 */
+  function gotoPresenter(delta: number, landOnLast = false) {
     const idx = currentPresenterIndex.value
     const next = idx + delta
     if (next < 0 || next >= presenters.value.length) return
     const slot = presenters.value[next]
     const dept = grouped.value.find((d) => d.dept === slot.dept)
     const member = dept?.members.find((m) => m.name === slot.member)
-    const proj = member?.projects[0]
+    const list = member?.projects ?? []
+    const proj = landOnLast ? list[list.length - 1] : list[0]
     if (proj) {
       currentProjectId.value = proj.id
     }
   }
   const nextPresenter = () => gotoPresenter(1)
   const prevPresenter = () => gotoPresenter(-1)
+  /* 向前翻页专用：跳到上一位汇报人的「最后一个」项目，让项目级翻页跨汇报人也连续 */
+  const prevPresenterTail = () => gotoPresenter(-1, true)
 
   /* 计时：每秒 tick（正向累加） */
   function start() {
@@ -227,7 +231,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     currentMemberProjects, currentProjectIndexInMember,
     running, totalElapsed, personElapsed,
     grouped, presenters, personOvertime, totalOvertime,
-    load, selectProject, nextPresenter, prevPresenter,
+    load, selectProject, nextPresenter, prevPresenter, prevPresenterTail,
     nextProjectInMember, prevProjectInMember,
     start, stop, saveOrder, findDepartment,
   }
