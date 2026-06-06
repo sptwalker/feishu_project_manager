@@ -126,13 +126,14 @@ async function persist(order: MeetingReportOrder) {
 .mr-empty { padding: 20px; text-align: center; color: var(--c-ink-3); font-size: 13px; }
 .mr-dept { margin-bottom: 6px; }
 .mr-dept-head { display: flex; align-items: center; gap: 6px; padding: 4px 6px;
-  background: var(--c-surface-2, #f2f3f5); border-radius: 6px; font-weight: 600; cursor: grab; }
+  background: var(--c-surface-2, #f2f3f5); border-radius: 6px; font-weight: 600; cursor: grab;
+  font-size: 20px; }
 .swatch { width: 10px; height: 10px; border-radius: 2px; }
 .mr-member { margin: 4px 0 4px 14px; }
 .mr-member-head { display: flex; align-items: center; gap: 4px; padding: 2px 6px;
-  cursor: grab; color: var(--c-ink-2); }
+  cursor: grab; color: var(--c-ink-2); font-size: 18px; }
 .mr-proj { margin-left: 18px; padding: 3px 8px; border-radius: 5px; cursor: pointer;
-  font-size: 13px; color: var(--c-ink-2); }
+  font-size: 15px; color: var(--c-ink-2); }
 .mr-proj:hover { background: var(--c-surface-2, #f2f3f5); }
 .mr-proj.cur { background: var(--c-accent, #3954d6); color: #fff; font-weight: 600; }
 .grip { color: var(--c-ink-3); cursor: grab; }
