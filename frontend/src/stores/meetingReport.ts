@@ -214,6 +214,15 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     if (timer) { clearInterval(timer); timer = null }
   }
 
+  /* 结束会议：停止计时并清空所有周会运行时状态，下次进入汇报页从零开始 */
+  function reset() {
+    stop()                                              // 停止计时器
+    totalElapsed.value = 0                              // 会议总计时归零
+    personTimes.value = {}                              // 每位汇报人累计用时清空
+    currentProjectId.value = null                       // 取消选中项目
+    hiddenStatuses.value = [...DEFAULT_HIDDEN_STATUSES] // 过滤状态恢复默认
+  }
+
   /* 是否超时 */
   const personOvertime = computed(() => personElapsed.value >= personThresholdMinutes.value * 60)
   const totalOvertime = computed(() => totalElapsed.value >= totalMinutes.value * 60)
@@ -233,7 +242,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     grouped, presenters, personOvertime, totalOvertime,
     load, selectProject, nextPresenter, prevPresenter, prevPresenterTail,
     nextProjectInMember, prevProjectInMember,
-    start, stop, saveOrder, findDepartment,
+    start, stop, reset, saveOrder, findDepartment,
   }
 })
 

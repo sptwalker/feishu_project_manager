@@ -142,11 +142,12 @@ async function onEndMeeting() {
   }
   try {
     await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 记操作日志
-    store.stop()
     ElMessage.success('周会已结束')
   } catch {
     ElMessage.error('结束会议失败（需要管理员权限）')
   } finally {
+    store.reset()       // 清空计时/选中/过滤等所有周会运行时状态
+    lastPersonElapsed = 0  // 重置蜂鸣节流基准
     router.push('/board')  // 关闭汇报页
   }
 }
