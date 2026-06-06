@@ -205,11 +205,11 @@
                 <div class="tl-content" @contextmenu.prevent="onProgressContextMenu($event, e)">
                   <span v-if="e.meeting_session" class="meeting-prefix">【第{{ e.meeting_session }}次周会更新】</span>{{ e.content || '（无内容）' }}
                 </div>
-                <!-- 文档附件列表（展示态） -->
+                <!-- 文档附件列表（展示态）：链接 @click.stop，避免点击冒泡到 .prog-view 触发进入编辑态 -->
                 <div v-if="e.attachments && e.attachments.length" class="tl-attachments">
                   <div v-for="att in e.attachments" :key="att.url" class="tl-attach-item">
                     <el-icon class="attach-icon"><Document /></el-icon>
-                    <a :href="att.url" target="_blank" class="attach-link">{{ att.title || '飞书文档' }}</a>
+                    <a :href="att.url" target="_blank" class="attach-link" @click.stop>{{ att.title || '飞书文档' }}</a>
                   </div>
                 </div>
                 <!-- 批注列表 -->
@@ -621,10 +621,10 @@ const progressWrap = ref<HTMLElement | null>(null)
 // 进展记录统一排序：按更新时间从过去到现在升序（编辑态与展示态共用，保证排序一致）
 const byTime = (a: ProgressEntry, b: ProgressEntry) => (a.time || '').localeCompare(b.time || '')
 
-// 时间线：抽屉按时间正序；会议页倒序（最新更新显示在最上面）
+// 时间线：抽屉与会议页统一倒序展示（最新更新显示在最上面）
 const timeline = computed<ProgressEntry[]>(() => {
   const sorted = [...(local.value?.progress_log ?? [])].sort(byTime)
-  return props.layout === 'meeting' ? sorted.reverse() : sorted
+  return sorted.reverse()
 })
 
 const isPending = (s?: string) => PENDING_STATUSES.includes((s || '') as typeof PENDING_STATUSES[number])
