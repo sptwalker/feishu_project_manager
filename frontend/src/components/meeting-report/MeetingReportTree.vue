@@ -25,7 +25,6 @@
         @drop="onDeptDrop(di)"
       >
         <div class="mr-dept-head" :style="{ background: d.color ? `color-mix(in srgb, ${d.color} 16%, #fff)` : 'var(--c-surface-2, #f2f3f5)' }">
-          <span class="grip">⇅</span>
           <span class="swatch" :style="{ background: d.color || 'var(--c-ink-3)' }"></span>
           <b>{{ d.dept }}</b>
         </div>
@@ -40,17 +39,20 @@
           @drop.stop="onMemberDrop(d.dept, mi)"
         >
           <div class="mr-member-head">
-            <span class="grip">⇅</span>{{ m.name }} ({{ m.projects.length }})
+            {{ m.name }} ({{ m.projects.length }})
           </div>
-          <div
-            v-for="p in m.projects"
-            :key="p.id"
-            class="mr-proj"
-            :class="{ cur: p.id === store.currentProjectId }"
-            @click="store.selectProject(p.id)"
-          >
-            <span class="mr-pst" :style="{ color: statusColor(p.status) }">【{{ statusLabel(p.status) }}】</span>{{ p.name }}
-          </div>
+          <!-- 仅当前汇报部门展开项目；其他部门折叠（只显示到负责人）。搜索时全部展开，保证查找结果可点选 -->
+          <template v-if="d.dept === currentDept || !!keyword.trim()">
+            <div
+              v-for="p in m.projects"
+              :key="p.id"
+              class="mr-proj"
+              :class="{ cur: p.id === store.currentProjectId }"
+              @click="store.selectProject(p.id)"
+            >
+              <span class="mr-pst" :style="{ color: statusColor(p.status) }">【{{ statusLabel(p.status) }}】</span>{{ p.name }}
+            </div>
+          </template>
         </div>
       </div>
       <div v-if="!filteredGroups.length" class="mr-empty">无匹配项目</div>
@@ -71,6 +73,9 @@ const keyword = ref('')
 /* 项目状态中文标签 / 颜色 */
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
+
+/* 当前汇报部门：仅该部门在左树展开项目，其他部门折叠到负责人 */
+const currentDept = computed(() => store.presenters[store.currentPresenterIndex]?.dept ?? null)
 
 /* 关键词过滤：命中项目名/负责人/部门即保留该项目；保持分组结构 */
 const filteredGroups = computed(() => {
