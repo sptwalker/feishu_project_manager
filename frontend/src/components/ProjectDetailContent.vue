@@ -1295,4 +1295,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .layout-meeting .d-fields .f:nth-child(4) { order: 5; }
 .layout-meeting .d-fields .f:nth-child(5) { order: 4; }
 .layout-meeting .d-fields .f:nth-child(6) { order: 6; }
+/* 字段标签不换行（完成情况/截止日期等 4 字标签放大后会折行） */
+.layout-meeting .f dt { width: 76px; white-space: nowrap; }
+/* 项目编辑按钮：缩小并上移，与项目名称高度对齐 */
+.layout-meeting .edit-btn { top: 0; height: 34px; padding: 0 14px; font-size: 14px; }
 </style>
