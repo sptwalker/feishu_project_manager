@@ -350,7 +350,7 @@ const timelinessGauge = computed(() => ({
    边缘色：
    - 重点：重要=深红 #C0392B、高=浅红 #EF8A8A
    - 等待关注：按最新进展状态着色（待确认=粉、待讨论=橙、待执行=青）
-   - 延迟关注：橙 */
+   - 延迟关注：按最新进展状态着色（阻塞=红、延迟=黄），阻塞优先 */
 const zones = computed(() => {
   const active = allProjects.value
     .filter((p) => p.status === 'in_progress')
@@ -369,11 +369,15 @@ const zones = computed(() => {
     ...active.filter((p) => p.urgency === 'high'),
   ]
   const wait = active.filter((p) => ['待讨论', '待确认', '待执行'].includes(p._latest?.status || ''))
-  const delay = active.filter((p) => (p._latest?.status || '') === '延迟')
+  // 延迟关注：纳入阻塞与延迟，阻塞优先排在延迟之前
+  const delay = [
+    ...active.filter((p) => (p._latest?.status || '') === '阻塞'),
+    ...active.filter((p) => (p._latest?.status || '') === '延迟'),
+  ]
   return [
     { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => urgencyColor[p.urgency] },
     { key: 'wait', title: '待处理事件', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
-    { key: 'delay', title: '延迟关注', desc: '最新进展：延迟', items: delay, barColor: () => '#FA8C16' },
+    { key: 'delay', title: '延迟关注', desc: '最新进展：阻塞 / 延迟', items: delay, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
   ]
 })
 

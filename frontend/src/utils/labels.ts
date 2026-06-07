@@ -33,7 +33,7 @@ export const urgencyWeight: Record<ProjectUrgency, number> = {
 }
 
 export const urgencyColor: Record<ProjectUrgency, string> = {
-  low: '#1a1a1a',      // 低：黑色
+  low: '#6b7280',      // 低：深灰（slate-500，白底对比≈4.8:1）
   medium: '#f59e0b',   // 中：琥珀色
   high: '#f4511e',     // 高：橙红色
   urgent: '#c0392b',   // 重要：深红色
