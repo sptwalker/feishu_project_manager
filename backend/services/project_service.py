@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 from backend.models.project import Project, ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate
 
+
+class ProjectVersionConflict(Exception):
+    """乐观锁冲突：客户端持有的 version 与数据库当前值不一致（项目已被他人修改）"""
+
+
 class ProjectService:
     """项目服务层"""
 
@@ -54,12 +59,18 @@ class ProjectService:
 
     @staticmethod
     def update(db: Session, project_id: int, project_data: ProjectUpdate) -> Optional[Project]:
-        """更新项目"""
+        """更新项目（乐观锁：客户端带 version 时与当前值比对，不一致抛 ProjectVersionConflict；
+        version 自身由 version_id_col 在 flush 时自动 +1，并发提交另有 SQL 级 CAS 兜底）"""
         project = ProjectService.get_by_id(db, project_id)
         if not project:
             return None
 
         update_data = project_data.model_dump(exclude_unset=True)
+        # version 不是业务字段：弹出仅用于比对，禁止 setattr 直接覆盖
+        client_version = update_data.pop("version", None)
+        if client_version is not None and project.version != client_version:
+            raise ProjectVersionConflict()
+
         for field, value in update_data.items():
             setattr(project, field, value)
 

@@ -2,12 +2,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import StaleDataError
 from backend.api.deps import get_db
 from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
 from backend.models.project import ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
-from backend.services.project_service import ProjectService
+from backend.services.project_service import ProjectService, ProjectVersionConflict
 from backend.services.operation_log_service import OperationLogService
 from backend.services.project_diff import build_field_change_desc
 from backend.schemas.operation_log import OperationLogResponse
@@ -98,6 +99,12 @@ def update_project(
 
     try:
         project = ProjectService.update(db, project_id, project_data)
+    except (ProjectVersionConflict, StaleDataError):
+        # 乐观锁冲突：应用层版本比对失败，或并发提交时 SQL 级 CAS 命中 0 行
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="项目已被他人修改，请刷新后重试"
+        )
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

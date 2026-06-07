@@ -73,11 +73,15 @@ class ProjectUpdate(BaseModel):
     estimated_end_date: Optional[date] = None
     actual_end_date: Optional[date] = None
     progress_log: Optional[List[ProgressEntry]] = None
+    # 乐观锁：客户端打开时持有的版本号；带上则与 DB 当前值比对，不一致返回 409。
+    # 过渡期可选（不带则跳过应用层比对，兼容旧客户端），后续可收紧为必填。
+    version: Optional[int] = Field(None, description="乐观锁版本号（打开项目时获取的 version）")
 
 class ProjectResponse(ProjectBase):
     """项目响应 Schema"""
     id: int
     actual_end_date: Optional[date] = None
+    version: int = Field(1, description="乐观锁版本号（更新时带回以做并发校验）")
     created_at: datetime
     updated_at: datetime
 

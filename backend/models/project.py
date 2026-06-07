@@ -36,6 +36,13 @@ class Project(BaseModel):
     actual_end_date = Column(Date, comment="实际完成时间")
     # 项目进展记录：[{time, content, status}] 列表
     progress_log = Column(JSON, default=list, comment="项目进展记录")
+    # 乐观锁版本号：配合 version_id_col，每次 flush 自动 +1，
+    # 并以 UPDATE ... WHERE version=旧值 做 CAS，并发提交命中 0 行时抛 StaleDataError
+    version = Column(Integer, nullable=False, default=1, server_default="1",
+                     comment="乐观锁版本号（每次更新自动+1）")
+
+    # SQLAlchemy 原生乐观锁：所有 ORM 更新自动维护 version 并做 SQL 级并发校验
+    __mapper_args__ = {"version_id_col": version}
 
     __table_args__ = (
         CheckConstraint('completion >= 0 AND completion <= 100', name='check_project_completion'),
