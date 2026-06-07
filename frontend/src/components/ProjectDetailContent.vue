@@ -125,7 +125,8 @@
               <tr><th style="width:180px">更新时间</th><th>内容</th><th style="width:130px">状况</th><th style="width:44px"></th></tr>
             </thead>
             <tbody>
-              <tr v-for="(e, i) in progressDraft" :key="i">
+              <!-- 编辑行按 draftView 倒序渲染（最新在上，与展示态一致）；操作回调经 draftIndex 还原数据下标 -->
+              <tr v-for="(e, vi) in draftView" :key="vi">
                 <td><el-date-picker v-model="e.time" type="datetime" value-format="YYYY-MM-DD HH:mm" size="small" style="width: 100%" :disabled-date="disabledFutureDate" /></td>
                 <td>
                   <div class="content-cell">
@@ -136,12 +137,12 @@
                     <el-button
                       v-if="isPending(e.status) && !e.reply_to && !draftHasReply(e)"
                       text type="primary" size="small" class="feedback-btn"
-                      @click="addFeedback(i)"
+                      @click="addFeedback(draftIndex(vi))"
                     >反馈</el-button>
                     <el-button
                       text type="primary" size="small" class="attach-btn"
                       :icon="Link"
-                      @click="openAttachDialog(i)"
+                      @click="openAttachDialog(draftIndex(vi))"
                     >文档</el-button>
                   </div>
                   <!-- 附件列表（编辑态） -->
@@ -149,7 +150,7 @@
                     <div v-for="(att, ai) in e.attachments" :key="ai" class="edit-attach-item">
                       <el-icon class="attach-icon"><Document /></el-icon>
                       <a :href="att.url" target="_blank" class="attach-link">{{ att.title || att.url }}</a>
-                      <el-icon class="attach-remove" @click="removeAttachment(i, ai)"><Close /></el-icon>
+                      <el-icon class="attach-remove" @click="removeAttachment(draftIndex(vi), ai)"><Close /></el-icon>
                     </div>
                   </div>
                 </td>
@@ -160,7 +161,7 @@
                     </el-option>
                   </el-select>
                 </td>
-                <td><el-icon class="row-del" @click="removeRow(i)"><Delete /></el-icon></td>
+                <td><el-icon class="row-del" @click="removeRow(draftIndex(vi))"><Delete /></el-icon></td>
               </tr>
               <tr v-if="!progressDraft.length">
                 <td colspan="4" class="empty-row muted">暂无记录，点击下方"添加一条"</td>
@@ -616,6 +617,11 @@ async function removeProject() {
 /* ---------- 项目进展详情：表格 ↔ 时间线 ---------- */
 const editingProgress = ref(false)
 const progressDraft = ref<ProgressEntry[]>([])
+
+/* 编辑态渲染视图：与展示态时间线一致按「上新下旧」倒序显示；
+   数据 progressDraft 仍按时间升序存储（保存格式与对比逻辑不变），行操作经 draftIndex 换算回原数组下标 */
+const draftView = computed(() => [...progressDraft.value].reverse())
+const draftIndex = (vi: number) => progressDraft.value.length - 1 - vi
 const progressWrap = ref<HTMLElement | null>(null)
 
 // 进展记录统一排序：按更新时间从过去到现在升序（编辑态与展示态共用，保证排序一致）
@@ -795,7 +801,7 @@ function blankProject(): Project {
 
 function enterProgressEdit() {
   if (!local.value) return
-  // 深拷贝以保留 annotations，并按更新时间升序排列（与展示态时间线一致）
+  // 深拷贝以保留 annotations，并按更新时间升序排列（渲染时经 draftView 倒序为「上新下旧」，与展示态一致）
   progressDraft.value = JSON.parse(JSON.stringify(local.value.progress_log ?? []))
   progressDraft.value.sort(byTime)
   editingProgress.value = true
