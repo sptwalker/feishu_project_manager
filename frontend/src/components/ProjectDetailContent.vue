@@ -515,6 +515,19 @@ function cancelEdit() {
   editing.value = false
 }
 
+/* 是否乐观锁冲突（HTTP 409：项目已被他人修改） */
+function isConflict(err: unknown): boolean {
+  return (err as { response?: { status?: number } })?.response?.status === 409
+}
+
+/* 拉取项目最新数据刷新 local（含最新 version）；网络失败时静默保持现状 */
+async function refreshLocal() {
+  if (!local.value?.id) return
+  try {
+    local.value = await projectApi.get(local.value.id)
+  } catch { /* 保持现状，由用户手动刷新 */ }
+}
+
 async function saveFields() {
   if (!local.value) return
   if (!form.name || !String(form.name).trim()) {
@@ -534,6 +547,7 @@ async function saveFields() {
       completion: form.completion,
       is_long_term: form.is_long_term,
       estimated_end_date: form.estimated_end_date || null,
+      version: local.value.version,   // 乐观锁：带上打开时持有的版本号
     }
     const updated = await projectApi.update(local.value.id, payload as Partial<Project>)
     local.value = updated
@@ -541,8 +555,14 @@ async function saveFields() {
     editing.value = false
     emit('updated')
     ElMessage.success('已保存')
-  } catch {
-    ElMessage.error('保存失败（需要管理员或项目经理权限）')
+  } catch (err) {
+    if (isConflict(err)) {
+      // 乐观锁冲突：刷新最新数据（含新 version），保留编辑态与表单草稿供用户核对
+      await refreshLocal()
+      ElMessage.warning('项目已被他人修改，已加载最新值，请核对后重新保存')
+    } else {
+      ElMessage.error('保存失败（需要管理员或项目经理权限）')
+    }
   } finally {
     saving.value = false
   }
@@ -795,7 +815,7 @@ function blankProject(): Project {
     status: 'planned' as ProjectStatus, urgency: 'medium' as ProjectUrgency,
     department: null, owner_name: null, related_name: null, completion: 0, is_long_term: false,
     estimated_end_date: null, actual_end_date: null, progress_log: null,
-    created_at: '', updated_at: '',
+    version: 1, created_at: '', updated_at: '',
   }
 }
 
@@ -867,11 +887,42 @@ async function commitProgress() {
   // 无变化则不请求
   if (JSON.stringify(cleaned) === JSON.stringify(local.value.progress_log ?? [])) return
   try {
-    const updated = await projectApi.update(local.value.id, { progress_log: cleaned } as Partial<Project>)
+    const updated = await projectApi.update(
+      local.value.id,
+      { progress_log: cleaned, version: local.value.version } as Partial<Project>,
+    )
     local.value = updated
     emit('updated')
+  } catch (err) {
+    if (isConflict(err)) {
+      await mergeDraftOnConflict()
+    } else {
+      ElMessage.error('保存进展失败（需要管理员或项目经理权限）')
+    }
+  }
+}
+
+/* 进展保存遇乐观锁冲突（409）：拉取最新数据，把「我新增的条目」并入最新进展重建草稿并恢复编辑态，
+   双方的新增都不丢；对既有条目的修改以服务端最新为准。
+   条目键：优先 id；无 id 的历史条目用「时间|内容」兜底，避免并集时重复 */
+async function mergeDraftOnConflict() {
+  if (!local.value) return
+  try {
+    const fresh = await projectApi.get(local.value.id)
+    const latest = fresh.progress_log ?? []
+    const keyOf = (e: ProgressEntry) => e.id || `${e.time}|${e.content}`
+    const knownKeys = new Set(latest.map(keyOf))
+    // 我的新增 = 草稿中有内容、且键不存在于最新进展中的条目
+    const mine = progressDraft.value.filter(
+      (e) => (e.content || '').trim() && !knownKeys.has(keyOf(e)),
+    )
+    local.value = fresh
+    progressDraft.value = JSON.parse(JSON.stringify([...latest, ...mine]))
+    progressDraft.value.sort(byTime)
+    editingProgress.value = true   // 恢复编辑态，待用户核对后重新保存
+    ElMessage.warning('项目进展已被他人更新，已合并最新内容与您的新增记录，请核对后重新保存')
   } catch {
-    ElMessage.error('保存进展失败（需要管理员或项目经理权限）')
+    ElMessage.error('项目已被他人修改，请刷新页面后重试')
   }
 }
 
@@ -1005,13 +1056,22 @@ async function saveAnnotation() {
 
   // 保存到后端
   try {
-    const updated = await projectApi.update(local.value.id, { progress_log: log } as Partial<Project>)
+    const updated = await projectApi.update(
+      local.value.id,
+      { progress_log: log, version: local.value.version } as Partial<Project>,
+    )
     local.value = updated
     emit('updated')
     annotationDialog.visible = false
     ElMessage.success(annotationDialog.mode === 'annotation' ? '批注已添加' : '回复已添加')
-  } catch {
-    ElMessage.error('保存失败（需要管理员或项目经理权限）')
+  } catch (err) {
+    if (isConflict(err)) {
+      // 冲突：刷新最新数据；对话框与已输入内容保留，再点确定即基于最新数据重新追加
+      await refreshLocal()
+      ElMessage.warning('项目已被他人更新，已刷新，请再次点击确定提交')
+    } else {
+      ElMessage.error('保存失败（需要管理员或项目经理权限）')
+    }
   }
 }
 

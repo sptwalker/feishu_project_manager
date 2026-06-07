@@ -129,6 +129,7 @@ export interface Project {
   estimated_end_date?: string | null
   actual_end_date?: string | null
   progress_log?: ProgressEntry[] | null
+  version: number   // 乐观锁版本号：更新请求带回，后端不一致返回 409
   created_at: string
   updated_at: string
 }
