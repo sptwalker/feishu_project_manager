@@ -1,7 +1,7 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { projectApi, departmentApi, settingsApi } from '@/api/resources'
-import type { Project, Department, MeetingReportOrder } from '@/types'
+import { projectApi, departmentApi, settingsApi, timerApi } from '@/api/resources'
+import type { Project, Department, MeetingReportOrder, TimerState } from '@/types'
 
 /* 未分配兜底分组名（恒排在末尾） */
 export const UNASSIGNED_DEPT = '未分配部门'
@@ -9,6 +9,17 @@ export const UNASSIGNED_OWNER = '未分配'
 
 /* 默认隐藏的项目状态：暂停/已完成/已取消（左侧多选可切换）；进行中/待启动默认显示 */
 const DEFAULT_HIDDEN_STATUSES = ['paused', 'completed', 'cancelled']
+
+/* 本端浏览器唯一 id（localStorage 持久化）：主控刷新后用同一 id 重连续权 */
+const CLIENT_ID_KEY = 'fpm_meeting_client_id'
+function getClientId(): string {
+  let id = localStorage.getItem(CLIENT_ID_KEY)
+  if (!id) {
+    id = `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+    localStorage.setItem(CLIENT_ID_KEY, id)
+  }
+  return id
+}
 
 export interface MemberGroup { name: string; projects: Project[] }
 export interface DeptGroup { dept: string; color?: string; members: MemberGroup[] }
@@ -27,15 +38,50 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   const totalMinutes = ref(120)              // 总时长提醒阈值（分钟）；超过即变色提醒，不强制结束
   const personThresholdMinutes = ref(5)
 
-  // 当前选中
+  // 浏览焦点：本端自由切换/编辑的项目（与计时焦点解耦，协助端浏览不影响计时）
   const currentProjectId = ref<number | null>(null)
 
-  // 计时运行时（均为正向计时，记录已经历时长，单位秒）
-  const running = ref(false)
-  const totalElapsed = ref(0)          // 会议已进行总时长
-  // 每个汇报位（部门|个人）的累计用时（秒）；会议期间持续累计，切换汇报人不清零
-  const personTimes = ref<Record<string, number>>({})
-  let timer: ReturnType<typeof setInterval> | null = null
+  // ---- 服务端计时（锚点 + 本地推算）----
+  const clientId = getClientId()
+  const role = ref<'controller' | 'assistant' | 'none'>('none')
+  const timer = ref<TimerState | null>(null)   // 服务端最近一次返回的计时状态
+  let clockOffsetMs = 0                          // server_now - client_now，用于时钟漂移校正
+  const tickNow = ref(Date.now())               // 每秒推进，驱动推算 computed 重算
+  let tickHandle: ReturnType<typeof setInterval> | null = null
+  let pollHandle: ReturnType<typeof setInterval> | null = null
+  let heartbeatHandle: ReturnType<typeof setInterval> | null = null
+
+  /* 角色 / 计时运行态 / 主控在线 */
+  const isController = computed(() => role.value === 'controller')
+  const running = computed(() => timer.value?.status === 'running')
+  const controllerPresent = computed(() => !!timer.value?.controller_present)
+  const controllerOnline = computed(() => !!timer.value?.controller_online)
+  const pausedReason = computed(() => timer.value?.paused_reason ?? null)
+  /* 主控已释放（掉线超阈值，无主控）：协助端可接管 */
+  const controllerReleased = computed(() => !!timer.value?.active && !controllerPresent.value)
+  /* 主控掉线但未释放（计时已自动暂停，等待重连） */
+  const controllerOffline = computed(() =>
+    !!timer.value?.active && controllerPresent.value && !controllerOnline.value)
+
+  /* 校正后的当前毫秒（用 tickNow 触发响应式 + 时钟偏移） */
+  function serverNowMs(): number { return tickNow.value + clockOffsetMs }
+  function parseMs(s?: string | null): number | null {
+    if (!s) return null
+    const t = new Date(s).getTime()
+    return Number.isNaN(t) ? null : t
+  }
+
+  /* 会议总时长（秒）：本地推算 = total_base + (运行中 ? now - total_started_at : 0) */
+  const totalElapsed = computed<number>(() => {
+    const t = timer.value
+    if (!t || !t.active) return 0
+    let s = t.total_base ?? 0
+    if (t.status === 'running') {
+      const st = parseMs(t.total_started_at)
+      if (st) s += Math.max(0, Math.floor((serverNowMs() - st) / 1000))
+    }
+    return s
+  })
 
   /* 部门容错映射：按全称或简称匹配部门记录（与总览页一致） */
   function findDepartment(name?: string | null): Department | undefined {
@@ -103,16 +149,32 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     return presenters.value.findIndex((s) => s.dept === dept && s.member === member)
   })
 
-  /* 当前汇报位的唯一键（部门|个人），用于按汇报人累计用时 */
-  const currentPresenterKey = computed<string>(() => {
+  /* 当前【浏览】项目反推的汇报位键（部门|个人）——用于左树高亮、项目翻页等浏览逻辑 */
+  const browsePresenterKey = computed<string>(() => {
     const p = currentProject.value
     if (!p) return ''
     const dept = (p.department && p.department.trim()) || UNASSIGNED_DEPT
     const member = (p.owner_name && p.owner_name.trim()) || UNASSIGNED_OWNER
     return `${dept}|${member}`
   })
-  /* 当前汇报人已用时长（秒）= 其在会议期间的累计值 */
-  const personElapsed = computed<number>(() => personTimes.value[currentPresenterKey.value] || 0)
+  /* 当前【计时】汇报人键：来自服务端（主控选定），与浏览解耦 */
+  const timingPresenterKey = computed<string>(() => timer.value?.current_presenter_key || '')
+
+  /* 各汇报人累计用时（秒）= person_base + (该人正在计时段 ? now - segment_started_at : 0) */
+  const personTimes = computed<Record<string, number>>(() => {
+    const t = timer.value
+    const base: Record<string, number> = { ...(t?.person_base || {}) }
+    if (t?.active && t.status === 'running' && t.current_presenter_key) {
+      const seg = parseMs(t.segment_started_at)
+      if (seg) {
+        const extra = Math.max(0, Math.floor((serverNowMs() - seg) / 1000))
+        base[t.current_presenter_key] = (base[t.current_presenter_key] || 0) + extra
+      }
+    }
+    return base
+  })
+  /* 当前【计时】汇报人已用时长（秒）——顶栏主席台显示用 */
+  const personElapsed = computed<number>(() => personTimes.value[timingPresenterKey.value] || 0)
 
   /* 当前汇报人（部门+个人）名下的项目列表（已按隐藏状态过滤、按顺序） */
   const currentMemberProjects = computed<Project[]>(() => {
@@ -173,9 +235,21 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     }
   }
 
-  /* 选中某项目（切换汇报人不清零计时，各汇报人用时各自累计） */
+  /* 选中某项目（浏览焦点，本端本地切换，任何端都可自由浏览，不影响计时）。
+     主控选中时若该项目属于不同汇报人，则同步推进服务端计时焦点。 */
   function selectProject(id: number) {
     currentProjectId.value = id
+    syncTimingPresenterIfController()
+  }
+
+  /* 主控：若浏览到的汇报人与当前计时汇报人不同，推进服务端计时焦点（切人结算）。
+     协助端不发送，浏览不改计时。 */
+  function syncTimingPresenterIfController() {
+    if (role.value !== 'controller' || !timer.value?.active) return
+    const key = browsePresenterKey.value
+    if (key && key !== timingPresenterKey.value) {
+      timerApi.control(clientId, 'select_presenter', key).then(applyTimerState).catch(() => {})
+    }
   }
 
   /* 上一位 / 下一位：跳到相邻汇报位的项目
@@ -198,29 +272,78 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   /* 向前翻页专用：跳到上一位汇报人的「最后一个」项目，让项目级翻页跨汇报人也连续 */
   const prevPresenterTail = () => gotoPresenter(-1, true)
 
-  /* 计时：每秒 tick（正向累加） */
-  function start() {
-    if (running.value) return
-    running.value = true
-    timer = setInterval(() => {
-      totalElapsed.value += 1
-      // 给当前汇报人累加用时（切换汇报人后各自累计、互不清零）
-      const key = currentPresenterKey.value
-      if (key) personTimes.value[key] = (personTimes.value[key] || 0) + 1
-    }, 1000)
-  }
-  function stop() {
-    running.value = false
-    if (timer) { clearInterval(timer); timer = null }
+  // ---- 服务端计时：状态应用 + 生命周期 ----
+
+  /* 用服务端返回的计时状态刷新本地：更新 role、时钟偏移、timer 锚点 */
+  function applyTimerState(st: TimerState) {
+    timer.value = st
+    role.value = st.my_role
+    const sv = parseMs(st.server_now)
+    if (sv) clockOffsetMs = sv - Date.now()
   }
 
-  /* 结束会议：停止计时并清空所有周会运行时状态，下次进入汇报页从零开始 */
+  /* 进入汇报页：拉一次状态 → 管理员认领主控 → 启动 tick/轮询/心跳。
+     非管理员（认领失败/无权）保持协助态，只轮询不心跳。 */
+  async function connectTimer(isAdmin: boolean) {
+    try {
+      if (isAdmin) {
+        applyTimerState(await timerApi.claim(clientId))
+      } else {
+        applyTimerState(await timerApi.state(clientId))
+      }
+    } catch { /* 无进行中周会等：保持 none，UI 兜底 */ }
+
+    // 本地每秒 tick：仅驱动推算 computed 重算，不写任何状态
+    if (!tickHandle) tickHandle = setInterval(() => { tickNow.value = Date.now() }, 1000)
+    // 轮询服务端状态（4s）：同步他端的切人/暂停/掉线判定
+    if (!pollHandle) pollHandle = setInterval(refreshTimer, 4000)
+    // 主控心跳（5s）：维持存活 + 掉线后重连自动续
+    if (!heartbeatHandle) heartbeatHandle = setInterval(sendHeartbeat, 5000)
+  }
+
+  async function refreshTimer() {
+    try { applyTimerState(await timerApi.state(clientId)) } catch { /* 忽略瞬时失败 */ }
+  }
+
+  async function sendHeartbeat() {
+    if (role.value !== 'controller') return
+    try { applyTimerState(await timerApi.heartbeat(clientId)) } catch { /* 忽略 */ }
+  }
+
+  /* 离开汇报页：停掉所有定时器（不影响服务端，掉线由服务端惰性判定） */
+  function disconnectTimer() {
+    if (tickHandle) { clearInterval(tickHandle); tickHandle = null }
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null }
+    if (heartbeatHandle) { clearInterval(heartbeatHandle); heartbeatHandle = null }
+  }
+
+  /* 主控：开始/继续计时 */
+  async function startTiming() {
+    if (role.value !== 'controller') return
+    try {
+      applyTimerState(await timerApi.control(clientId, 'resume'))
+      syncTimingPresenterIfController()  // 开始后把计时焦点对齐到当前浏览的汇报人
+    } catch { /* 忽略 */ }
+  }
+  /* 主控：暂停计时 */
+  async function pauseTiming() {
+    if (role.value !== 'controller') return
+    try { applyTimerState(await timerApi.control(clientId, 'pause')) } catch { /* 忽略 */ }
+  }
+  /* 协助端：接管主控（主控已释放时） */
+  async function takeoverControl() {
+    try {
+      applyTimerState(await timerApi.takeover(clientId, timer.value?.controller_version ?? null))
+    } catch { /* 冲突/仍在线由 UI 提示后刷新 */ await refreshTimer() }
+  }
+
+  /* 结束会议本地清理：停定时器、清浏览焦点与过滤（服务端计时由 close 接口清空） */
   function reset() {
-    stop()                                              // 停止计时器
-    totalElapsed.value = 0                              // 会议总计时归零
-    personTimes.value = {}                              // 每位汇报人累计用时清空
-    currentProjectId.value = null                       // 取消选中项目
-    hiddenStatuses.value = [...DEFAULT_HIDDEN_STATUSES] // 过滤状态恢复默认
+    disconnectTimer()
+    timer.value = null
+    role.value = 'none'
+    currentProjectId.value = null
+    hiddenStatuses.value = [...DEFAULT_HIDDEN_STATUSES]
   }
 
   /* 是否超时 */
@@ -238,11 +361,16 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     totalMinutes, personThresholdMinutes,
     currentProjectId, currentProject, currentPresenterIndex,
     currentMemberProjects, currentProjectIndexInMember,
-    running, totalElapsed, personElapsed,
+    running, totalElapsed, personElapsed, personTimes,
     grouped, presenters, personOvertime, totalOvertime,
+    // 计时 + 主控
+    clientId, role, isController, timer,
+    controllerPresent, controllerOnline, controllerReleased, controllerOffline, pausedReason,
+    timingPresenterKey,
+    connectTimer, disconnectTimer, startTiming, pauseTiming, takeoverControl,
     load, selectProject, nextPresenter, prevPresenter, prevPresenterTail,
     nextProjectInMember, prevProjectInMember,
-    start, stop, reset, saveOrder, findDepartment,
+    reset, saveOrder, findDepartment,
   }
 })
 

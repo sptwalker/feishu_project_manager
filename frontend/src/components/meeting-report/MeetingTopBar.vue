@@ -27,18 +27,38 @@
         title="下一位" @click="store.nextPresenter()">›</button>
     </div>
 
-    <!-- 右：纪要 + 结束会议 + 设置 -->
+    <!-- 右：计时控制 + 纪要 + 结束会议 + 设置 -->
     <div class="mr-actions">
+      <!-- 主控：开始/暂停计时 -->
+      <template v-if="store.isController">
+        <el-button v-if="!store.running" type="success" class="mr-ctrl-btn" @click="store.startTiming()">
+          {{ store.timer?.status === 'paused' ? '▶ 继续' : '▶ 开始计时' }}
+        </el-button>
+        <el-button v-else type="warning" class="mr-ctrl-btn" @click="store.pauseTiming()">⏸ 暂停</el-button>
+        <span class="mr-role mr-role-ctrl">● 主控</span>
+      </template>
+      <!-- 协助态：只读提示 + 主控释放后可接管 -->
+      <template v-else-if="store.timer?.active">
+        <span v-if="store.controllerReleased" class="mr-role mr-role-warn">主控已掉线</span>
+        <span v-else class="mr-role mr-role-assist">● 协助中</span>
+        <el-button v-if="store.controllerReleased" type="primary" size="small" @click="onTakeover">接管控制</el-button>
+      </template>
+
       <el-button type="primary" @click="emit('view-minutes')">查看会议纪要</el-button>
       <el-button class="mr-end-btn" @click="emit('end-meeting')">结束会议</el-button>
       <el-button @click="emit('open-settings')">⚙ 设置</el-button>
     </div>
   </header>
+
+  <!-- 主控掉线横幅：计时已自动暂停，等待重连 -->
+  <div v-if="store.controllerOffline" class="mr-offline-banner">
+    ⚠ 主控客户端掉线，计时已自动暂停，等待重连（超 3 分钟后可由其他端接管）
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ElButton } from 'element-plus'
+import { ElButton, ElMessageBox, ElMessage } from 'element-plus'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 
 defineProps<{ session: number; today: string }>()
@@ -46,6 +66,20 @@ const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void
 
 const store = useMeetingReportStore()
 const presenter = computed(() => store.presenters[store.currentPresenterIndex] ?? null)
+
+/* 协助端接管主控：二次确认后调用（主控掉线超 3 分钟、已释放时可点） */
+async function onTakeover() {
+  try {
+    await ElMessageBox.confirm('主控已掉线超过 3 分钟，确认接管控制权？接管后由你控制计时。', '接管控制', {
+      type: 'warning', confirmButtonText: '确认接管', cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
+  await store.takeoverControl()
+  if (store.isController) ElMessage.success('已接管控制权')
+  else ElMessage.warning('接管失败，可能已被他人接管')
+}
 
 /* 当前汇报人所属部门的主题色（无对应部门时回退墨色） */
 const deptColor = computed(() => {
@@ -117,7 +151,19 @@ function fmt(total: number): string {
 .mr-arrow:focus-visible { outline: 2px solid var(--c-accent, #3954d6); outline-offset: 2px; border-radius: 4px; }
 .mr-arrow:disabled { opacity: .25; cursor: not-allowed; }
 
-.mr-actions { display: flex; gap: 8px; }
+.mr-actions { display: flex; gap: 8px; align-items: center; }
+/* 计时控制按钮（开始/暂停/继续） */
+.mr-ctrl-btn { font-weight: 700; }
+/* 角色徽标 */
+.mr-role { font-size: 13px; font-weight: 700; white-space: nowrap; padding: 0 4px; }
+.mr-role-ctrl { color: #1a7f4b; }
+.mr-role-assist { color: #1a73e8; }
+.mr-role-warn { color: #e6493a; }
+/* 主控掉线横幅 */
+.mr-offline-banner {
+  background: #fdf3c4; color: #9b1c1c; font-weight: 600; font-size: 14px;
+  text-align: center; padding: 6px 16px; border-bottom: 1px solid #f0d98c;
+}
 /* 结束会议：白字灰底 */
 .mr-end-btn { background: #909399; border-color: #909399; color: #fff; }
 .mr-end-btn:hover, .mr-end-btn:focus { background: #7d8085; border-color: #7d8085; color: #fff; }

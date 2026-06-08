@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -169,6 +169,25 @@ export const meetingApi = {
   },
   startReport(session: number) {
     return api.post<MeetingRecordDetail>(`/meeting-records/${session}/start-report`).then((r) => r.data)
+  },
+}
+
+/* 会议服务端计时 + 主控 */
+export const timerApi = {
+  state(clientId: string) {
+    return api.get<TimerState>('/meeting/timer/state', { params: { client_id: clientId } }).then((r) => r.data)
+  },
+  claim(clientId: string) {
+    return api.post<TimerState>('/meeting/timer/claim', { client_id: clientId }).then((r) => r.data)
+  },
+  heartbeat(clientId: string) {
+    return api.post<TimerState>('/meeting/timer/heartbeat', { client_id: clientId }).then((r) => r.data)
+  },
+  control(clientId: string, action: 'resume' | 'pause' | 'select_presenter', presenterKey?: string | null) {
+    return api.post<TimerState>('/meeting/timer/control', { client_id: clientId, action, presenter_key: presenterKey ?? null }).then((r) => r.data)
+  },
+  takeover(clientId: string, expectedVersion?: number | null) {
+    return api.post<TimerState>('/meeting/timer/takeover', { client_id: clientId, expected_version: expectedVersion ?? null }).then((r) => r.data)
   },
 }
 

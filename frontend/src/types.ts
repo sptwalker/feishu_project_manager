@@ -206,3 +206,23 @@ export interface MeetingTimerSettings {
   total_minutes: number
   person_threshold_minutes: number
 }
+
+/* 会议服务端计时状态（锚点 + 主控信息）。active=false 时仅 active/server_now/my_role 有效 */
+export interface TimerState {
+  active: boolean
+  server_now: string
+  my_role: 'controller' | 'assistant' | 'none'
+  session?: number | null
+  status?: 'idle' | 'running' | 'paused' | null
+  total_base?: number | null
+  total_started_at?: string | null
+  current_presenter_key?: string | null
+  segment_started_at?: string | null
+  person_base?: Record<string, number> | null
+  paused_reason?: 'manual' | 'controller_offline' | null
+  controller_present?: boolean | null
+  controller_online?: boolean | null
+  controller_version?: number | null
+  offline_seconds?: number | null
+  release_seconds?: number | null
+}

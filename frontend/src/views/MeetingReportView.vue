@@ -56,11 +56,20 @@
 
     <!-- 查看会议纪要：复用「周会记录」弹窗，本地展示本次纪要内容，弹窗内可发送到飞书 -->
     <MeetingRecordDialog v-model:visible="recordVisible" :session="session" />
+
+    <!-- 会议结束：各汇报人用时统计柱状图 -->
+    <el-dialog v-model="statsVisible" title="本次周会汇报人用时统计" width="680px" :close-on-click-modal="false" @closed="onStatsClosed">
+      <BaseChart v-if="statsData.length" :option="statsOption" style="height: 360px" />
+      <el-empty v-else description="本次周会暂无计时记录" />
+      <template #footer>
+        <el-button type="primary" @click="statsVisible = false">完成</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElDialog, ElButton, ElInputNumber, ElCheckbox, ElMessage, ElMessageBox } from 'element-plus'
 import MeetingTopBar from '@/components/meeting-report/MeetingTopBar.vue'
@@ -68,13 +77,17 @@ import MeetingReportTree from '@/components/meeting-report/MeetingReportTree.vue
 import ProjectDetailContent from '@/components/ProjectDetailContent.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
+import BaseChart from '@/components/BaseChart.vue'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useMeetingStore } from '@/stores/meeting'
+import { useAuthStore } from '@/stores/auth'
 import { settingsApi, meetingApi } from '@/api/resources'
 
 const router = useRouter()
 const store = useMeetingReportStore()
 const meeting = useMeetingStore()
+const auth = useAuthStore()
+const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 
 const session = ref(0)
 const today = new Date().toISOString().slice(0, 10)
@@ -85,17 +98,22 @@ const totalM = ref(120)
 const thresholdM = ref(5)
 const soundEnabled = ref(true)   // 声音提醒开关：默认开；关闭后不再播放任何逾时提示音
 
+// 会议结束：各汇报人用时统计柱状图弹窗
+const statsVisible = ref(false)
+const statsData = ref<{ name: string; seconds: number }[]>([])
+
 onMounted(async () => {
   await meeting.load()
   session.value = meeting.currentCount
   await store.load()
   totalM.value = store.totalMinutes
   thresholdM.value = store.personThresholdMinutes
-  store.start()
-  try { await meetingApi.startReport(session.value) } catch { /* 非阻断：未开启周会时忽略 */ }
+  try { if (isAdmin.value) await meetingApi.startReport(session.value) } catch { /* 非阻断：未开启周会时忽略 */ }
+  // 连接服务端计时：管理员认领主控，其余协助态；启动 tick/轮询/心跳
+  await store.connectTimer(isAdmin.value)
 })
 
-onBeforeUnmount(() => store.stop())
+onBeforeUnmount(() => store.disconnectTimer())
 
 /* 超时蜂鸣（Web Audio，无需音频文件）；声音提醒关闭时直接跳过 */
 function beep() {
@@ -133,7 +151,7 @@ function onViewMinutes() {
   recordVisible.value = true
 }
 
-/* 结束会议：确认后归档（记录结束时间）+ 关闭周会模式，再离开汇报页 */
+/* 结束会议：确认 → 捕获各汇报人用时快照 → 归档关闭 → 弹统计柱状图（关闭后再清理跳转） */
 async function onEndMeeting() {
   try {
     await ElMessageBox.confirm('确定结束本次周会？将记录结束时间并关闭周会模式。', '结束会议', {
@@ -142,17 +160,51 @@ async function onEndMeeting() {
   } catch {
     return  // 用户取消
   }
+  // 结束前捕获各汇报人累计用时（服务端锚点推算的当前值），按用时降序
+  const snapshot = Object.entries(store.personTimes)
+    .map(([key, seconds]) => ({ name: key.split('|')[1] || key, seconds: seconds as number }))
+    .filter((x) => x.seconds > 0)
+    .sort((a, b) => b.seconds - a.seconds)
   try {
-    await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 记操作日志
+    await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 清空 timer + 记操作日志
     ElMessage.success('周会已结束')
   } catch {
     ElMessage.error('结束会议失败（需要管理员权限）')
   } finally {
-    store.reset()       // 清空计时/选中/过滤等所有周会运行时状态
+    store.reset()       // 停定时器 + 清浏览/角色/过滤
     lastPersonElapsed = 0  // 重置蜂鸣节流基准
-    router.push('/board')  // 关闭汇报页
+    if (snapshot.length) {
+      statsData.value = snapshot
+      statsVisible.value = true   // 有数据则弹统计图，关闭后跳转
+    } else {
+      router.push('/board')
+    }
   }
 }
+
+/* 关闭统计图后离开汇报页 */
+function onStatsClosed() {
+  statsVisible.value = false
+  router.push('/board')
+}
+
+/* 汇报人用时柱状图配置（秒 → 自适应 分:秒 标签） */
+const statsOption = computed(() => {
+  const names = statsData.value.map((x) => x.name)
+  const values = statsData.value.map((x) => x.seconds)
+  const fmtMMSS = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (p: { name: string; value: number }[]) => `${p[0].name}：${fmtMMSS(p[0].value)}` },
+    grid: { left: 8, right: 24, top: 16, bottom: 8, containLabel: true },
+    xAxis: { type: 'category', data: names, axisLabel: { interval: 0, rotate: names.length > 6 ? 35 : 0 } },
+    yAxis: { type: 'value', name: '用时', axisLabel: { formatter: (v: number) => fmtMMSS(v) } },
+    series: [{
+      type: 'bar', barWidth: '46%',
+      data: values.map((v, i) => ({ value: v, itemStyle: { color: ['#1A73E8', '#2F8FE0', '#13C2C2', '#3B6FE0', '#5AB1BB', '#2F54EB', '#41B0D8', '#6979F8'][i % 8], borderRadius: [4, 4, 0, 0] } })),
+      label: { show: true, position: 'top', formatter: (p: { value: number }) => fmtMMSS(p.value) },
+    }],
+  } as Record<string, unknown>
+})
 </script>
 
 <style scoped>

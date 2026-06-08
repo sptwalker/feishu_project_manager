@@ -58,9 +58,9 @@
             <el-tooltip content="查看周会记录" placement="bottom">
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
-            <!-- 进入全屏周会汇报：仅周会模式开启且管理员可见，点击二次确认后进入 -->
-            <el-tooltip v-if="isAdmin && meeting.active" content="进入周会汇报（全屏）" placement="bottom">
-              <el-button class="m-record-btn" type="primary" :icon="Monitor" size="small" circle @click="enterMeetingReport" />
+            <!-- 进入全屏周会汇报：仅周会模式开启且管理员可见；进行中显示绿色，点击二次确认后进入 -->
+            <el-tooltip v-if="isAdmin && meeting.active" content="进入周会汇报（全屏）· 进行中" placement="bottom">
+              <el-button class="m-record-btn m-record-live" type="success" :icon="Monitor" size="small" circle @click="enterMeetingReport" />
             </el-tooltip>
           </div>
           <el-dropdown trigger="click" @command="onCommand">
@@ -286,6 +286,13 @@ onMounted(async () => {
 .meeting-switch.is-on .m-label { color: #1a73e8; }
 .m-state { font-size: 12px; font-weight: 600; color: var(--c-ink-3); }
 .m-state.on { color: #1a73e8; }
+/* 全屏汇报「进行中」绿色按钮：轻微呼吸光晕，提示会议进行中 */
+.m-record-live { animation: live-pulse 2s ease-in-out infinite; }
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26, 127, 75, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(26, 127, 75, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .m-record-live { animation: none; } }
 .user { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; color: var(--c-ink-2); }
 .uname { font-weight: 600; font-size: 13px; color: var(--c-ink-2); }
 .avatar {
