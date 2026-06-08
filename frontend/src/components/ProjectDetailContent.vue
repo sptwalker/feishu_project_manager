@@ -114,11 +114,14 @@
       <div ref="progressWrap" class="progress-block">
         <div class="prog-title">
           <span class="mini-label">项目进展详情</span>
-          <!-- 进展编辑/保存按钮：紧跟标题；编辑(蓝)进入编辑态，保存(琥珀)提交并收起；createMode 下随项目创建保存，不显示 -->
-          <el-button v-if="!createMode" size="small" class="pg-toggle-btn"
-            :class="editingProgress ? 'btn-amber' : 'btn-blue'" @click="onToggleProgressEdit">
-            {{ editingProgress ? '保存' : '编辑' }}
-          </el-button>
+          <!-- 进展编辑控制：编辑(蓝)进入；编辑态显示 取消(灰)放弃 + 保存(琥珀)提交；createMode 下随项目创建保存，不显示 -->
+          <template v-if="!createMode">
+            <el-button v-if="!editingProgress" size="small" class="pg-toggle-btn btn-blue" @click="enterProgressEdit">编辑</el-button>
+            <template v-else>
+              <el-button size="small" class="pg-toggle-btn" type="info" @click="cancelProgressEdit">取消</el-button>
+              <el-button size="small" class="pg-toggle-btn btn-amber" @click="commitProgress">保存</el-button>
+            </template>
+          </template>
           <span v-if="stalled" class="stalled-tag" :style="{ color: stalled.color, fontWeight: stalled.bold ? 700 : 600 }">⏱超过{{ stalled.days }}无反馈</span>
           <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击保存提交' : '右键点击记录可添加批注' }}</span>
         </div>
@@ -831,10 +834,10 @@ function enterProgressEdit() {
   progressDraft.value.sort(byTime)
   editingProgress.value = true
 }
-/* 进展「编辑/保存」按钮：编辑态点击保存提交并收起，否则进入编辑态 */
-function onToggleProgressEdit() {
-  if (editingProgress.value) commitProgress()
-  else enterProgressEdit()
+/* 进展「取消」：放弃未保存的草稿并退出编辑态（重新从 local 同步以备下次进入） */
+function cancelProgressEdit() {
+  editingProgress.value = false
+  progressDraft.value = JSON.parse(JSON.stringify(local.value?.progress_log ?? []))
 }
 function addRow() {
   const entry: ProgressEntry = { id: genId(), time: nowStr(), content: '', status: '正常' }
