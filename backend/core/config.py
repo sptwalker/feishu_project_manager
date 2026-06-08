@@ -97,6 +97,24 @@ class Settings(BaseSettings):
     # 前端配置
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # ========== 品牌/表现差异化（多实例 white-label：每套系统可不同，空则前端用内置默认）==========
+    # 文字（支持可信 HTML：仅来自本配置，不接受用户输入，前端 v-html 渲染）
+    BRAND_SIDEBAR: str = '<span class="brand-accent">P</span>roject <span class="brand-accent">M</span>anager'
+    BRAND_LOGIN: str = '飞书<span class="accent">PM</span>'   # 登录页品牌名
+    BRAND_MARK: str = "飞"                                   # 登录页左上方块标记字符
+    BRAND_PAGE_TITLE: str = "飞书项目管理系统"                # 浏览器标签标题
+    BRAND_LOGIN_HEADLINE: str = '把中长期项目<br />管理得<span class="accent">轻盈</span>。'  # 登录页主标语
+    BRAND_LOGIN_SUB: str = "里程碑 · 任务 · 风险 · 飞书联动 —— 一处掌握全局。"               # 登录页副标语
+    # 图片（相对路径，由各实例 Nginx /branding/ 提供；空则前端用构建内置默认 logo/favicon）
+    BRAND_LOGO_URL: str = ""
+    BRAND_FAVICON_URL: str = ""
+    # 主题色（覆盖 :root CSS 变量；留空则该项不覆盖，沿用 tokens.css 默认）
+    BRAND_ACCENT: str = ""
+    BRAND_ACCENT_HOVER: str = ""
+    BRAND_ACCENT_SOFT: str = ""
+    BRAND_SIDEBAR_BG: str = ""
+    BRAND_SIDEBAR_HOVER: str = ""
+
     # 系统配置
     TIMEZONE: str = "Asia/Shanghai"
     LOG_LEVEL: str = "INFO"

@@ -27,6 +27,30 @@ services:
       retries: 3
       start_period: 40s
 
+  # 营销销售部实例：复用同一镜像，独立数据卷 + 独立 .env.sales（不同 SECRET_KEY/飞书/品牌）
+  backend-sales:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: feishu_pm_backend
+    container_name: feishu_pm_backend_sales
+    volumes:
+      - sales_data:/data
+    env_file:
+      - .env.sales
+    environment:
+      AUTO_OPEN_MEETING_ENABLED: "True"
+      FEISHU_NOTIFY_ENABLED: "True"
+    restart: unless-stopped
+    networks:
+      - feishu_pm_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   frontend:
     build:
       context: ../frontend
@@ -35,8 +59,14 @@ services:
     container_name: feishu_pm_frontend
     ports:
       - "8088:80"
+    volumes:
+      # 各实例品牌图片（logo/favicon）：放服务器对应目录，Nginx 按子域名 /branding/ 提供
+      - ./branding/pms:/srv/branding/pms:ro
+      - ./branding/sales:/srv/branding/sales:ro
     depends_on:
       backend:
+        condition: service_healthy
+      backend-sales:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -44,6 +74,7 @@ services:
 
 volumes:
   backend_data:
+  sales_data:
 
 networks:
   feishu_pm_network:
