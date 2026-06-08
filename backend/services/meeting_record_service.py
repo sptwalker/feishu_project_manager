@@ -139,6 +139,10 @@ class MeetingRecordService:
             rec.content_snapshot = snapshot
             rec.status = "archived"
             rec.ended_at = datetime.now()
+            # 归档清空服务端计时与主控状态，下次开会从零开始
+            rec.timer_state = None
+            rec.controller_client_id = None
+            rec.controller_heartbeat_at = None
         else:
             rec = MeetingRecord(
                 session=session,

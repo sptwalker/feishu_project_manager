@@ -4,7 +4,7 @@
 - 开启/关闭周会（管理员）：归档落库 + 切换周会模式
 - 发送会议记录到飞书（管理员）：生成飞书文档并分享到核心群
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
@@ -12,12 +12,16 @@ from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
 from backend.schemas.meeting_record import (
     MeetingRecordResponse, MeetingSessionsResponse, MeetingOpenRequest, MeetingSendResponse,
+    TimerStateResponse, TimerClientRequest, TimerControlRequest, TimerTakeoverRequest,
 )
 from backend.schemas.setting import MeetingStateResponse
 from backend.services.meeting_record_service import MeetingRecordService
 from backend.services.settings_service import SettingsService
 from backend.services.notification_service import NotificationService
 from backend.services.operation_log_service import OperationLogService
+from backend.services.meeting_timer_service import (
+    MeetingTimerService, NoActiveMeeting, NotController, ControllerPresent, VersionConflict,
+)
 from backend.core.config import get_settings
 
 router = APIRouter()
@@ -106,3 +110,78 @@ def start_meeting_report(
         description=f"开始第 {session} 次周会汇报",
     )
     return MeetingRecordService.get_session_detail(db, session)
+
+
+# ---------- 服务端计时 + 主控 ----------
+
+@router.get("/meeting/timer/state", response_model=TimerStateResponse)
+def get_timer_state(
+    client_id: str = Query("", description="本端浏览器 client_id（用于判定我的角色）"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """读计时状态（含惰性掉线/释放判定 + server_now）。登录可读，供主控与协助端轮询。"""
+    return MeetingTimerService.get_state(db, client_id or None)
+
+
+@router.post("/meeting/timer/claim", response_model=TimerStateResponse)
+def claim_timer(
+    payload: TimerClientRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """认领主控（管理员）：无主控时成为主控，已有他人主控则返回协助态。"""
+    try:
+        return MeetingTimerService.claim(db, payload.client_id)
+    except NoActiveMeeting:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="当前没有进行中的周会")
+
+
+@router.post("/meeting/timer/heartbeat", response_model=TimerStateResponse)
+def heartbeat_timer(
+    payload: TimerClientRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """主控心跳（管理员）：刷新存活；掉线自动暂停后重连则自动继续。"""
+    try:
+        return MeetingTimerService.heartbeat(db, payload.client_id)
+    except NoActiveMeeting:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="当前没有进行中的周会")
+
+
+@router.post("/meeting/timer/control", response_model=TimerStateResponse)
+def control_timer(
+    payload: TimerControlRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """主控计时控制（管理员）：resume/pause/select_presenter。非主控返回 403。"""
+    try:
+        return MeetingTimerService.control(
+            db, payload.client_id, payload.action,
+            {"presenter_key": payload.presenter_key},
+        )
+    except NoActiveMeeting:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="当前没有进行中的周会")
+    except NotController:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="非主控客户端，无权操作计时")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/meeting/timer/takeover", response_model=TimerStateResponse)
+def takeover_timer(
+    payload: TimerTakeoverRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """接管主控（管理员）：仅当主控已释放（掉线超 3 分钟）时可接管。"""
+    try:
+        return MeetingTimerService.takeover(db, payload.client_id, payload.expected_version)
+    except NoActiveMeeting:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="当前没有进行中的周会")
+    except ControllerPresent:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="主控仍在线，无法接管")
+    except VersionConflict:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="已有他人接管，请刷新")

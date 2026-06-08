@@ -45,3 +45,43 @@ class MeetingSendResponse(BaseModel):
     ok: bool
     doc_url: Optional[str] = None
     message: str = ""
+
+
+# ---------- 服务端计时 + 主控 ----------
+
+class TimerStateResponse(BaseModel):
+    """计时状态（锚点 + server_now + 主控信息 + 我的角色）。active=False 时仅含基础字段。"""
+    active: bool
+    server_now: str
+    my_role: str = "none"                      # controller | assistant | none
+    session: Optional[int] = None
+    status: Optional[str] = None               # idle | running | paused
+    total_base: Optional[int] = None
+    total_started_at: Optional[str] = None
+    current_presenter_key: Optional[str] = None
+    segment_started_at: Optional[str] = None
+    person_base: Optional[dict] = None
+    paused_reason: Optional[str] = None
+    controller_present: Optional[bool] = None
+    controller_online: Optional[bool] = None
+    controller_version: Optional[int] = None
+    offline_seconds: Optional[int] = None
+    release_seconds: Optional[int] = None
+
+
+class TimerClientRequest(BaseModel):
+    """带 client_id 的通用请求（claim / heartbeat）"""
+    client_id: str = Field(..., max_length=64)
+
+
+class TimerControlRequest(BaseModel):
+    """主控计时控制：resume / pause / select_presenter"""
+    client_id: str = Field(..., max_length=64)
+    action: str = Field(..., description="resume | pause | select_presenter")
+    presenter_key: Optional[str] = Field(None, description="select_presenter 时的『部门|个人』")
+
+
+class TimerTakeoverRequest(BaseModel):
+    """协助端接管（主控释放后）"""
+    client_id: str = Field(..., max_length=64)
+    expected_version: Optional[int] = Field(None, description="CAS：期望的 controller_version")
