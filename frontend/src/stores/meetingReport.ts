@@ -288,6 +288,11 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     try {
       if (isAdmin) {
         applyTimerState(await timerApi.claim(clientId))
+        // 主控首次进入（计时从未开始，status=idle）→ 自动开始计时，符合「进入即开始计时」。
+        // 仅 idle 才自动开始：刷新一场 running/paused 的会议不会被误唤醒（手动暂停得以保持）。
+        if (role.value === 'controller' && timer.value?.status === 'idle') {
+          await startTiming()
+        }
       } else {
         applyTimerState(await timerApi.state(clientId))
       }

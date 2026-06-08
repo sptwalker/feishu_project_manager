@@ -58,9 +58,12 @@
             <el-tooltip content="查看周会记录" placement="bottom">
               <el-button class="m-record-btn" :icon="Document" size="small" circle @click="recordVisible = true" />
             </el-tooltip>
-            <!-- 进入全屏周会汇报：仅周会模式开启且管理员可见；进行中显示绿色，点击二次确认后进入 -->
-            <el-tooltip v-if="isAdmin && meeting.active" content="进入周会汇报（全屏）· 进行中" placement="bottom">
-              <el-button class="m-record-btn m-record-live" type="success" :icon="Monitor" size="small" circle @click="enterMeetingReport" />
+            <!-- 进入全屏周会汇报：仅周会模式开启且管理员可见。
+                 颜色区分：会议真正进行中(有主控在计时)显示绿色呼吸；周会刚开启未开始计时显示蓝色「待开始」 -->
+            <el-tooltip v-if="isAdmin && meeting.active"
+              :content="meetingLive ? '进入周会汇报（全屏）· 进行中' : '进入周会汇报（全屏）· 待开始'" placement="bottom">
+              <el-button class="m-record-btn" :class="{ 'm-record-live': meetingLive }"
+                :type="meetingLive ? 'success' : 'primary'" :icon="Monitor" size="small" circle @click="enterMeetingReport" />
             </el-tooltip>
           </div>
           <el-dropdown trigger="click" @command="onCommand">
@@ -94,12 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMeetingStore } from '@/stores/meeting'
+import { timerApi } from '@/api/resources'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
 import MeetingConfirmDialog from '@/components/MeetingConfirmDialog.vue'
 import logoUrl from '@/assets/logo.png'
@@ -175,7 +179,22 @@ async function onToggleMeeting(val: string | number | boolean) {
       ElMessage.error('操作失败（需要管理员权限）')
     }
   }
+  await refreshMeetingLive()  // 开/关后立即刷新「进行中」状态
 }
+
+/* 会议是否真正进行中（有主控在计时：running/paused）——决定全屏按钮蓝（待开始）/绿（进行中）。
+   仅周会模式开启时查询；空 client_id 只读状态，不参与主控认领。 */
+const meetingLive = ref(false)
+async function refreshMeetingLive() {
+  if (!meeting.active) { meetingLive.value = false; return }
+  try {
+    const st = await timerApi.state('')
+    meetingLive.value = !!st.active && (st.status === 'running' || st.status === 'paused')
+  } catch {
+    meetingLive.value = false
+  }
+}
+let liveTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
   if (!auth.currentUser) await auth.fetchCurrentUser()
@@ -183,7 +202,12 @@ onMounted(async () => {
   if (meeting.active && isAdmin.value) {
     ElMessage.info('现在系统在公司周例会记录状态')
   }
+  await refreshMeetingLive()
+  // 低频轮询（12s）：反映他端「开始/暂停计时」导致的进行中状态变化（仅 active 时发请求）
+  liveTimer = setInterval(refreshMeetingLive, 12000)
 })
+
+onBeforeUnmount(() => { if (liveTimer) clearInterval(liveTimer) })
 </script>
 
 <style scoped>

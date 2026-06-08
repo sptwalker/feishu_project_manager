@@ -103,6 +103,9 @@ const statsVisible = ref(false)
 const statsData = ref<{ name: string; seconds: number }[]>([])
 
 onMounted(async () => {
+  // 整页加载/刷新会议页时 auth 可能尚未初始化，先确保 currentUser，否则 isAdmin 误判为 false、
+  // 管理员会被当作协助端而无法认领主控（破坏「主控刷新续权」）
+  if (!auth.currentUser) await auth.fetchCurrentUser()
   await meeting.load()
   session.value = meeting.currentCount
   await store.load()
