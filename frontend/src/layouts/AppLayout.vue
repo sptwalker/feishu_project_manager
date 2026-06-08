@@ -3,8 +3,8 @@
     <!-- 左侧导航 -->
     <aside class="sidebar" :class="{ collapsed }">
       <div class="brand">
-        <img :src="logoUrl" alt="Logo" class="brand-logo" />
-        <span class="brand-name"><span class="brand-accent">P</span>roject <span class="brand-accent">M</span>anager</span>
+        <img :src="branding.logoSrc" alt="Logo" class="brand-logo" />
+        <span class="brand-name" v-html="branding.data.brand_sidebar"></span>
       </div>
 
       <nav class="nav">
@@ -106,11 +106,12 @@ import { useMeetingStore } from '@/stores/meeting'
 import { timerApi } from '@/api/resources'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
 import MeetingConfirmDialog from '@/components/MeetingConfirmDialog.vue'
-import logoUrl from '@/assets/logo.png'
+import { useBrandingStore } from '@/stores/branding'
 
 const router = useRouter()
 const auth = useAuthStore()
 const meeting = useMeetingStore()
+const branding = useBrandingStore()
 const recordVisible = ref(false)
 const confirmVisible = ref(false)
 const confirmSession = ref(1)
@@ -257,7 +258,7 @@ onBeforeUnmount(() => { if (liveTimer) clearInterval(liveTimer) })
   color: var(--c-on-dark);
   text-align: center;
 }
-.brand-accent { color: var(--c-accent); }
+.brand-name :deep(.brand-accent) { color: var(--c-accent); }
 
 .nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .nav-foot { padding-top: var(--sp-3); border-top: 1px solid var(--c-sidebar-hover); }

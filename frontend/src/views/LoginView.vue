@@ -4,11 +4,11 @@
     <div class="brand-panel">
       <div class="brand-content">
         <div class="brand-row">
-          <span class="brand-mark">飞</span>
-          <span class="brand-name">飞书<span class="accent">PM</span></span>
+          <span class="brand-mark">{{ branding.data.brand_mark }}</span>
+          <span class="brand-name" v-html="branding.data.brand_login"></span>
         </div>
-        <h1 class="headline">把中长期项目<br />管理得<span class="accent">轻盈</span>。</h1>
-        <p class="sub">里程碑 · 任务 · 风险 · 飞书联动 —— 一处掌握全局。</p>
+        <h1 class="headline" v-html="branding.data.login_headline"></h1>
+        <p class="sub">{{ branding.data.login_sub }}</p>
       </div>
       <div class="grid-deco" aria-hidden="true"></div>
     </div>
@@ -32,8 +32,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useBrandingStore } from '@/stores/branding'
 
 const loading = ref(false)
+const branding = useBrandingStore()
 
 function loginWithFeishu() {
   loading.value = true
@@ -73,7 +75,8 @@ function loginWithFeishu() {
   font-family: var(--font-display); font-weight: 700; font-size: 19px;
 }
 .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 21px; }
-.accent { color: var(--c-accent); }
+/* v-html 注入的强调字（品牌名/标语里的 .accent）需 :deep 穿透 scoped */
+.brand-content :deep(.accent) { color: var(--c-accent); }
 .headline {
   font-family: var(--font-display);
   font-size: 46px;
