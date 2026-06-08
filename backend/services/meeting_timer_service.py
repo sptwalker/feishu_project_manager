@@ -259,12 +259,14 @@ class MeetingTimerService:
                 ts["paused_reason"] = "manual"
         elif action == "select_presenter":
             key = payload.get("presenter_key")
-            # 先结算上一位汇报人（仅运行中），再切到新汇报人
-            if ts["status"] == "running":
-                _settle(ts, now)
-                ts["total_started_at"] = now.isoformat()   # 总时长持续走
-            ts["current_presenter_key"] = key
-            ts["segment_started_at"] = now.isoformat() if (key and ts["status"] == "running") else None
+            # 同一汇报人不重置其计时段（主控浏览同一人不同项目时不结算）
+            if key != ts.get("current_presenter_key"):
+                # 先结算上一位汇报人（仅运行中），再切到新汇报人
+                if ts["status"] == "running":
+                    _settle(ts, now)
+                    ts["total_started_at"] = now.isoformat()   # 总时长持续走
+                ts["current_presenter_key"] = key
+                ts["segment_started_at"] = now.isoformat() if (key and ts["status"] == "running") else None
         else:
             raise ValueError(f"unknown timer action: {action}")
 
