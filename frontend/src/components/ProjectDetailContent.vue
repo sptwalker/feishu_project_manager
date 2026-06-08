@@ -4,7 +4,7 @@
       <div v-if="!createMode" class="edit-btn-group">
         <el-button
           class="edit-btn"
-          :type="editing ? 'warning' : 'primary'"
+          :type="editing ? 'info' : 'primary'"
           :icon="editing ? Close : EditPen"
           size="large"
           @click="toggleEdit"
@@ -103,8 +103,8 @@
       </dl>
 
       <div v-if="editing" class="edit-actions">
-        <el-button v-if="!createMode && isAdmin" type="warning" :icon="Delete" :loading="deleting" @click="removeProject">删除</el-button>
-        <el-button type="primary" :icon="Check" :loading="saving" @click="onSave">{{ createMode ? '创建项目' : '保存' }}</el-button>
+        <el-button v-if="!createMode && isAdmin" class="btn-delete-deep" :icon="Delete" :loading="deleting" @click="removeProject">删除</el-button>
+        <el-button class="btn-amber" :icon="Check" :loading="saving" @click="onSave">{{ createMode ? '创建项目' : '保存' }}</el-button>
       </div>
 
       <!-- 项目进展 / 历史修改记录（tab 切换） -->
@@ -115,7 +115,12 @@
         <div class="prog-title">
           <span class="mini-label">项目进展详情</span>
           <span v-if="stalled" class="stalled-tag" :style="{ color: stalled.color, fontWeight: stalled.bold ? 700 : 600 }">⏱超过{{ stalled.days }}无反馈</span>
-          <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击空白处保存并收起' : '点击下方区域编辑，右键点击记录可添加批注' }}</span>
+          <span class="hint muted">{{ createMode ? '请填写首次进展记录（必填）' : editingProgress ? '编辑中 · 点击保存提交' : '右键点击记录可添加批注' }}</span>
+          <!-- 进展编辑/保存按钮：编辑(蓝)进入编辑态，保存(琥珀)提交并收起；createMode 下进展随项目创建保存，不显示 -->
+          <el-button v-if="!createMode" size="small" class="pg-toggle-btn"
+            :class="editingProgress ? 'btn-amber' : 'btn-blue'" @click="onToggleProgressEdit">
+            {{ editingProgress ? '保存' : '编辑' }}
+          </el-button>
         </div>
 
         <!-- 编辑态：可编辑表格 -->
@@ -171,8 +176,8 @@
           <el-button text type="primary" :icon="Plus" size="small" @click="addRow">添加一条</el-button>
         </div>
 
-        <!-- 展示态：时间线 -->
-        <div v-else class="prog-view" @click="enterProgressEdit">
+        <!-- 展示态：时间线（只读；编辑通过上方「编辑」按钮进入，不再点击区域进入） -->
+        <div v-else class="prog-view">
           <div v-if="timeline.length" ref="timelineEl" class="timeline">
             <svg class="tl-svg" aria-hidden="true">
               <path
@@ -826,6 +831,11 @@ function enterProgressEdit() {
   progressDraft.value.sort(byTime)
   editingProgress.value = true
 }
+/* 进展「编辑/保存」按钮：编辑态点击保存提交并收起，否则进入编辑态 */
+function onToggleProgressEdit() {
+  if (editingProgress.value) commitProgress()
+  else enterProgressEdit()
+}
 function addRow() {
   const entry: ProgressEntry = { id: genId(), time: nowStr(), content: '', status: '正常' }
   if (meeting.active) {
@@ -1189,6 +1199,17 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 
 .edit-actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 
+/* 详情区按钮统一配色（抽屉 + 会议页共用同组件，自动同步）：
+   蓝=编辑 / 琥珀=保存·创建 / 深红=删除 */
+.btn-blue { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+.btn-blue:hover, .btn-blue:focus { background: #1763c8; border-color: #1763c8; color: #fff; }
+.btn-amber { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+.btn-amber:hover, .btn-amber:focus { background: #d98c08; border-color: #d98c08; color: #fff; }
+.btn-delete-deep { background: #c0392b; border-color: #c0392b; color: #fff; }
+.btn-delete-deep:hover, .btn-delete-deep:focus { background: #a5311f; border-color: #a5311f; color: #fff; }
+/* 进展「编辑/保存」按钮：在 baseline 对齐的标题行中居中 */
+.pg-toggle-btn { align-self: center; }
+
 /* 进展 */
 .progress-block { border-top: 1px solid var(--c-border); padding-top: var(--sp-4); }
 .prog-title { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
@@ -1208,8 +1229,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .row-del:hover { color: var(--c-status-overdue); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
-.prog-view { cursor: pointer; border: 1px dashed transparent; border-radius: var(--r-md); padding: var(--sp-2); transition: border-color 0.15s, background 0.15s; }
-.prog-view:hover { border-color: var(--c-border); background: var(--c-surface-2); }
+/* 展示态时间线容器：只读（编辑通过上方「编辑」按钮进入，不再点击区域进入） */
+.prog-view { border: 1px dashed transparent; border-radius: var(--r-md); padding: var(--sp-2); }
 .tl-empty { padding: var(--sp-4); text-align: center; font-size: 13px; }
 
 .timeline { position: relative; padding-left: 40px; }
