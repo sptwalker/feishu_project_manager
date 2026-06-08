@@ -128,6 +128,8 @@
 
         <!-- 编辑态：可编辑表格 -->
         <div v-if="editingProgress" class="prog-edit">
+          <!-- 「添加一条」置于表格上方：新增记录(时间=现在)在倒序时间线中显示在最上，按钮位置与之呼应 -->
+          <el-button text type="primary" :icon="Plus" size="small" class="add-row-btn" @click="addRow">添加一条</el-button>
           <table class="prog-table">
             <thead>
               <tr><th style="width:180px">更新时间</th><th>内容</th><th style="width:130px">状况</th><th style="width:44px"></th></tr>
@@ -172,11 +174,10 @@
                 <td><el-icon class="row-del" @click="removeRow(draftIndex(vi))"><Delete /></el-icon></td>
               </tr>
               <tr v-if="!progressDraft.length">
-                <td colspan="4" class="empty-row muted">暂无记录，点击下方"添加一条"</td>
+                <td colspan="4" class="empty-row muted">暂无记录，点击上方"添加一条"</td>
               </tr>
             </tbody>
           </table>
-          <el-button text type="primary" :icon="Plus" size="small" @click="addRow">添加一条</el-button>
         </div>
 
         <!-- 展示态：时间线（只读；编辑通过上方「编辑」按钮进入，不再点击区域进入） -->
@@ -244,7 +245,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="stalled-banner">--- 暂无进展记录，点击此处添加 ---</div>
+          <div v-else class="stalled-banner">--- 暂无进展记录，点击编辑添加 ---</div>
         </div>
 
         <div v-if="stalled" class="stalled-banner">
@@ -1225,6 +1226,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .stalled-banner-days { font-weight: 800; font-style: italic; }
 
 .prog-table { width: 100%; border-collapse: collapse; }
+/* 「添加一条」移到表格上方后，与表格留出间距 */
+.add-row-btn { margin-bottom: 6px; }
 .prog-table th, .prog-table td { border: 1px solid var(--c-border); padding: 6px; vertical-align: top; text-align: left; }
 .prog-table th { background: var(--c-surface-2); font-size: 12px; color: var(--c-ink-2); font-weight: 600; }
 .empty-row { text-align: center; padding: var(--sp-3); }
