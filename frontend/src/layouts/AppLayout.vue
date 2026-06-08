@@ -139,7 +139,7 @@ function onCommand(cmd: string) {
 async function enterMeetingReport() {
   try {
     await ElMessageBox.confirm(
-      '要开周会了？是否要进入全屏会议页面？进入后会议即开始计时！',
+      '要开周会了？是否进入全屏会议页面主持本次周会？进入后点击 ▶ 开始计时。',
       '进入周会汇报',
       { type: 'warning', confirmButtonText: '进入', cancelButtonText: '取消' },
     )

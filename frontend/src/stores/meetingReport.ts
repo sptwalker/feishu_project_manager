@@ -176,6 +176,14 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   /* 当前【计时】汇报人已用时长（秒）——顶栏主席台显示用 */
   const personElapsed = computed<number>(() => personTimes.value[timingPresenterKey.value] || 0)
 
+  /* 各汇报人用时统计（取个人名、降序、过滤0秒）：供顶栏统计弹窗与结束柱状图复用 */
+  const personTimeStats = computed<{ name: string; seconds: number }[]>(() =>
+    Object.entries(personTimes.value)
+      .map(([key, seconds]) => ({ name: key.split('|')[1] || key, seconds }))
+      .filter((x) => x.seconds > 0)
+      .sort((a, b) => b.seconds - a.seconds),
+  )
+
   /* 当前汇报人（部门+个人）名下的项目列表（已按隐藏状态过滤、按顺序） */
   const currentMemberProjects = computed<Project[]>(() => {
     const idx = currentPresenterIndex.value
@@ -287,12 +295,8 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   async function connectTimer(isAdmin: boolean) {
     try {
       if (isAdmin) {
+        // 认领主控（不自动开始计时：进入后由主控手动点 ▶ 开始）
         applyTimerState(await timerApi.claim(clientId))
-        // 主控首次进入（计时从未开始，status=idle）→ 自动开始计时，符合「进入即开始计时」。
-        // 仅 idle 才自动开始：刷新一场 running/paused 的会议不会被误唤醒（手动暂停得以保持）。
-        if (role.value === 'controller' && timer.value?.status === 'idle') {
-          await startTiming()
-        }
       } else {
         applyTimerState(await timerApi.state(clientId))
       }
@@ -366,7 +370,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     totalMinutes, personThresholdMinutes,
     currentProjectId, currentProject, currentPresenterIndex,
     currentMemberProjects, currentProjectIndexInMember,
-    running, totalElapsed, personElapsed, personTimes,
+    running, totalElapsed, personElapsed, personTimes, personTimeStats,
     grouped, presenters, personOvertime, totalOvertime,
     // 计时 + 主控
     clientId, role, isController, timer,

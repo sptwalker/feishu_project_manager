@@ -1,9 +1,16 @@
 <template>
   <header class="mr-top">
-    <!-- 左：会议信息 + 总时间（单行，正向计时） -->
+    <!-- 左：会议信息 + 总时间 + 计时控制 + 统计 -->
     <div class="mr-left">
       <span class="mr-meet">周例会 · 第 {{ session }} 次 · {{ today }}</span>
       <span class="mr-total" :class="{ overtime: store.totalOvertime }">总 {{ fmt(store.totalElapsed) }}</span>
+      <!-- 计时控制（无边框）：▶ 开始/继续 · ❚❚ 暂停；仅主控可点 -->
+      <button class="mr-timer-btn" :class="{ running: store.running }"
+        :disabled="!store.isController" :title="timerBtnTitle" @click="onToggleTiming">
+        {{ store.running ? '❚❚' : '▶' }}
+      </button>
+      <!-- 统计：弹窗显示各汇报人当前用时（所有人可看） -->
+      <button class="mr-stat-btn" title="汇报人用时统计" @click="statsVisible = true">📊</button>
     </div>
 
     <!-- 中：梯形主席台（上宽下窄） -->
@@ -27,16 +34,10 @@
         title="下一位" @click="store.nextPresenter()">›</button>
     </div>
 
-    <!-- 右：计时控制 + 纪要 + 结束会议 + 设置 -->
+    <!-- 右：角色/接管 + 纪要 + 结束会议 + 设置 -->
     <div class="mr-actions">
-      <!-- 主控：开始/暂停计时 -->
-      <template v-if="store.isController">
-        <el-button v-if="!store.running" type="success" class="mr-ctrl-btn" @click="store.startTiming()">
-          {{ store.timer?.status === 'paused' ? '▶ 继续' : '▶ 开始计时' }}
-        </el-button>
-        <el-button v-else type="warning" class="mr-ctrl-btn" @click="store.pauseTiming()">⏸ 暂停</el-button>
-        <span class="mr-role mr-role-ctrl">● 主控</span>
-      </template>
+      <!-- 主控角色标 -->
+      <span v-if="store.isController" class="mr-role mr-role-ctrl">● 主控</span>
       <!-- 协助态：只读提示 + 主控释放后可接管 -->
       <template v-else-if="store.timer?.active">
         <span v-if="store.controllerReleased" class="mr-role mr-role-warn">主控已掉线</span>
@@ -54,18 +55,43 @@
   <div v-if="store.controllerOffline" class="mr-offline-banner">
     ⚠ 主控客户端掉线，计时已自动暂停，等待重连（超 3 分钟后可由其他端接管）
   </div>
+
+  <!-- 汇报人用时统计弹窗（会议中实时查看） -->
+  <el-dialog v-model="statsVisible" title="汇报人用时统计" width="640px">
+    <BaseChart v-if="store.personTimeStats.length" :option="statsOption" style="height: 340px" />
+    <el-empty v-else description="暂无计时记录" :image-size="60" />
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ElButton, ElMessageBox, ElMessage } from 'element-plus'
+import { ref, computed } from 'vue'
+import { ElButton, ElDialog, ElEmpty, ElMessageBox, ElMessage } from 'element-plus'
 import { useMeetingReportStore } from '@/stores/meetingReport'
+import BaseChart from '@/components/BaseChart.vue'
+import { buildPersonTimesBarOption } from '@/utils/meetingStats'
 
 defineProps<{ session: number; today: string }>()
 const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void; (e: 'end-meeting'): void }>()
 
 const store = useMeetingReportStore()
 const presenter = computed(() => store.presenters[store.currentPresenterIndex] ?? null)
+
+/* 统计弹窗：各汇报人当前用时柱状图（实时） */
+const statsVisible = ref(false)
+const statsOption = computed(() => buildPersonTimesBarOption(store.personTimeStats))
+
+/* 计时控制按钮提示文案（仅主控可操作） */
+const timerBtnTitle = computed(() => {
+  if (!store.isController) return '仅主控可控制计时'
+  return store.running ? '暂停计时' : (store.timer?.status === 'paused' ? '继续计时' : '开始计时')
+})
+
+/* ▶/❚❚ 切换：主控开始(或继续)/暂停计时 */
+function onToggleTiming() {
+  if (!store.isController) return
+  if (store.running) store.pauseTiming()
+  else store.startTiming()
+}
 
 /* 协助端接管主控：二次确认后调用（主控掉线超 3 分钟、已释放时可点） */
 async function onTakeover() {
@@ -117,6 +143,18 @@ function fmt(total: number): string {
   color: #1a7f4b; background: #e3f5ea; padding: 3px 14px; border-radius: 6px; }
 /* 总时间超过提醒阈值：暗红数字 + 淡黄背景（不闪烁） */
 .mr-total.overtime { color: #9b1c1c; background: #fdf3c4; }
+/* 计时控制按钮（▶/❚❚）：无边框、圆形点击区，主控绿色、暂停态橙色 */
+.mr-timer-btn { background: transparent; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; color: #1a7f4b; padding: 4px 6px; border-radius: 6px;
+  transition: background .15s ease, color .15s ease; }
+.mr-timer-btn:hover:not(:disabled) { background: var(--c-surface-2, #f2f3f5); }
+.mr-timer-btn.running { color: #d97706; }
+.mr-timer-btn:disabled { opacity: .3; cursor: not-allowed; }
+/* 统计按钮：无边框图标 */
+.mr-stat-btn { background: transparent; border: none; cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 4px 6px; border-radius: 6px;
+  transition: background .15s ease; }
+.mr-stat-btn:hover { background: var(--c-surface-2, #f2f3f5); }
 @keyframes flash { 50% { opacity: .4; } }
 @media (prefers-reduced-motion: reduce) {
   .mr-person.flashing { animation: none; }
@@ -152,8 +190,6 @@ function fmt(total: number): string {
 .mr-arrow:disabled { opacity: .25; cursor: not-allowed; }
 
 .mr-actions { display: flex; gap: 8px; align-items: center; }
-/* 计时控制按钮（开始/暂停/继续） */
-.mr-ctrl-btn { font-weight: 700; }
 /* 角色徽标 */
 .mr-role { font-size: 13px; font-weight: 700; white-space: nowrap; padding: 0 4px; }
 .mr-role-ctrl { color: #1a7f4b; }

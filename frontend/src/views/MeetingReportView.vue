@@ -82,6 +82,7 @@ import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useMeetingStore } from '@/stores/meeting'
 import { useAuthStore } from '@/stores/auth'
 import { settingsApi, meetingApi } from '@/api/resources'
+import { buildPersonTimesBarOption } from '@/utils/meetingStats'
 
 const router = useRouter()
 const store = useMeetingReportStore()
@@ -163,11 +164,8 @@ async function onEndMeeting() {
   } catch {
     return  // 用户取消
   }
-  // 结束前捕获各汇报人累计用时（服务端锚点推算的当前值），按用时降序
-  const snapshot = Object.entries(store.personTimes)
-    .map(([key, seconds]) => ({ name: key.split('|')[1] || key, seconds: seconds as number }))
-    .filter((x) => x.seconds > 0)
-    .sort((a, b) => b.seconds - a.seconds)
+  // 结束前捕获各汇报人累计用时（服务端锚点推算的当前值，reset 前），按用时降序
+  const snapshot = [...store.personTimeStats]
   try {
     await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 清空 timer + 记操作日志
     ElMessage.success('周会已结束')
@@ -191,23 +189,8 @@ function onStatsClosed() {
   router.push('/board')
 }
 
-/* 汇报人用时柱状图配置（秒 → 自适应 分:秒 标签） */
-const statsOption = computed(() => {
-  const names = statsData.value.map((x) => x.name)
-  const values = statsData.value.map((x) => x.seconds)
-  const fmtMMSS = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
-  return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (p: { name: string; value: number }[]) => `${p[0].name}：${fmtMMSS(p[0].value)}` },
-    grid: { left: 8, right: 24, top: 16, bottom: 8, containLabel: true },
-    xAxis: { type: 'category', data: names, axisLabel: { interval: 0, rotate: names.length > 6 ? 35 : 0 } },
-    yAxis: { type: 'value', name: '用时', axisLabel: { formatter: (v: number) => fmtMMSS(v) } },
-    series: [{
-      type: 'bar', barWidth: '46%',
-      data: values.map((v, i) => ({ value: v, itemStyle: { color: ['#1A73E8', '#2F8FE0', '#13C2C2', '#3B6FE0', '#5AB1BB', '#2F54EB', '#41B0D8', '#6979F8'][i % 8], borderRadius: [4, 4, 0, 0] } })),
-      label: { show: true, position: 'top', formatter: (p: { value: number }) => fmtMMSS(p.value) },
-    }],
-  } as Record<string, unknown>
-})
+/* 汇报人用时柱状图配置（结束统计，复用共享生成器） */
+const statsOption = computed(() => buildPersonTimesBarOption(statsData.value))
 </script>
 
 <style scoped>
