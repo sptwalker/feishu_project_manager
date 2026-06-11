@@ -686,9 +686,14 @@ function replyColor(e: ProgressEntry): string {
   const origin = timeline.value.find((x) => x.id === e.reply_to)
   return progressColor(origin?.status || e.status)
 }
-// 反馈事件的状态文字：待讨论→讨论已反馈，待确认→确认已反馈，待执行→执行已反馈
+// 待处理→已闭环：待讨论/待确认/待执行 反馈完成后流转的目标状态
+const PENDING_TO_DONE: Record<string, string> = {
+  待讨论: '已讨论', 待确认: '已确认', 待执行: '已执行',
+}
+// 反馈事件的状态文字：无论原事项处于待X还是流转后的已X，反馈条都显示「X已反馈」
 const FEEDBACK_LABEL: Record<string, string> = {
   待讨论: '讨论已反馈', 待确认: '确认已反馈', 待执行: '执行已反馈',
+  已讨论: '讨论已反馈', 已确认: '确认已反馈', 已执行: '执行已反馈',
 }
 function replyLabel(e: ProgressEntry): string {
   return FEEDBACK_LABEL[e.status] || `${e.status}已反馈`
@@ -887,6 +892,23 @@ function cleanDraft(): ProgressEntry[] {
     })
 }
 
+/* 反馈完成（有内容的反馈条）后，把其指向的待处理原事项及该反馈条状态流转为「已X」，
+   使该事项不再出现在待处理筛选中（待讨论→已讨论 / 待确认→已确认 / 待执行→已执行）。
+   入参为 cleanDraft 结果（已过滤掉无内容条目，故此处的反馈条都视为「反馈完成」）。 */
+function resolvePendingByFeedback(entries: ProgressEntry[]): ProgressEntry[] {
+  const byId = new Map(entries.filter((e) => e.id).map((e) => [e.id as string, e]))
+  for (const fb of entries) {
+    if (!fb.reply_to) continue
+    const origin = byId.get(fb.reply_to)
+    if (origin && PENDING_TO_DONE[origin.status]) {
+      const done = PENDING_TO_DONE[origin.status]
+      origin.status = done
+      fb.status = done   // 反馈条同步流转，保证 latestStatusOf 不再命中「待X」
+    }
+  }
+  return entries
+}
+
 async function commitProgress() {
   if (props.createMode) return
   if (!editingProgress.value || !local.value) return
@@ -897,7 +919,7 @@ async function commitProgress() {
     return // 保持编辑态，不退出
   }
   editingProgress.value = false
-  const cleaned = cleanDraft()
+  const cleaned = resolvePendingByFeedback(cleanDraft())
   // 无变化则不请求
   if (JSON.stringify(cleaned) === JSON.stringify(local.value.progress_log ?? [])) return
   try {

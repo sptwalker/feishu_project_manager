@@ -109,6 +109,7 @@ export function isOverdue(dueDate?: string | null, status?: string): boolean {
 // 项目进展记录的「状况」选项与对应时间节点颜色
 export const PROGRESS_STATUSES = [
   '正常', '延迟', '暂停', '阻塞', '等待', '待讨论', '待执行', '待确认',
+  '已讨论', '已执行', '已确认',   // 待处理事项反馈完成后流转到的「已闭环」状态
 ] as const
 
 // 未结束事件状态（时间线空心闪烁圆点 + 可反馈）
@@ -123,6 +124,9 @@ export const progressStatusColor: Record<string, string> = {
   待讨论: '#E8833A', // 橙
   待执行: '#21C7C7', // 青
   待确认: '#E87FB0', // 粉
+  已讨论: '#2f9e6f', // 完成绿（已闭环）
+  已执行: '#2f9e6f',
+  已确认: '#2f9e6f',
 }
 
 /* 完成度进度条渐变：随完成度从浅到深的同色系绿。
