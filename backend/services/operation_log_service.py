@@ -101,7 +101,11 @@ class OperationLogService:
             new_entries = [e for e in new[len(old):] if isinstance(e, dict)]
         for e in new_entries:
             if e.get("reply_to"):
-                return "feedback", (e.get("status") or "")
+                # 反馈对象是「待处理事项」，其状态可能在本次保存中已流转为「已X」；
+                # 取 old_log 里被反馈原事项的原状态（待X）作日志文案，避免记成「反馈了已讨论事项」
+                origin = next((o for o in old if entry_id(o) == e.get("reply_to")), None)
+                st = (origin.get("status") if isinstance(origin, dict) else None) or e.get("status") or ""
+                return "feedback", st
         if new_entries:
             return "update_progress", None
 

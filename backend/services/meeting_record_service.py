@@ -198,20 +198,23 @@ class MeetingRecordService:
         return MeetingRecordService.get_session_detail(db, session)
 
     @staticmethod
-    def start_report(db: Session, session: int) -> Optional[MeetingRecord]:
-        """记录某次周会汇报开始时刻（仅首次写入，幂等）。无该 session 记录返回 None。"""
+    def start_report(db: Session, session: int) -> bool:
+        """记录某次周会汇报开始时刻（仅首次写入，幂等）。
+        返回 True=本次为首次写入 started_at（应记一条开始日志）；
+        False=已开始过 / 无该 session 记录（不应重复记日志）。"""
         rec = MeetingRecordService._get_record(db, session)
         if rec is None:
-            return None
-        if rec.started_at is None:
-            rec.started_at = datetime.now()
-            try:
-                db.commit()
-                db.refresh(rec)
-            except Exception:
-                db.rollback()
-                raise
-        return rec
+            return False
+        if rec.started_at is not None:
+            return False   # 已开始过，幂等：不重复写、不重复记日志
+        rec.started_at = datetime.now()
+        try:
+            db.commit()
+            db.refresh(rec)
+        except Exception:
+            db.rollback()
+            raise
+        return True
 
     @staticmethod
     def close_meeting(db: Session) -> None:

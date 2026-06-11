@@ -103,12 +103,13 @@ def start_meeting_report(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """记录周会汇报开始时刻（管理员）。幂等：已开始则不覆盖。"""
-    MeetingRecordService.start_report(db, session)
-    OperationLogService.log(
-        db, user=current_admin, action="meeting_report_start",
-        description=f"开始第 {session} 次周会汇报",
-    )
+    """记录周会汇报开始时刻（管理员）。幂等：已开始则不覆盖，且不重复记日志。"""
+    # 仅「首次开始」才记一条日志——避免每次进入/刷新汇报页都记，造成日志刷屏
+    if MeetingRecordService.start_report(db, session):
+        OperationLogService.log(
+            db, user=current_admin, action="meeting_report_start",
+            description=f"开始第 {session} 次周会汇报",
+        )
     return MeetingRecordService.get_session_detail(db, session)
 
 
