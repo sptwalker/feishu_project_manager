@@ -25,6 +25,27 @@ AUTO_REMINDER_ENABLED_KEY = "auto_reminder_enabled"
 # 本实例飞书机器人应用凭证（在「系统设置 › 其他设置」配置，DB 优先于 .env，实现各实例独立机器人）
 FEISHU_APP_ID_KEY = "feishu_app_id"
 FEISHU_APP_SECRET_KEY = "feishu_app_secret"
+# 本实例品牌配置（JSON；DB 优先于 .env，UI 可改、免登服务器）
+BRANDING_CONFIG_KEY = "branding_config"
+
+# 品牌字段 → 对应 .env 默认值的属性名（DB 缺省时回退 env）
+_BRANDING_ENV_MAP = {
+    "brand_sidebar": "BRAND_SIDEBAR",
+    "brand_login": "BRAND_LOGIN",
+    "brand_mark": "BRAND_MARK",
+    "page_title": "BRAND_PAGE_TITLE",
+    "login_headline": "BRAND_LOGIN_HEADLINE",
+    "login_sub": "BRAND_LOGIN_SUB",
+    "org_scope": "BRAND_ORG_SCOPE",
+    "dept_unit": "BRAND_DEPT_UNIT",
+    "logo_url": "BRAND_LOGO_URL",
+    "favicon_url": "BRAND_FAVICON_URL",
+    "accent": "BRAND_ACCENT",
+    "accent_hover": "BRAND_ACCENT_HOVER",
+    "accent_soft": "BRAND_ACCENT_SOFT",
+    "sidebar_bg": "BRAND_SIDEBAR_BG",
+    "sidebar_hover": "BRAND_SIDEBAR_HOVER",
+}
 # 周会汇报页：汇报顺序（部门级 + 个人级）与计时设置
 MEETING_REPORT_ORDER_KEY = "meeting_report_order"
 MEETING_TOTAL_MINUTES_KEY = "meeting_total_minutes"
@@ -129,6 +150,35 @@ class SettingsService:
         SettingsService.set_setting(db, FEISHU_APP_ID_KEY, (app_id or "").strip())
         if app_secret is not None and app_secret.strip():
             SettingsService.set_setting(db, FEISHU_APP_SECRET_KEY, app_secret.strip())
+
+    @staticmethod
+    def get_branding_config(db: Session) -> dict:
+        """本实例品牌配置：逐字段 DB 优先、空则回退 .env。返回扁平 dict（含全部品牌字段）。"""
+        raw = SettingsService.get_setting(db, BRANDING_CONFIG_KEY, "")
+        try:
+            db_cfg = json.loads(raw) if raw else {}
+        except (ValueError, TypeError):
+            db_cfg = {}
+        s = get_settings()
+        out: dict = {}
+        for field, env_attr in _BRANDING_ENV_MAP.items():
+            v = (db_cfg.get(field) or "").strip() if isinstance(db_cfg.get(field), str) else db_cfg.get(field)
+            out[field] = v or getattr(s, env_attr, "")
+        return out
+
+    @staticmethod
+    def set_branding_config(db: Session, updates: dict) -> dict:
+        """合并保存品牌配置（仅写入传入的字段，None 跳过；空串表示清空→回退 env）。返回合并后配置。"""
+        raw = SettingsService.get_setting(db, BRANDING_CONFIG_KEY, "")
+        try:
+            cfg = json.loads(raw) if raw else {}
+        except (ValueError, TypeError):
+            cfg = {}
+        for field in _BRANDING_ENV_MAP:
+            if field in updates and updates[field] is not None:
+                cfg[field] = updates[field]
+        SettingsService.set_setting(db, BRANDING_CONFIG_KEY, json.dumps(cfg, ensure_ascii=False))
+        return SettingsService.get_branding_config(db)
 
     # ---------- 周会汇报页：顺序 + 计时设置 ----------
 

@@ -203,6 +203,34 @@ export const logApi = {
   },
 }
 
+/* 品牌设置（管理员；DB 存、UI 改、免登服务器） */
+export interface BrandingFull {
+  brand_sidebar: string
+  brand_login: string
+  brand_mark: string
+  page_title: string
+  login_headline: string
+  login_sub: string
+  org_scope: string
+  dept_unit: string
+  logo_url: string
+  favicon_url: string
+  accent: string
+  accent_hover: string
+  accent_soft: string
+  sidebar_bg: string
+  sidebar_hover: string
+}
+
+export const brandingApi = {
+  get() {
+    return api.get<BrandingFull>('/settings/branding').then((r) => r.data)
+  },
+  update(payload: Partial<BrandingFull>) {
+    return api.put<BrandingFull>('/settings/branding', payload).then((r) => r.data)
+  },
+}
+
 export const followupApi = {
   atRiskOwners() {
     return api.get<AtRiskOwner[]>('/followup/at-risk-owners').then((r) => r.data)

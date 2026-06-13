@@ -1,5 +1,5 @@
 """系统设置 API（周例会状态 / 次数校准 / 项目催办阈值）"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
@@ -17,6 +17,7 @@ from backend.schemas.setting import (
     FeishuAppResponse, FeishuAppUpdate,
 )
 from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
+from backend.schemas.branding import BrandingFull, BrandingUpdate
 from backend.services.project_followup_service import (
     get_stall_days_threshold, SETTING_FOLLOWUP_STALL_DAYS,
 )
@@ -226,3 +227,27 @@ def set_feishu_app(
         app_id=SettingsService.get_feishu_app_id(db),
         secret_set=SettingsService.is_feishu_secret_set(db),
     )
+
+
+@router.get("/settings/branding", response_model=BrandingFull)
+def get_branding_full(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """获取本实例品牌完整配置（仅管理员，用于设置页表单回显；DB 优先、空回退 .env）"""
+    return BrandingFull(**SettingsService.get_branding_config(db))
+
+
+@router.put("/settings/branding", response_model=BrandingFull)
+def set_branding_full(
+    payload: BrandingUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """保存本实例品牌配置（仅管理员；改后刷新即生效，无需登录服务器/重启）。
+    logo_url 支持 data URI（上传图片转 base64）；为防 DB 膨胀限制其长度。"""
+    if payload.logo_url and payload.logo_url.startswith("data:") and len(payload.logo_url) > 700_000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="logo 图片过大（请压缩到约 500KB 以内）")
+    merged = SettingsService.set_branding_config(db, payload.model_dump())
+    return BrandingFull(**merged)

@@ -22,10 +22,8 @@
           <el-empty description="AI API设置功能开发中" />
         </div>
       </el-tab-pane>
-      <el-tab-pane label="页面主题" name="theme">
-        <div class="empty-tab">
-          <el-empty description="页面主题设置功能开发中" />
-        </div>
+      <el-tab-pane label="品牌设置" name="branding">
+        <BrandingSettings />
       </el-tab-pane>
       <el-tab-pane label="其他设置" name="other">
         <OtherSettings />
@@ -43,6 +41,7 @@ import UserManagement from '@/components/UserManagement.vue'
 import DepartmentManagement from '@/components/DepartmentManagement.vue'
 import MeetingSettings from '@/components/MeetingSettings.vue'
 import FollowupSettings from '@/components/FollowupSettings.vue'
+import BrandingSettings from '@/components/BrandingSettings.vue'
 import OtherSettings from '@/components/OtherSettings.vue'
 import SystemLog from '@/components/SystemLog.vue'
 
