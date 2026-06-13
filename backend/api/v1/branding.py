@@ -34,6 +34,8 @@ def get_branding() -> BrandingResponse:
         page_title=s.BRAND_PAGE_TITLE,
         login_headline=s.BRAND_LOGIN_HEADLINE,
         login_sub=s.BRAND_LOGIN_SUB,
+        org_scope=s.BRAND_ORG_SCOPE,
+        dept_unit=s.BRAND_DEPT_UNIT,
         logo_url=s.BRAND_LOGO_URL,
         favicon_url=s.BRAND_FAVICON_URL,
         theme=theme,

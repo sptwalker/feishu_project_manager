@@ -180,6 +180,7 @@ import BaseChart from '@/components/BaseChart.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
 import ManualFollowupDialog from '@/components/ManualFollowupDialog.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useBrandingStore } from '@/stores/branding'
 
 const allProjects = ref<Project[]>([])
 const loading = ref(false)
@@ -193,6 +194,7 @@ const users = ref<User[]>([])
 const departments = ref<Department[]>([])
 const auth = useAuthStore()
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+const branding = useBrandingStore()
 const subtitle = computed(() => {
   const deptCount = departments.value.length
   const managerCount = users.value.filter(
@@ -207,7 +209,9 @@ const subtitle = computed(() => {
       (a.last_login_at || '') > (b.last_login_at || '') ? a : b)
     who = `${latest.name}（${fmtLoginTime(latest.last_login_at)}）`
   }
-  return `目前本系统管理涵盖全公司 ${deptCount} 个部门，${managerCount} 位项目经理，最近活跃的用户是 ${who}。`
+  const scope = branding.data.org_scope || '全公司'
+  const unit = branding.data.dept_unit || '部门'
+  return `目前本系统管理涵盖${scope} ${deptCount} 个${unit}，${managerCount} 位项目经理，最近活跃的用户是 ${who}。`
 })
 
 /* 格式化最后活跃时间：后端存 UTC（无时区后缀），按 UTC 解析后转北京时间显示，避免差 8 小时 */

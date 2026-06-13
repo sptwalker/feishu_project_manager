@@ -10,6 +10,8 @@ export interface Branding {
   page_title: string
   login_headline: string
   login_sub: string
+  org_scope: string
+  dept_unit: string
   logo_url: string
   favicon_url: string
   theme: Record<string, string>
@@ -23,6 +25,8 @@ const DEFAULTS: Branding = {
   page_title: '飞书项目管理系统',
   login_headline: '把中长期项目<br />管理得<span class="accent">轻盈</span>。',
   login_sub: '里程碑 · 任务 · 风险 · 飞书联动 —— 一处掌握全局。',
+  org_scope: '全公司',
+  dept_unit: '部门',
   logo_url: '',
   favicon_url: '',
   theme: {},

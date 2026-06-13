@@ -105,6 +105,9 @@ class Settings(BaseSettings):
     BRAND_PAGE_TITLE: str = "飞书项目管理系统"                # 浏览器标签标题
     BRAND_LOGIN_HEADLINE: str = '把中长期项目<br />管理得<span class="accent">轻盈</span>。'  # 登录页主标语
     BRAND_LOGIN_SUB: str = "里程碑 · 任务 · 风险 · 飞书联动 —— 一处掌握全局。"               # 登录页副标语
+    # 首页副标题口径：组织范围词 + 部门单位词（多实例差异化，如 sales=营销销售部/团队）
+    BRAND_ORG_SCOPE: str = "全公司"                          # 首页副标题"涵盖{X}"的范围词
+    BRAND_DEPT_UNIT: str = "部门"                            # 首页副标题"N 个{X}"的单位词
     # 图片（相对路径，由各实例 Nginx /branding/ 提供；空则前端用构建内置默认 logo/favicon）
     BRAND_LOGO_URL: str = ""
     BRAND_FAVICON_URL: str = ""

@@ -14,6 +14,8 @@ class BrandingResponse(BaseModel):
     page_title: str = Field(..., description="浏览器标签标题")
     login_headline: str = Field(..., description="登录页主标语（HTML）")
     login_sub: str = Field(..., description="登录页副标语")
+    org_scope: str = Field("全公司", description="首页副标题范围词（如 全公司 / 营销销售部）")
+    dept_unit: str = Field("部门", description="首页副标题部门单位词（如 部门 / 团队）")
     logo_url: str = Field("", description="侧边栏 logo 图地址（空则前端用内置默认）")
     favicon_url: str = Field("", description="favicon 地址（空则用默认）")
     theme: Dict[str, str] = Field(default_factory=dict, description="CSS 变量覆盖（仅含非空项）")
