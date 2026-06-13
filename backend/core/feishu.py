@@ -25,12 +25,58 @@ class FeishuClient:
     BASE_URL = "https://open.feishu.cn/open-apis"
 
     def __init__(self):
-        self.app_id = settings.FEISHU_APP_ID
-        self.app_secret = settings.FEISHU_APP_SECRET
+        # 凭证解析优先级：显式赋值(测试/手动) > 系统设置(DB) > .env。
+        # 不在此处绑定 settings 值，留空 override 让 DB/env 在使用时解析。
+        self._app_id_override: Optional[str] = None
+        self._app_secret_override: Optional[str] = None
         self._client: Optional[httpx.AsyncClient] = None
-        # tenant_access_token 缓存
+        # tenant_access_token 缓存（按凭证 key 失效：凭证变更后下次取 token 自动重取）
         self._tenant_token: Optional[str] = None
         self._tenant_token_expire_at: float = 0.0
+        self._tenant_cred_key: Optional[str] = None
+
+    @staticmethod
+    def _db_credentials() -> tuple[str, str]:
+        """从系统设置(DB)读取飞书应用凭证；不可用/未配置时返回 ('','')。"""
+        try:
+            from backend.db.session import SessionLocal
+            from backend.models.system_setting import SystemSetting
+            db = SessionLocal()
+            try:
+                rows = {
+                    s.key: (s.value or "")
+                    for s in db.query(SystemSetting).filter(
+                        SystemSetting.key.in_(("feishu_app_id", "feishu_app_secret"))
+                    ).all()
+                }
+            finally:
+                db.close()
+            return rows.get("feishu_app_id", "").strip(), rows.get("feishu_app_secret", "").strip()
+        except Exception:  # noqa: BLE001 - 读取失败回退 env，不影响主流程
+            return "", ""
+
+    def _creds(self) -> tuple[str, str]:
+        """解析当前应用凭证：显式 override > DB 系统设置 > .env 默认。"""
+        if self._app_id_override is not None:
+            return self._app_id_override, (self._app_secret_override or "")
+        db_id, db_secret = self._db_credentials()
+        return (db_id or settings.FEISHU_APP_ID), (db_secret or settings.FEISHU_APP_SECRET)
+
+    @property
+    def app_id(self) -> str:
+        return self._creds()[0]
+
+    @app_id.setter
+    def app_id(self, value: str) -> None:
+        self._app_id_override = value
+
+    @property
+    def app_secret(self) -> str:
+        return self._creds()[1]
+
+    @app_secret.setter
+    def app_secret(self, value: str) -> None:
+        self._app_secret_override = value
 
     def _get_client(self) -> httpx.AsyncClient:
         """获取或创建 HTTP 客户端"""
@@ -47,12 +93,13 @@ class FeishuClient:
     async def get_app_access_token(self) -> str:
         """获取应用 access token"""
         client = self._get_client()
+        app_id, app_secret = self._creds()
         try:
             response = await client.post(
                 f"{self.BASE_URL}/auth/v3/app_access_token/internal",
                 json={
-                    "app_id": self.app_id,
-                    "app_secret": self.app_secret
+                    "app_id": app_id,
+                    "app_secret": app_secret
                 }
             )
             response.raise_for_status()
@@ -109,23 +156,28 @@ class FeishuClient:
 
     def get_oauth_url(self, state: Optional[str] = None) -> str:
         """生成飞书 OAuth 授权 URL"""
+        app_id, _ = self._creds()
         redirect_uri = quote(settings.FEISHU_REDIRECT_URI)
-        url = f"https://open.feishu.cn/open-apis/authen/v1/authorize?app_id={self.app_id}&redirect_uri={redirect_uri}"
+        url = f"https://open.feishu.cn/open-apis/authen/v1/authorize?app_id={app_id}&redirect_uri={redirect_uri}"
         if state:
             url += f"&state={quote(state)}"
         return url
 
     async def get_tenant_access_token(self) -> str:
-        """获取并缓存 tenant_access_token（发送消息、操作多维表格使用）"""
+        """获取并缓存 tenant_access_token（发送消息、操作多维表格使用）。
+        缓存按当前凭证(app_id+secret) key：凭证在系统设置变更后，下次取 token 自动重取。"""
+        app_id, app_secret = self._creds()
+        cred_key = f"{app_id}|{app_secret}"
         now = time.monotonic()
-        if self._tenant_token and now < self._tenant_token_expire_at:
+        if (self._tenant_token and self._tenant_cred_key == cred_key
+                and now < self._tenant_token_expire_at):
             return self._tenant_token
 
         client = self._get_client()
         try:
             response = await client.post(
                 f"{self.BASE_URL}/auth/v3/tenant_access_token/internal",
-                json={"app_id": self.app_id, "app_secret": self.app_secret},
+                json={"app_id": app_id, "app_secret": app_secret},
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
@@ -140,6 +192,7 @@ class FeishuClient:
         self._tenant_token = data["tenant_access_token"]
         # 提前 60 秒过期，避免边界失效
         self._tenant_token_expire_at = now + max(0, int(data.get("expire", 7200)) - 60)
+        self._tenant_cred_key = cred_key
         return self._tenant_token
 
     async def _post_authed(self, path: str, json_body: Dict[str, Any],

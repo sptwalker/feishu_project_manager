@@ -22,6 +22,9 @@ FEISHU_CORE_GROUP_CHAT_ID_KEY = "feishu_core_group_chat_id"
 AUTO_OPEN_MEETING_ENABLED_KEY = "auto_open_meeting_enabled"
 # 周会自动催更的运行时开关（每周五/周日自动在核心群催更）
 AUTO_REMINDER_ENABLED_KEY = "auto_reminder_enabled"
+# 本实例飞书机器人应用凭证（在「系统设置 › 其他设置」配置，DB 优先于 .env，实现各实例独立机器人）
+FEISHU_APP_ID_KEY = "feishu_app_id"
+FEISHU_APP_SECRET_KEY = "feishu_app_secret"
 # 周会汇报页：汇报顺序（部门级 + 个人级）与计时设置
 MEETING_REPORT_ORDER_KEY = "meeting_report_order"
 MEETING_TOTAL_MINUTES_KEY = "meeting_total_minutes"
@@ -106,6 +109,26 @@ class SettingsService:
     def set_auto_reminder_enabled(db: Session, enabled: bool) -> None:
         """设置周会自动催更的运行时开关（每周五/周日自动催更）。"""
         SettingsService.set_setting(db, AUTO_REMINDER_ENABLED_KEY, "true" if enabled else "false")
+
+    @staticmethod
+    def get_feishu_app_id(db: Session) -> str:
+        """本实例飞书 App ID：DB 优先，空则回退 .env。"""
+        v = (SettingsService.get_setting(db, FEISHU_APP_ID_KEY, "") or "").strip()
+        return v or get_settings().FEISHU_APP_ID
+
+    @staticmethod
+    def is_feishu_secret_set(db: Session) -> bool:
+        """是否已配置 App Secret（DB 或 .env 任一非空）。不回传密钥本身。"""
+        v = (SettingsService.get_setting(db, FEISHU_APP_SECRET_KEY, "") or "").strip()
+        return bool(v or get_settings().FEISHU_APP_SECRET)
+
+    @staticmethod
+    def set_feishu_app(db: Session, app_id: str, app_secret: Optional[str] = None) -> None:
+        """保存本实例飞书应用凭证。app_id 总是写入（空=清空，回退 .env）；
+        app_secret 仅在提供且非空时更新（留空表示保持现有密钥）。"""
+        SettingsService.set_setting(db, FEISHU_APP_ID_KEY, (app_id or "").strip())
+        if app_secret is not None and app_secret.strip():
+            SettingsService.set_setting(db, FEISHU_APP_SECRET_KEY, app_secret.strip())
 
     # ---------- 周会汇报页：顺序 + 计时设置 ----------
 

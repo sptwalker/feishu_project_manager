@@ -14,6 +14,7 @@ from backend.schemas.setting import (
     MeetingReportOrderResponse, MeetingReportOrderUpdate,
     MeetingTimerResponse, MeetingTimerUpdate,
     FollowupAutoResponse, FollowupAutoUpdate,
+    FeishuAppResponse, FeishuAppUpdate,
 )
 from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
 from backend.services.project_followup_service import (
@@ -199,3 +200,29 @@ def set_followup_auto(
     """保存自动定时催办配置（仅管理员；改后立即生效无需重启）"""
     merged = SettingsService.set_followup_auto(db, payload.model_dump())
     return FollowupAutoResponse(**merged)
+
+
+@router.get("/settings/feishu-app", response_model=FeishuAppResponse)
+def get_feishu_app(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """获取本实例飞书应用配置（仅管理员；只返回 App ID 与「是否已配密钥」，不回传密钥）"""
+    return FeishuAppResponse(
+        app_id=SettingsService.get_feishu_app_id(db),
+        secret_set=SettingsService.is_feishu_secret_set(db),
+    )
+
+
+@router.put("/settings/feishu-app", response_model=FeishuAppResponse)
+def set_feishu_app(
+    payload: FeishuAppUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """保存本实例飞书应用凭证（仅管理员；App Secret 留空则保持原值。改后立即生效无需重启）"""
+    SettingsService.set_feishu_app(db, payload.app_id, payload.app_secret)
+    return FeishuAppResponse(
+        app_id=SettingsService.get_feishu_app_id(db),
+        secret_set=SettingsService.is_feishu_secret_set(db),
+    )

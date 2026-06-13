@@ -119,3 +119,15 @@ class FollowupAutoUpdate(BaseModel):
     time: str = Field("14:00")
     interval_days: int = Field(7, ge=3, le=15)
     follow: list[str] = Field(default_factory=list)
+
+
+class FeishuAppResponse(BaseModel):
+    """本实例飞书机器人应用配置（不回传密钥）"""
+    app_id: str = Field("", description="飞书 App ID")
+    secret_set: bool = Field(False, description="是否已配置 App Secret")
+
+
+class FeishuAppUpdate(BaseModel):
+    """更新飞书机器人应用凭证"""
+    app_id: str = Field("", description="飞书 App ID（空则回退 .env）")
+    app_secret: Optional[str] = Field(None, description="App Secret；留空则保持现有密钥")

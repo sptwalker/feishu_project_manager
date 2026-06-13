@@ -149,6 +149,12 @@ export const settingsApi = {
   setMeetingTimer(payload: MeetingTimerSettings) {
     return api.put<MeetingTimerSettings>('/settings/meeting-timer', payload).then((r) => r.data)
   },
+  getFeishuApp() {
+    return api.get<{ app_id: string; secret_set: boolean }>('/settings/feishu-app').then((r) => r.data)
+  },
+  setFeishuApp(payload: { app_id: string; app_secret?: string | null }) {
+    return api.put<{ app_id: string; secret_set: boolean }>('/settings/feishu-app', payload).then((r) => r.data)
+  },
 }
 
 export const meetingApi = {
