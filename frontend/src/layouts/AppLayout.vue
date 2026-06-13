@@ -17,12 +17,6 @@
         <RouterLink to="/settings" class="nav-item" active-class="active" :title="collapsed ? '系统设置' : undefined">
           <el-icon><Setting /></el-icon><span>系统设置</span>
         </RouterLink>
-        <div class="nav-item disabled" :title="collapsed ? '风险' : undefined">
-          <el-icon><Warning /></el-icon><span>风险</span>
-        </div>
-        <div class="nav-item disabled" :title="collapsed ? '报表' : undefined">
-          <el-icon><DataAnalysis /></el-icon><span>报表</span>
-        </div>
       </nav>
 
       <div class="nav-foot">

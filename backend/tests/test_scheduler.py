@@ -28,6 +28,7 @@ def test_scheduler_starts_when_enabled(monkeypatch):
             "overdue_task_reminders", "due_soon_reminders",
             "milestone_reminders", "progress_followups", "weekly_report",
             "project_followups",
+            "followup_auto_tick",
         }
         sched.shutdown_scheduler()
 

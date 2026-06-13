@@ -226,3 +226,22 @@ export interface TimerState {
   offline_seconds?: number | null
   release_seconds?: number | null
 }
+
+export interface AtRiskOwner {
+  owner: string
+  resolvable: boolean
+  stalled: { name: string }[]
+  pending: { name: string }[]
+  stalled_count: number
+  pending_count: number
+}
+
+export interface FollowupAuto {
+  enabled: boolean
+  mode: 'weekly' | 'fixed_days' | 'follow_meeting'
+  weekday: number
+  time: string
+  interval_days: number
+  follow: string[]
+  last_run_date?: string
+}

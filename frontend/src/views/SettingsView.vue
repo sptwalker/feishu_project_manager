@@ -11,6 +11,12 @@
       <el-tab-pane label="部门管理" name="departments">
         <DepartmentManagement />
       </el-tab-pane>
+      <el-tab-pane label="周会设置" name="meeting">
+        <MeetingSettings />
+      </el-tab-pane>
+      <el-tab-pane label="催办设置" name="followup">
+        <FollowupSettings />
+      </el-tab-pane>
       <el-tab-pane label="AI API设置" name="ai">
         <div class="empty-tab">
           <el-empty description="AI API设置功能开发中" />
@@ -35,6 +41,8 @@
 import { ref } from 'vue'
 import UserManagement from '@/components/UserManagement.vue'
 import DepartmentManagement from '@/components/DepartmentManagement.vue'
+import MeetingSettings from '@/components/MeetingSettings.vue'
+import FollowupSettings from '@/components/FollowupSettings.vue'
 import OtherSettings from '@/components/OtherSettings.vue'
 import SystemLog from '@/components/SystemLog.vue'
 

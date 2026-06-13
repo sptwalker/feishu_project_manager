@@ -28,6 +28,17 @@ MEETING_TOTAL_MINUTES_KEY = "meeting_total_minutes"
 MEETING_PERSON_THRESHOLD_MINUTES_KEY = "meeting_person_threshold_minutes"
 DEFAULT_MEETING_TOTAL_MINUTES = 120
 DEFAULT_MEETING_PERSON_THRESHOLD_MINUTES = 5
+# 自动定时催办配置（JSON）：按负责人私聊催办的定时设置
+FOLLOWUP_AUTO_KEY = "followup_auto"
+DEFAULT_FOLLOWUP_AUTO = {
+    "enabled": False,
+    "mode": "weekly",          # weekly | fixed_days | follow_meeting
+    "weekday": 4,              # 0=周一..6=周日（weekly 模式）
+    "time": "14:00",          # HH:mm（weekly / fixed_days）
+    "interval_days": 7,        # 3-15（fixed_days 模式）
+    "follow": ["one"],        # follow_meeting 模式：one=周五① two=周日②
+    "last_run_date": "",      # 防当天重复（YYYY-MM-DD）
+}
 
 # 默认基准：2026-06-01（周一）= 第 22 次
 DEFAULT_BASE_MONDAY = "2026-06-01"
@@ -142,6 +153,32 @@ class SettingsService:
     @staticmethod
     def set_meeting_person_threshold_minutes(db: Session, minutes: int) -> None:
         SettingsService.set_setting(db, MEETING_PERSON_THRESHOLD_MINUTES_KEY, str(minutes))
+
+    # ---------- 自动定时催办（按负责人私聊）配置 ----------
+
+    @staticmethod
+    def get_followup_auto(db: Session) -> dict:
+        """读取自动定时催办配置；未设置/损坏返回默认（禁用）。"""
+        raw = SettingsService.get_setting(db, FOLLOWUP_AUTO_KEY, "")
+        cfg = dict(DEFAULT_FOLLOWUP_AUTO)
+        if raw:
+            try:
+                data = json.loads(raw)
+                if isinstance(data, dict):
+                    cfg.update({k: data[k] for k in DEFAULT_FOLLOWUP_AUTO if k in data})
+            except (ValueError, TypeError):
+                pass
+        return cfg
+
+    @staticmethod
+    def set_followup_auto(db: Session, cfg: dict) -> dict:
+        """保存自动定时催办配置（合并进默认，保留 last_run_date 若未传）。"""
+        merged = dict(DEFAULT_FOLLOWUP_AUTO)
+        current = SettingsService.get_followup_auto(db)
+        merged.update(current)
+        merged.update({k: cfg[k] for k in DEFAULT_FOLLOWUP_AUTO if k in cfg})
+        SettingsService.set_setting(db, FOLLOWUP_AUTO_KEY, json.dumps(merged, ensure_ascii=False))
+        return merged
 
     @staticmethod
     def _base(db: Session) -> tuple[date, int]:

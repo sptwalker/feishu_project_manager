@@ -11,6 +11,7 @@ from backend.services.report_service import ReportService
 from backend.services.project_followup_service import ProjectFollowupService
 from backend.services.auto_meeting_service import AutoMeetingService
 from backend.services.meeting_reminder_service import MeetingReminderService
+from backend.services.followup_auto_service import FollowupAutoService
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +60,34 @@ async def job_auto_open_meeting() -> int:
 
 
 async def job_meeting_reminder_one() -> int:
-    """周会自动催更①（每周五）：进展更新条数排名前三"""
-    return await _run_with_session(MeetingReminderService.send_reminder_one, "meeting_reminder_one")
+    """周会自动催更①（每周五）：进展更新条数排名前三 + （如配置）跟随周会的个人催办"""
+    return await _run_with_session(
+        lambda db: _meeting_reminder_with_follow(db, "one"), "meeting_reminder_one")
 
 
 async def job_meeting_reminder_two() -> int:
-    """周会自动催更②（每周日）：待更新数量排名前三"""
-    return await _run_with_session(MeetingReminderService.send_reminder_two, "meeting_reminder_two")
+    """周会自动催更②（每周日）：待更新数量排名前三 + （如配置）跟随周会的个人催办"""
+    return await _run_with_session(
+        lambda db: _meeting_reminder_with_follow(db, "two"), "meeting_reminder_two")
+
+
+async def _meeting_reminder_with_follow(db, which: str) -> int:
+    """先发周会群催更，再按「跟随周会催更」配置向负责人私聊催办（仅周会进行中）。"""
+    from backend.services.settings_service import SettingsService
+    from backend.services.project_followup_service import ProjectFollowupService
+    if which == "one":
+        sent = await MeetingReminderService.send_reminder_one(db)
+    else:
+        sent = await MeetingReminderService.send_reminder_two(db)
+    extra = 0
+    cfg = SettingsService.get_followup_auto(db)
+    if (cfg.get("enabled") and cfg.get("mode") == "follow_meeting"
+            and which in (cfg.get("follow") or [])
+            and SettingsService.get_active_meeting_record(db) is not None):
+        extra = await ProjectFollowupService.run_auto_followup_all(db, auto=True)
+    return (1 if sent else 0) + extra
+
+
+async def job_followup_auto_tick() -> int:
+    """每分钟检查自动定时催办配置（weekly/fixed_days），到点则向负责人私聊催办"""
+    return await _run_with_session(FollowupAutoService.tick, "followup_auto_tick")

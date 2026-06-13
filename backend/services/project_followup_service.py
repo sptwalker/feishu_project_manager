@@ -25,6 +25,7 @@ from backend.models.user import User
 from backend.core.config import get_settings
 from backend.services.settings_service import SettingsService
 from backend.services.notification_service import NotificationService
+from backend.services.operation_log_service import OperationLogService
 
 logger = logging.getLogger(__name__)
 
@@ -198,3 +199,116 @@ class ProjectFollowupService:
 
         ok = await NotificationService.notify_project_followups(chat_id, items)
         return 1 if ok else 0
+
+    # ---------- 按负责人聚合 + 私聊催办（手动/自动） ----------
+
+    @staticmethod
+    def _reason_texts(entry: Dict[str, Any]) -> List[str]:
+        """把一条 at-risk 项目转为催办原因文案列表（用于 DM 正文）。"""
+        reasons: List[str] = []
+        for st in entry.get("pending_list") or []:
+            reasons.append(f"有未处理的{st}事项")
+        if entry.get("no_progress"):
+            reasons.append("暂无任何进展记录")
+        elif entry.get("stall_days") is not None and entry["stall_days"] >= 0:
+            # 仅当达到停滞阈值时 find_at_risk_projects 才会把它列为停滞原因
+            if any("停滞" in r for r in (entry.get("reasons") or [])):
+                reasons.append(f"超过{entry['stall_days']}天没有反馈进展信息")
+        return reasons
+
+    @staticmethod
+    def group_at_risk_by_owner(
+        db: Session,
+        stall_days_threshold: Optional[int] = None,
+        now: Optional[datetime] = None,
+    ) -> List[Dict[str, Any]]:
+        """按负责人聚合需催办项目。返回每负责人：
+        {owner, resolvable, stalled:[{name}], pending:[{name}],
+         projects:[{name, reason}], stalled_count, pending_count}
+        （projects 每项目一行、合并原因，用于 DM；stalled/pending 为两个展示维度）"""
+        at_risk = ProjectFollowupService.find_at_risk_projects(db, stall_days_threshold, now)
+        groups: Dict[str, Dict[str, Any]] = {}
+        for entry in at_risk:
+            owner = (entry.get("owner_name") or "").strip() or "未指定"
+            g = groups.setdefault(owner, {
+                "owner": owner, "stalled": [], "pending": [], "projects": [],
+            })
+            name = entry["project"].name
+            is_stalled = entry.get("no_progress") or any(
+                "停滞" in r for r in (entry.get("reasons") or [])
+            )
+            is_pending = bool(entry.get("pending_list"))
+            if is_stalled:
+                g["stalled"].append({"name": name})
+            if is_pending:
+                g["pending"].append({"name": name})
+            reason = "；".join(ProjectFollowupService._reason_texts(entry)) or "需要关注"
+            g["projects"].append({"name": name, "reason": reason})
+
+        result: List[Dict[str, Any]] = []
+        for owner, g in groups.items():
+            feishu_id = ProjectFollowupService.resolve_owner_feishu_id(db, owner)
+            result.append({
+                **g,
+                "resolvable": bool(feishu_id),
+                "stalled_count": len(g["stalled"]),
+                "pending_count": len(g["pending"]),
+            })
+        # 按待办+停滞总数降序，便于优先催办
+        result.sort(key=lambda x: -(x["stalled_count"] + x["pending_count"]))
+        return result
+
+    @staticmethod
+    async def send_owner_followup(
+        db: Session,
+        owner_name: str,
+        *,
+        auto: bool = False,
+        operator: Optional[User] = None,
+        now: Optional[datetime] = None,
+    ) -> Dict[str, Any]:
+        """向单个负责人私聊催办（实时重算其 at-risk 项目）。返回 {sent, reason?}。
+        operator：手动催办的触发管理员（写日志用）；auto=True 时操作人记为系统。"""
+        owner = (owner_name or "").strip()
+        if not owner:
+            return {"sent": False, "reason": "负责人为空"}
+        groups = ProjectFollowupService.group_at_risk_by_owner(db, now=now)
+        g = next((x for x in groups if x["owner"] == owner), None)
+        if not g or not g["projects"]:
+            return {"sent": False, "reason": "无需催办"}
+        feishu_id = ProjectFollowupService.resolve_owner_feishu_id(db, owner)
+        if not feishu_id:
+            return {"sent": False, "reason": "未关联飞书账号"}
+        ok = await NotificationService.notify_owner_followup(
+            feishu_id, owner, g["projects"], auto=auto,
+        )
+        if ok:
+            # 记录催办发送日志：手动=触发管理员，自动=系统；每催一个负责人一条
+            n = len(g["projects"])
+            kind = "自动催办" if auto else "手动催办"
+            OperationLogService.log(
+                db,
+                user=None if auto else operator,
+                user_name="系统" if auto else None,
+                action="followup",
+                target=owner,
+                description=f"向{owner}发送了{kind}（{n}个项目）",
+            )
+        return {"sent": bool(ok), "reason": None if ok else "发送失败或通知未开启"}
+
+    @staticmethod
+    async def run_auto_followup_all(db: Session, *, auto: bool = True,
+                                    operator: Optional[User] = None,
+                                    now: Optional[datetime] = None) -> int:
+        """遍历可解析的负责人逐个私聊催办，返回成功条数（自动定时催办用）。"""
+        groups = ProjectFollowupService.group_at_risk_by_owner(db, now=now)
+        sent = 0
+        for g in groups:
+            if not g["resolvable"]:
+                continue
+            res = await ProjectFollowupService.send_owner_followup(
+                db, g["owner"], auto=auto, operator=operator, now=now)
+            if res.get("sent"):
+                sent += 1
+        return sent
+

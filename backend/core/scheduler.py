@@ -60,6 +60,14 @@ def _build_scheduler() -> AsyncIOScheduler:
         _job_event_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED
     )
 
+    # 自动定时催办 tick：无条件注册（只要调度器在跑就存在），每分钟检查 DB 配置是否到点。
+    # 运行时由 followup_auto.enabled + due_now 守卫控制是否真正发送，改配置即时生效无需重启。
+    scheduler.add_job(
+        scheduler_jobs.job_followup_auto_tick,
+        _cron(minute="*"),
+        id="followup_auto_tick", replace_existing=True,
+    )
+
     # 常规提醒/跟催/周报作业：受 SCHEDULER_ENABLED 控制
     if settings.SCHEDULER_ENABLED:
         scheduler.add_job(

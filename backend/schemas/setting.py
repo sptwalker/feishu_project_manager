@@ -98,3 +98,24 @@ class MeetingTimerUpdate(BaseModel):
     """更新周会计时设置"""
     total_minutes: int = Field(..., ge=1, le=600)
     person_threshold_minutes: int = Field(..., ge=1, le=120)
+
+
+class FollowupAutoResponse(BaseModel):
+    """自动定时催办配置"""
+    enabled: bool = Field(False, description="是否启用自动定时催办")
+    mode: str = Field("weekly", description="weekly | fixed_days | follow_meeting")
+    weekday: int = Field(4, ge=0, le=6, description="星期(0=周一..6=周日)，weekly 用")
+    time: str = Field("14:00", description="HH:mm，weekly/fixed_days 用")
+    interval_days: int = Field(7, ge=3, le=15, description="固定间隔天数，fixed_days 用")
+    follow: list[str] = Field(default_factory=list, description="follow_meeting：one=周五① two=周日②")
+    last_run_date: str = Field("", description="上次执行日期(YYYY-MM-DD)")
+
+
+class FollowupAutoUpdate(BaseModel):
+    """更新自动定时催办配置"""
+    enabled: bool = Field(False)
+    mode: str = Field("weekly")
+    weekday: int = Field(4, ge=0, le=6)
+    time: str = Field("14:00")
+    interval_days: int = Field(7, ge=3, le=15)
+    follow: list[str] = Field(default_factory=list)

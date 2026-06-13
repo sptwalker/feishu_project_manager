@@ -70,7 +70,10 @@
       </section>
 
       <section class="feed feed-pending">
-        <h3 class="feed-title">待处理事项信息</h3>
+        <div class="feed-head">
+          <h3 class="feed-title">待处理事项信息</h3>
+          <el-button v-if="isAdmin" type="primary" size="small" :icon="Bell" @click="manualFollowupVisible = true">立即催办</el-button>
+        </div>
         <div class="feed-viewport">
           <ul v-if="pendingFeed.length" class="feed-track">
             <li
@@ -157,13 +160,16 @@
       :project="detailProject"
       @updated="onDetailUpdated"
     />
+
+    <!-- 立即催办弹窗（与催办设置复用同一组件） -->
+    <ManualFollowupDialog v-model="manualFollowupVisible" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Grid, List } from '@element-plus/icons-vue'
+import { Grid, List, Bell } from '@element-plus/icons-vue'
 import { projectApi, userApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, User, Department } from '@/types'
 import {
@@ -172,16 +178,21 @@ import {
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
 import ProjectDetailDrawer from '@/components/ProjectDetailDrawer.vue'
+import ManualFollowupDialog from '@/components/ManualFollowupDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const allProjects = ref<Project[]>([])
 const loading = ref(false)
 const viewMode = ref<'grid' | 'list'>('grid')
 
+/* 立即催办弹窗（仅管理员可见入口） */
+const manualFollowupVisible = ref(false)
+
 /* 首页副标题动态统计：部门数 / 项目经理(含管理员)数 / 最新登录用户 */
 const users = ref<User[]>([])
 const departments = ref<Department[]>([])
 const auth = useAuthStore()
+const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const subtitle = computed(() => {
   const deptCount = departments.value.length
   const managerCount = users.value.filter(
@@ -535,6 +546,8 @@ onMounted(() => {
 .feed-latest { background: #EAF2FE; }   /* 淡蓝 */
 .feed-pending { background: #E6F7F7; }   /* 淡青 */
 .feed-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); color: var(--c-ink-2); }
+.feed-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
+.feed-head .feed-title { margin-bottom: 0; }
 .feed-viewport { height: 200px; overflow: hidden; position: relative; }
 .feed-track {
   margin: 0; padding: 0; list-style: none;

@@ -13,6 +13,7 @@ from backend.schemas.setting import (
     AutoReminderResponse, AutoReminderUpdate,
     MeetingReportOrderResponse, MeetingReportOrderUpdate,
     MeetingTimerResponse, MeetingTimerUpdate,
+    FollowupAutoResponse, FollowupAutoUpdate,
 )
 from backend.services.settings_service import SettingsService, FEISHU_CORE_GROUP_CHAT_ID_KEY
 from backend.services.project_followup_service import (
@@ -178,3 +179,23 @@ def set_meeting_timer(
         total_minutes=SettingsService.get_meeting_total_minutes(db),
         person_threshold_minutes=SettingsService.get_meeting_person_threshold_minutes(db),
     )
+
+
+@router.get("/settings/followup-auto", response_model=FollowupAutoResponse)
+def get_followup_auto(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取自动定时催办配置（所有登录用户可读）"""
+    return FollowupAutoResponse(**SettingsService.get_followup_auto(db))
+
+
+@router.put("/settings/followup-auto", response_model=FollowupAutoResponse)
+def set_followup_auto(
+    payload: FollowupAutoUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """保存自动定时催办配置（仅管理员；改后立即生效无需重启）"""
+    merged = SettingsService.set_followup_auto(db, payload.model_dump())
+    return FollowupAutoResponse(**merged)

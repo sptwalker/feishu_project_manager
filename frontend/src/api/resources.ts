@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto } from '@/types'
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {
@@ -194,5 +194,21 @@ export const timerApi = {
 export const logApi = {
   list(params: { start?: string; end?: string; limit?: number }) {
     return api.get<OperationLog[]>('/operation-logs', { params }).then((r) => r.data)
+  },
+}
+
+export const followupApi = {
+  atRiskOwners() {
+    return api.get<AtRiskOwner[]>('/followup/at-risk-owners').then((r) => r.data)
+  },
+  notifyOwner(owner_name: string) {
+    return api.post<{ sent: boolean; reason?: string | null }>(
+      '/followup/notify-owner', { owner_name }).then((r) => r.data)
+  },
+  getAuto() {
+    return api.get<FollowupAuto>('/settings/followup-auto').then((r) => r.data)
+  },
+  setAuto(cfg: FollowupAuto) {
+    return api.put<FollowupAuto>('/settings/followup-auto', cfg).then((r) => r.data)
   },
 }

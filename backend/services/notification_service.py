@@ -124,3 +124,16 @@ class NotificationService:
         """周会自动催更通知（发送到核心组群）。"""
         card = feishu_cards.build_meeting_reminder_card(session, body)
         return await NotificationService._send_card(chat_id, card, receive_id_type="chat_id")
+
+    @staticmethod
+    async def notify_owner_followup(
+        open_id: Optional[str],
+        owner: str,
+        project_lines: List[Dict[str, Any]],
+        auto: bool = False,
+    ) -> bool:
+        """按负责人私聊催办（DM，receive_id_type=open_id）。"""
+        if not project_lines:
+            return False
+        card = feishu_cards.build_owner_followup_card(owner, project_lines, auto)
+        return await NotificationService._send_card(open_id, card, receive_id_type="open_id")

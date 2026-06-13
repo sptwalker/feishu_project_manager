@@ -177,3 +177,15 @@ def build_meeting_reminder_card(session: int, body: str) -> Dict[str, Any]:
     """周会自动催更卡片（发核心组群）。标题同开启卡片，正文为催更文案。"""
     return build_notification_card(f"周会模式已开启 · 第 {session} 次", [body], HEADER_GREEN)
 
+
+def build_owner_followup_card(owner: str, project_lines: List[Dict[str, str]],
+                              auto: bool = False) -> Dict[str, Any]:
+    """按负责人私聊催办卡片（DM）。project_lines: [{name, reason}]。
+    auto 决定末句为「自动催办」还是「手动催办」。"""
+    lines = [f"{owner}，你好！你目前在周会项目管理系统中有以下待处理项目需要尽快回复进展信息："]
+    for p in project_lines:
+        lines.append(f"**【{p.get('name', '')}】**（催办原因：{p.get('reason', '')}）")
+    tail = "以上信息为自动催办通知，请您重视并及时处理！" if auto else "以上信息为手动催办通知，请您重视并及时处理！"
+    lines.append(tail)
+    return build_notification_card("周会待处理项目催办通知", lines, HEADER_ORANGE)
+
