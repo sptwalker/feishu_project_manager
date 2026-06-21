@@ -51,8 +51,11 @@ def set_meeting_count(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """校准周会次数（仅管理员）：以校准目标周一为基准重设"""
-    SettingsService.set_count(db, payload.count)
+    """校准周会次数（仅管理员）：纠正最近一次周会的次数"""
+    try:
+        SettingsService.set_count(db, payload.count)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return SettingsService.get_meeting_state(db)
 
 

@@ -347,15 +347,33 @@ class SettingsService:
 
     @staticmethod
     def set_count(db: Session, count: int, today: Optional[date] = None) -> None:
-        """校准周会次数基准。进行中的周会直接改其 session；否则把 base_count 设为锚点。
-        （前端在 active 期间禁用校准，避免改动正在记录的周会次数导致进展标签错位。）"""
-        active_rec = SettingsService.get_active_meeting_record(db)
-        if active_rec:
-            active_rec.session = count
-            try:
-                db.commit()
-            except Exception:
-                db.rollback()
-                raise
-        else:
+        """校准周会次数。
+
+        meeting_records 是次数真相源（get_meeting_state 取 max(session)）：
+        - 进行中的周会 → 直接改其 session；
+        - 否则 → 改“最近一次周会记录”的 session（即当前次数）；
+        - 表为空（从未开会）→ 写 base_count 作为初始锚点。
+        旧实现无进行中周会时只写 base_count，但有记录时 base 被忽略 → 校准静默失效。
+        session 唯一：目标次数被其它记录占用时抛 ValueError（不静默删历史）。"""
+        target = (
+            SettingsService.get_active_meeting_record(db)
+            or db.query(MeetingRecord).order_by(MeetingRecord.session.desc()).first()
+        )
+        if target is None:
+            # 表为空：首次开会前，写 base 锚点（get_meeting_state 会回退读它）
             SettingsService.set_setting(db, MEETING_BASE_COUNT, str(count))
+            return
+        if count == target.session:
+            return
+        conflict = db.query(MeetingRecord).filter(
+            MeetingRecord.session == count, MeetingRecord.id != target.id,
+        ).first()
+        if conflict is not None:
+            raise ValueError(f"次数 {count} 已被其它周会记录占用，请换一个次数")
+        target.session = count
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+

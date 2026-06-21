@@ -32,17 +32,17 @@
         <div class="calibrate">
           <span class="ilabel">校准次数</span>
           <el-input-number
-            v-model="editCount" :min="1" :disabled="!isAdmin || state.active" controls-position="right" style="width: 140px"
+            v-model="editCount" :min="1" :disabled="!isAdmin || state.this_week_recorded" controls-position="right" style="width: 140px"
           />
-          <el-button type="primary" :loading="saving" :disabled="!isAdmin || state.active || editCount === state.calibration_count" @click="save">
+          <el-button type="primary" :loading="saving" :disabled="!isAdmin || state.this_week_recorded || editCount === state.this_week_count" @click="save">
             保存
           </el-button>
           <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
-          <span v-else-if="state.active" class="muted hint">（周会进行中，结束后可校准）</span>
+          <span v-else-if="state.this_week_recorded" class="muted hint">（周会进行中，结束后可校准）</span>
         </div>
         <p class="tip muted">
           说明：周会周期按"上次周会结束日期 + {{ state.new_cycle_days ?? 3 }} 天"递进——上轮周会结束满 {{ state.new_cycle_days ?? 3 }} 天后即可开启新一轮周会周期。
-          修改"校准次数"将把下次开启的周会设为该次数。
+          "校准次数"用于纠正<b>当前（最近一次）周会的次数</b>；下一次周会据此递推。
         </p>
       </template>
     </section>
@@ -198,10 +198,11 @@ async function save() {
   saving.value = true
   try {
     await meeting.setCount(editCount.value)
-    editCount.value = meeting.state?.calibration_count ?? editCount.value
+    editCount.value = meeting.state?.this_week_count ?? editCount.value
     ElMessage.success('周会次数已校准')
-  } catch {
-    ElMessage.error('保存失败（需要管理员权限）')
+  } catch (err: unknown) {
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '保存失败（需要管理员权限）')
   } finally {
     saving.value = false
   }
@@ -211,7 +212,7 @@ async function load() {
   loading.value = true
   try {
     await meeting.load()
-    editCount.value = meeting.state?.calibration_count ?? 0
+    editCount.value = meeting.state?.this_week_count ?? 0
   } finally {
     loading.value = false
   }
