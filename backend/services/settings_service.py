@@ -337,8 +337,9 @@ class SettingsService:
         can_open_new_cycle = (active_rec is None) and (
             days_since_last is not None and days_since_last >= new_cycle_days
         )
-        # 下次开启次数：进入新周期 +1，否则重开当前次（不跳号）
-        next_count = (last["session"] + 1) if can_open_new_cycle else current_count
+        # 下次开启次数：上一次"真正召开"的会已结束 → 下一次恒为当前次数 +1（递进）。
+        # 冷却期(can_open_new_cycle)只决定"何时能开"，不影响"开第几次"。
+        next_count = current_count + 1
 
         tw_monday = monday_of(today)
 

@@ -86,13 +86,13 @@ def test_meeting_state_event_driven_cycle(db_session):
                                  status="archived", recorder="x", content_snapshot=[]))
     db_session.commit()
 
-    # 今天周三 2026-06-03（间隔2天 < 3）-> 不可开新周期，不跳号
+    # 今天周三 2026-06-03（间隔2天 < 3）-> 不可开新周期；但次数仍递进(冷却只决定何时能开)
     st = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 3))
     assert st["this_week_count"] == 22
     assert st["this_week_recorded"] is False        # 无 active 记录
     assert st["last_meeting"] == {"date": "2026-06-01", "count": 22}
     assert st["can_open_new_cycle"] is False
-    assert st["next_count"] == 22
+    assert st["next_count"] == 23
 
     # 今天周四 2026-06-04（间隔3天）-> 可开新周期，next=23
     st2 = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 4))

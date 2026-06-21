@@ -77,3 +77,13 @@ def test_short_meeting_not_held(db_session):
     s = SettingsService.get_meeting_state(db_session, today=date(2026, 9, 12))
     assert s["last_meeting"]["count"] == 29
     assert s["last_meeting"]["date"] == "2026-09-04"
+
+
+def test_next_count_increments_even_within_cooldown(db_session):
+    """真正召开过 #25(6/21) 后，冷却期内下一次仍递进为 #26（冷却只决定何时能开）。"""
+    _rec(db_session, 25, date(2026, 6, 21), ended_at=datetime(2026, 6, 21, 15, 30),
+         started_at=datetime(2026, 6, 21, 14, 0))
+    s = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 22))
+    assert s["last_meeting"]["count"] == 25          # 上一次仍是 25
+    assert s["can_open_new_cycle"] is False          # 6/21+3=6/24，冷却未过
+    assert s["next_count"] == 26                     # 下一次递进为 26

@@ -57,6 +57,12 @@ class AutoMeetingService:
             logger.info("auto_open_meeting 跳过：周会已处于开启状态")
             return False
 
+        # 3b. 冷却期未过则不开新周期（上次"真正召开"的会结束需满 NEW_CYCLE_DAYS 天）
+        if not state["can_open_new_cycle"]:
+            logger.info("auto_open_meeting 跳过：距上次周会结束不足 %s 天（冷却期内）",
+                        state.get("new_cycle_days"))
+            return False
+
         # 4. 计算新周期次数与会议日期（下周一）
         session = state["next_count"]
         next_monday = today + timedelta(days=(7 - today.weekday()))  # 周四 -> 下周一

@@ -49,12 +49,13 @@ def test_can_open_new_cycle_after_3_days(db_session):
 
 
 def test_cannot_open_within_3_days(db_session):
-    """会议日期周一(6-01)，今天周二(6-02)，间隔1天 -> 不可开新周期，next_count 不跳号"""
+    """会议日期周一(6-01)，今天周二(6-02)，间隔1天 -> 不可开新周期；
+    但下一次次数仍递进(冷却只决定何时能开，不影响开第几次)"""
     _mk_record(db_session, 22, date(2026, 6, 1))
     st = SettingsService.get_meeting_state(db_session, today=date(2026, 6, 2))
     assert st["can_open_new_cycle"] is False
     assert st["days_since_last"] == 1
-    assert st["next_count"] == 22
+    assert st["next_count"] == 23
 
 
 def test_empty_table_fallback_to_base(db_session):
@@ -127,6 +128,18 @@ def test_auto_open_creates_meeting_and_notifies(db_session, monkeypatch):
 
 
 # ---------- 运行时开关（UI 可控） ----------
+
+def test_auto_open_skips_within_cooldown(db_session, monkeypatch):
+    """冷却期内（上次会议<3天）不自动开新周期，不建 active 记录。"""
+    monkeypatch.setattr(auto_meeting_service, "_is_workday_safe", lambda d: True)
+    SettingsService.set_auto_open_meeting_enabled(db_session, True)
+    _mk_record(db_session, 22, date(2026, 6, 1))   # 上次 6-01
+    # today=周二 6-02，间隔1天 < 3 → 冷却期内
+    result = asyncio.run(
+        AutoMeetingService.auto_open_if_due(db_session, today=date(2026, 6, 2))
+    )
+    assert result is False
+    assert db_session.query(MeetingRecord).filter(MeetingRecord.status == "active").count() == 0
 
 def test_auto_open_switch_default_disabled(db_session):
     """运行时开关默认关闭"""
