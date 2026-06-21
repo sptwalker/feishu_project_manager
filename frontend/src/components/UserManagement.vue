@@ -1,6 +1,9 @@
 <template>
   <div class="user-management">
     <div class="toolbar">
+      <el-select v-model="filterStatus" placeholder="全部状态" clearable style="width: 150px; margin-right: var(--sp-2)" @change="load">
+        <el-option v-for="s in USER_STATUS_OPTIONS" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
       <el-select v-model="filterRole" placeholder="全部角色" clearable style="width: 160px" @change="load">
         <el-option v-for="r in ROLE_OPTIONS" :key="r.value" :label="r.label" :value="r.value" />
       </el-select>
@@ -34,15 +37,30 @@
             <span class="role-badge" :class="'role-' + row.role">{{ roleText(row.role) }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <span class="status-badge" :class="'status-' + (row.status || 'active')">{{ statusText(row.status) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="feishu_user_id" label="飞书ID" min-width="150" show-overflow-tooltip />
         <el-table-column label="最后登录" width="170">
           <template #default="{ row }">
             <span class="muted">{{ fmtDate(row.last_login_at) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" align="center">
+        <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
-            <el-button v-if="isAdmin" size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
+            <template v-if="isAdmin">
+              <el-button
+                v-if="row.status !== 'active'" size="small" text type="success"
+                :disabled="row.id === auth.currentUser?.id" @click="setStatus(row, 'active')"
+              >{{ row.status === 'pending' ? '通过' : '启用' }}</el-button>
+              <el-button
+                v-if="row.status === 'active'" size="small" text type="danger"
+                :disabled="row.id === auth.currentUser?.id" @click="setStatus(row, 'disabled')"
+              >禁用</el-button>
+              <el-button size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
+            </template>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -88,16 +106,18 @@ import { ElMessage } from 'element-plus'
 import { userApi, departmentApi } from '@/api/resources'
 import type { User, Department } from '@/types'
 import { useAuthStore } from '@/stores/auth'
-import { roleLabel, ROLE_OPTIONS } from '@/utils/labels'
+import { roleLabel, ROLE_OPTIONS, userStatusLabel, USER_STATUS_OPTIONS } from '@/utils/labels'
 
 const auth = useAuthStore()
 const users = ref<User[]>([])
 const departments = ref<Department[]>([])
 const loading = ref(false)
 const filterRole = ref<string>('')
+const filterStatus = ref<string>('')
 
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const roleText = (r: string) => roleLabel[r] ?? r
+const statusText = (s?: string) => userStatusLabel[s || 'active'] ?? (s || 'active')
 const initial = (name: string) => (name ? name.slice(0, 1) : '?')
 
 function getDepartmentColor(deptName?: string | null) {
@@ -116,11 +136,26 @@ async function load() {
   try {
     const params: Record<string, unknown> = { limit: 200 }
     if (filterRole.value) params.role = filterRole.value
-    users.value = await userApi.list(params)
+    if (filterStatus.value) params.status = filterStatus.value
+    let list = await userApi.list(params)
+    // 前端按状态筛选（后端 /users 暂未支持 status 过滤），并把待审批用户置顶提醒
+    if (filterStatus.value) list = list.filter((u) => (u.status || 'active') === filterStatus.value)
+    list.sort((a, b) => (a.status === 'pending' ? -1 : 0) - (b.status === 'pending' ? -1 : 0))
+    users.value = list
   } catch {
     ElMessage.error('加载用户失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function setStatus(u: User, status: string) {
+  try {
+    await userApi.setStatus(u.id, status)
+    ElMessage.success(status === 'active' ? '已启用该用户' : '已禁用该用户')
+    await load()
+  } catch {
+    ElMessage.error('操作失败（需要管理员权限）')
   }
 }
 
@@ -214,6 +249,11 @@ onMounted(() => {
 .role-project_manager { color: var(--c-accent); background: var(--c-accent-soft); }
 .role-member { color: var(--c-status-done); background: var(--c-status-done-soft); }
 .role-observer { color: var(--c-ink-3); background: var(--c-surface-2); }
+
+.status-badge { font-weight: 600; font-size: 12px; padding: 2px 10px; border-radius: 999px; }
+.status-pending { color: #E6A23C; background: #fdf6ec; }
+.status-active { color: var(--c-status-done); background: var(--c-status-done-soft); }
+.status-disabled { color: var(--c-ink-3); background: var(--c-surface-2); }
 
 :deep(.el-table) { --el-table-border-color: var(--c-border); }
 </style>

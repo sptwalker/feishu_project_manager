@@ -4,7 +4,7 @@ import logging
 from backend.core.security import create_access_token, create_refresh_token, verify_token
 from backend.core.feishu import feishu_client
 from backend.core.config import get_settings
-from backend.models.user import UserRole
+from backend.models.user import UserRole, UserStatus
 from backend.services.user_service import UserService
 from backend.schemas.user import UserCreate
 
@@ -71,9 +71,11 @@ class AuthService:
                 avatar_url=user_info.get("avatar_url"),
                 department=user_info.get("department_name")
             )
-            # 初始管理员首次登录即赋予管理员角色，其余为普通成员
-            initial_role = UserRole.ADMIN if is_initial_admin else UserRole.MEMBER
-            user = UserService.create(db, user_create, role=initial_role)
+            # 初始管理员首次登录即 admin + 启用；其余新用户为待审批成员（需管理员在用户管理启用）
+            if is_initial_admin:
+                user = UserService.create(db, user_create, role=UserRole.ADMIN, status=UserStatus.ACTIVE)
+            else:
+                user = UserService.create(db, user_create, role=UserRole.MEMBER, status=UserStatus.PENDING)
         else:
             user = UserService.update_last_login(db, user)
             # 每次登录确保：初始管理员若被降级或被导入覆盖，自动恢复为管理员

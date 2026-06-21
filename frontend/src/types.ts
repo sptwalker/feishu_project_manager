@@ -15,6 +15,7 @@ export interface User {
   avatar_url?: string | null
   department?: string | null
   role: string
+  status?: string
   last_login_at?: string | null
   created_at?: string
   updated_at?: string

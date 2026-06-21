@@ -19,6 +19,8 @@
         <h2 class="form-title">登录</h2>
         <p class="form-desc">使用飞书账号一键登录，无需单独注册。</p>
 
+        <div v-if="notice" class="login-notice" :class="notice.type">{{ notice.text }}</div>
+
         <button class="feishu-btn" :disabled="loading" @click="loginWithFeishu">
           <span class="feishu-ico">✦</span>
           {{ loading ? '正在跳转…' : '飞书一键登录' }}
@@ -31,11 +33,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useBrandingStore } from '@/stores/branding'
 
 const loading = ref(false)
 const branding = useBrandingStore()
+
+/* 登录页提示：准入拒绝（待审批/已禁用）或飞书回调错误 */
+const notice = computed<{ type: string; text: string } | null>(() => {
+  const p = new URLSearchParams(location.search)
+  const denied = p.get('denied')
+  if (denied === 'account_pending') return { type: 'warn', text: '你的账号已提交，正在等待管理员审批通过后方可使用。' }
+  if (denied === 'account_disabled') return { type: 'error', text: '你的账号已被管理员禁用，如有疑问请联系管理员。' }
+  const err = p.get('error')
+  if (err) return { type: 'error', text: '登录失败，请重试或联系管理员。' }
+  return null
+})
 
 function loginWithFeishu() {
   loading.value = true
@@ -114,6 +127,9 @@ function loginWithFeishu() {
 }
 .form-title { font-size: 30px; margin-bottom: var(--sp-2); }
 .form-desc { color: var(--c-ink-3); margin-bottom: var(--sp-6); }
+.login-notice { padding: 10px 14px; border-radius: var(--r-sm); font-size: 13px; line-height: 1.5; margin-bottom: var(--sp-5); }
+.login-notice.warn { color: #b8860b; background: #fdf6ec; border: 1px solid #f5dab1; }
+.login-notice.error { color: var(--c-status-overdue); background: var(--c-status-overdue-soft); border: 1px solid #f5c2c2; }
 
 .feishu-btn {
   width: 100%;

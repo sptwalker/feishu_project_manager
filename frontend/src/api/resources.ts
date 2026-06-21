@@ -75,6 +75,9 @@ export const userApi = {
   updateRole(id: number, role: string) {
     return api.patch<User>(`/users/${id}/role`, { role }).then((r) => r.data)
   },
+  setStatus(id: number, status: string) {
+    return api.patch<User>(`/users/${id}/status`, { status }).then((r) => r.data)
+  },
 }
 
 export const departmentApi = {

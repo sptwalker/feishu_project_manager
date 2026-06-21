@@ -66,6 +66,15 @@ api.interceptors.response.use(
         location.href = '/login'
       }
     }
+    // 准入闸：账号待审批/已禁用（后端 get_current_user 返回 403 + 约定 detail）。
+    // 清 token 并带原因跳登录页，由登录页给出友好提示，而非反复重试。
+    const detail = (error.response?.data as { detail?: string } | undefined)?.detail
+    if (error.response?.status === 403 && (detail === 'account_pending' || detail === 'account_disabled')) {
+      tokenStore.clear()
+      if (location.pathname !== '/login') {
+        location.href = `/login?denied=${detail}`
+      }
+    }
     return Promise.reject(error)
   },
 )

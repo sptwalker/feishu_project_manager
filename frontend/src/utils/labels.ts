@@ -100,6 +100,19 @@ export const ROLE_OPTIONS = [
   { value: 'observer', label: '观察者' },
 ]
 
+/* 用户准入状态 */
+export const userStatusLabel: Record<string, string> = {
+  pending: '待审批',
+  active: '已启用',
+  disabled: '已禁用',
+}
+
+export const USER_STATUS_OPTIONS = [
+  { value: 'pending', label: '待审批' },
+  { value: 'active', label: '已启用' },
+  { value: 'disabled', label: '已禁用' },
+]
+
 export function isOverdue(dueDate?: string | null, status?: string): boolean {
   if (!dueDate) return false
   if (status === 'completed' || status === 'cancelled') return false

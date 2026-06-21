@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, HttpUrl
 from typing import Optional
 from datetime import datetime
-from backend.models.user import UserRole
+from backend.models.user import UserRole, UserStatus
 
 class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -18,6 +18,7 @@ class UserInDB(UserBase):
     feishu_user_id: str
     avatar_url: Optional[HttpUrl]
     role: UserRole
+    status: UserStatus
     last_login_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
@@ -29,6 +30,10 @@ class UserResponse(UserInDB):
 
 class UserRoleUpdate(BaseModel):
     role: UserRole
+
+class UserStatusUpdate(BaseModel):
+    """管理员审批：设置用户准入状态"""
+    status: UserStatus
 
 class UserUpdate(BaseModel):
     """管理员编辑用户：所有字段可选"""
