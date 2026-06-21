@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     AUTO_REMINDER_MINUTE: int = 0
     # 周会周期递进：上次会议日期 + N 天即可进入新周期（替代原“跨自然周”规则）
     NEW_CYCLE_DAYS: int = 3
+    # 判定“真正召开过”的最短汇报时长（分钟）：已启动汇报(started_at)且持续≥此值才算已召开。
+    # 用于排除“自动开启但没真正开会”的空会，避免它被当成“上一次周会”锚定冷却期。
+    MEETING_HELD_MIN_MINUTES: int = 60
     # 系统对外访问地址（周会通知文案里引导成员登录更新进展）
     SYSTEM_PUBLIC_URL: str = "https://pms.youdoogo.com/"
 

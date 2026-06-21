@@ -260,11 +260,32 @@ class SettingsService:
         return date.fromisoformat(bm), bc
 
     @staticmethod
+    def _last_meeting_obj(db: Session) -> Optional[MeetingRecord]:
+        """最近一次"真正召开过"的周会记录(ORM)：已归档、已启动汇报(started_at)、
+        且汇报持续 ≥ MEETING_HELD_MIN_MINUTES 分钟（默认60）。
+        "自动开启但没真正开会"（未启动汇报，或汇报过短）的空会不算"上一次"。
+        无任何"已召开"记录时回退最大 session（兼容历史/未走汇报流程的数据），仍无则 None。"""
+        threshold = timedelta(minutes=get_settings().MEETING_HELD_MIN_MINUTES)
+        candidates = (
+            db.query(MeetingRecord)
+            .filter(MeetingRecord.status == "archived",
+                    MeetingRecord.started_at.isnot(None),
+                    MeetingRecord.ended_at.isnot(None))
+            .order_by(MeetingRecord.session.desc())
+            .all()
+        )
+        for rec in candidates:  # 已按 session 降序，取首个达到时长门槛的=最近一次真正召开
+            if rec.ended_at - rec.started_at >= threshold:
+                return rec
+        # 回退：无"已召开"记录 → 最大 session（不破坏未走汇报流程的历史行为）
+        return db.query(MeetingRecord).order_by(MeetingRecord.session.desc()).first()
+
+    @staticmethod
     def get_last_meeting_record(db: Session) -> dict:
-        """最近一次周会（按 session 最大）。表为空时回退用 base 锚点作为“上次周会”，
-        实现从“自然周”到“事件驱动”的平滑迁移（无需 seed 数据）。
+        """最近一次"真正召开过"的周会（用于"上一次周会"显示与冷却期锚点）。
+        表为空/无记录时回退 base 锚点，实现从"自然周"到"事件驱动"的平滑迁移（无需 seed）。
         返回 {session:int, meeting_date:date, status:str, ended_at:datetime|None}，恒非 None。"""
-        rec = db.query(MeetingRecord).order_by(MeetingRecord.session.desc()).first()
+        rec = SettingsService._last_meeting_obj(db)
         if rec:
             return {"session": rec.session, "meeting_date": rec.meeting_date,
                     "status": rec.status, "ended_at": rec.ended_at}
@@ -357,7 +378,7 @@ class SettingsService:
         session 唯一：目标次数被其它记录占用时抛 ValueError（不静默删历史）。"""
         target = (
             SettingsService.get_active_meeting_record(db)
-            or db.query(MeetingRecord).order_by(MeetingRecord.session.desc()).first()
+            or SettingsService._last_meeting_obj(db)
         )
         if target is None:
             # 表为空：首次开会前，写 base 锚点（get_meeting_state 会回退读它）
