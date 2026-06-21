@@ -7,11 +7,11 @@
         <div v-if="state.this_week_recorded" class="info-block">
           <div class="info-row">
             <span class="ilabel">本周状态</span>
-            <span class="ival ok">本周已召开第 {{ state.this_week_count }} 次周例会</span>
+            <span class="ival ok">正在记录第 {{ state.this_week_count }} 次周例会</span>
           </div>
           <div class="info-row">
             <span class="ilabel">下一次周例会</span>
-            <span class="ival">{{ state.calibration_monday }}（周一）· 应为第 <b>{{ state.calibration_count }}</b> 次</span>
+            <span class="ival muted">本次结束、满 {{ state.new_cycle_days ?? 3 }} 天后可开启下一轮</span>
           </div>
         </div>
 
@@ -19,13 +19,17 @@
           <div class="info-row">
             <span class="ilabel">上一次周例会</span>
             <span class="ival">
-              <template v-if="state.last_meeting">{{ state.last_meeting.date }} · 第 {{ state.last_meeting.count }} 次</template>
+              <template v-if="state.last_meeting && state.last_meeting.date">{{ state.last_meeting.date }} · 第 {{ state.last_meeting.count }} 次</template>
               <span v-else class="muted">暂无记录</span>
             </span>
           </div>
           <div class="info-row">
-            <span class="ilabel">本周周例会</span>
-            <span class="ival">{{ state.this_week_monday }}（周一）· 将为第 <b>{{ state.calibration_count }}</b> 次</span>
+            <span class="ilabel">下一次周例会</span>
+            <span class="ival">
+              将为第 <b>{{ state.calibration_count }}</b> 次 ·
+              <template v-if="state.can_open_new_cycle">现在即可开启新一轮</template>
+              <template v-else>最早 {{ nextEarliestDate }} 可开启（上次结束满 {{ state.new_cycle_days ?? 3 }} 天）</template>
+            </span>
           </div>
         </div>
 
@@ -102,6 +106,20 @@ const editCount = ref(0)
 
 const state = computed(() => meeting.state)
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+
+/* 下一轮最早可开启日期 = 上次周会日期 + 周期天数（本地时区计算，避免 UTC 解析偏移） */
+function addDays(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  dt.setDate(dt.getDate() + n)
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`
+}
+const nextEarliestDate = computed(() => {
+  const last = meeting.state?.last_meeting?.date
+  const days = meeting.state?.new_cycle_days ?? 3
+  return last ? addDays(last, days) : '—'
+})
 
 /* 飞书周会群 chat_id */
 const coreChatId = ref('')
