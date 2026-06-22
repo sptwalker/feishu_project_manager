@@ -11,6 +11,7 @@ from backend.api.v1 import meeting_records as meeting_records_api
 from backend.api.v1 import operation_logs as operation_logs_api
 from backend.api.v1 import branding as branding_api
 from backend.api.v1 import followup as followup_api
+from backend.api.v1 import uploads as uploads_api
 
 settings = get_settings()
 
@@ -121,6 +122,11 @@ app.include_router(
     followup_api.router,
     prefix="/api/v1",
     tags=["followup"]
+)
+app.include_router(
+    uploads_api.router,
+    prefix="/api/v1",
+    tags=["uploads"]
 )
 
 

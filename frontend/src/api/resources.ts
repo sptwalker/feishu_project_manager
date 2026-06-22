@@ -1,5 +1,16 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem } from '@/types'
+
+/* 图片上传：进展配图（JPG/PNG ≤10MB）。返回 {url, name, size} */
+export const uploadApi = {
+  image(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<ImageItem>('/uploads/image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data)
+  },
+}
 
 export const projectApi = {
   list(params?: Record<string, unknown>) {

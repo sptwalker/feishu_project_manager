@@ -154,6 +154,16 @@
                       :icon="Link"
                       @click="openAttachDialog(draftIndex(vi))"
                     >文档</el-button>
+                    <!-- 图片上传：JPG/PNG ≤10MB，自定义 http-request 上传到后端拿 URL -->
+                    <el-upload
+                      :show-file-list="false"
+                      accept="image/jpeg,image/png"
+                      :before-upload="beforeImageUpload"
+                      :http-request="makeUploadRequest(draftIndex(vi))"
+                      class="img-upload"
+                    >
+                      <el-button text type="primary" size="small" class="attach-btn" :icon="Picture">图片</el-button>
+                    </el-upload>
                   </div>
                   <!-- 附件列表（编辑态） -->
                   <div v-if="e.attachments && e.attachments.length" class="edit-attachments">
@@ -161,6 +171,14 @@
                       <el-icon class="attach-icon"><Document /></el-icon>
                       <a :href="att.url" target="_blank" class="attach-link">{{ att.title || att.url }}</a>
                       <el-icon class="attach-remove" @click="removeAttachment(draftIndex(vi), ai)"><Close /></el-icon>
+                    </div>
+                  </div>
+                  <!-- 图片缩略图（编辑态）：点击放大，可删除 -->
+                  <div v-if="e.images && e.images.length" class="edit-images">
+                    <div v-for="(img, ii) in e.images" :key="ii" class="edit-image-item">
+                      <el-image :src="img.url" fit="cover" class="edit-thumb"
+                        :preview-src-list="e.images.map((x) => x.url)" :initial-index="ii" :preview-teleported="true" />
+                      <el-icon class="img-remove" @click="removeImage(draftIndex(vi), ii)"><Close /></el-icon>
                     </div>
                   </div>
                 </td>
@@ -221,6 +239,12 @@
                     <el-icon class="attach-icon"><Document /></el-icon>
                     <a :href="att.url" target="_blank" class="attach-link" @click.stop>{{ att.title || '飞书文档' }}</a>
                   </div>
+                </div>
+                <!-- 配图（展示态）：自适应缩略图，点击放大预览 -->
+                <div v-if="e.images && e.images.length" class="tl-images" @click.stop>
+                  <el-image v-for="(img, ii) in e.images" :key="ii" :src="img.url" fit="contain"
+                    class="tl-image" :preview-src-list="e.images.map((x) => x.url)" :initial-index="ii"
+                    :preview-teleported="true" />
                 </div>
                 <!-- 批注列表 -->
                 <div v-if="e.annotations && e.annotations.length" class="annotations">
@@ -331,9 +355,10 @@ import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } 
 import { useMeetingStore } from '@/stores/meeting'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { EditPen, Close, Delete, Plus, Check, Link, Document } from '@element-plus/icons-vue'
-import { projectApi, departmentApi, userApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, OperationLog } from '@/types'
+import type { UploadRequestOptions } from 'element-plus'
+import { EditPen, Close, Delete, Plus, Check, Link, Document, Picture } from '@element-plus/icons-vue'
+import { projectApi, departmentApi, userApi, uploadApi } from '@/api/resources'
+import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, ImageItem, OperationLog } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, progressStatusColor, isOverdue,
@@ -888,6 +913,7 @@ function cleanDraft(): ProgressEntry[] {
       if (e.reply_to) out.reply_to = e.reply_to
       if (e.annotations) out.annotations = e.annotations
       if (e.attachments) out.attachments = e.attachments
+      if (e.images) out.images = e.images
       return out
     })
 }
@@ -1184,7 +1210,39 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
   progressDraft.value[entryIndex].attachments?.splice(attachIndex, 1)
 }
 
-
+/* ---------- 图片上传（进展配图）---------- */
+/* 上传前校验：仅 JPG/PNG，≤10MB（即时反馈；后端另有强校验防绕过） */
+function beforeImageUpload(file: File): boolean {
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    ElMessage.error('仅支持 JPG / PNG 格式图片')
+    return false
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.error('图片不能超过 10MB')
+    return false
+  }
+  return true
+}
+/* 自定义上传：调后端拿 URL，存入该进展条目的 images */
+async function doUploadImage(entryIndex: number, file: File) {
+  try {
+    const img: ImageItem = await uploadApi.image(file)
+    const entry = progressDraft.value[entryIndex]
+    if (!entry.images) entry.images = []
+    entry.images.push(img)
+    ElMessage.success('图片已上传')
+  } catch {
+    ElMessage.error('上传失败（需要管理员或项目经理权限）')
+  }
+}
+/* el-upload :http-request 工厂：闭包绑定条目下标，opt 类型在此声明（模板不支持类型注解） */
+function makeUploadRequest(entryIndex: number) {
+  return (opt: UploadRequestOptions) => doUploadImage(entryIndex, opt.file)
+}
+/* 删除某条进展的某张配图（仅从草稿移除，保存后生效；不删后端文件） */
+function removeImage(entryIndex: number, imageIndex: number) {
+  progressDraft.value[entryIndex].images?.splice(imageIndex, 1)
+}
 </script>
 
 <style scoped>
@@ -1302,6 +1360,18 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .feedback-tag { color: #1a73e8; font-weight: 600; font-size: 13px; white-space: nowrap; padding-top: 6px; }
 .feedback-btn { flex-shrink: 0; padding: 0 6px; }
 .attach-btn { flex-shrink: 0; padding: 0 6px; }
+/* 图片上传按钮：el-upload 内联，与反馈/文档按钮同排 */
+.img-upload { display: inline-flex; flex-shrink: 0; }
+/* 编辑态配图缩略图 + 删除角标 */
+.edit-images { margin-top: var(--sp-2); display: flex; flex-wrap: wrap; gap: 6px; }
+.edit-image-item { position: relative; }
+.edit-thumb { width: 64px; height: 64px; border-radius: var(--r-sm); border: 1px solid var(--c-border); cursor: zoom-in; }
+.img-remove { position: absolute; top: -6px; right: -6px; background: var(--c-surface); border-radius: 50%;
+  color: var(--c-ink-3); cursor: pointer; font-size: 15px; box-shadow: var(--shadow-sm); }
+.img-remove:hover { color: var(--c-status-overdue); }
+/* 展示态配图：自适应缩略，点击放大预览 */
+.tl-images { margin-top: var(--sp-2); display: flex; flex-wrap: wrap; gap: 8px; }
+.tl-image { max-width: 160px; max-height: 160px; border-radius: var(--r-sm); border: 1px solid var(--c-border); cursor: zoom-in; }
 .meeting-prefix { color: #1a73e8; font-weight: 700; }
 
 /* 文档附件样式 */
@@ -1410,6 +1480,8 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 .layout-meeting .prog-edit .feedback-tag,
 .layout-meeting .prog-edit .meeting-tag { font-size: 15px; }
 .layout-meeting .prog-edit .attach-link { font-size: 15px; }
+/* 会议页大屏：展示态配图放大上限 */
+.layout-meeting .tl-image { max-width: 220px; max-height: 220px; }
 .layout-meeting :deep(.el-tabs__item) { font-size: 17px; }
 
 /* 压缩信息区：简要说明跨前两列，完成度落第三列（与下方「相关人」列左对齐）；字段三列两排 */

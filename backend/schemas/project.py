@@ -28,6 +28,13 @@ class DocumentAttachment(BaseModel):
     added_at: str = Field(..., description="添加时间")
 
 
+class ImageItem(BaseModel):
+    """进展配图（上传的 JPG/PNG）"""
+    url: str = Field(..., description="图片访问地址（/api/v1/uploads/<filename>）")
+    name: Optional[str] = Field(None, description="原文件名")
+    size: Optional[int] = Field(None, description="字节大小")
+
+
 class ProgressEntry(BaseModel):
     """项目进展记录条目"""
     time: str = Field(..., description="更新时间")
@@ -38,6 +45,7 @@ class ProgressEntry(BaseModel):
     reply_to: Optional[str] = Field(None, description="反馈事件指向的原事件 id")
     annotations: Optional[List[Annotation]] = Field(default=None, description="批注列表")
     attachments: Optional[List[DocumentAttachment]] = Field(default=None, description="文档附件列表")
+    images: Optional[List[ImageItem]] = Field(default=None, description="配图列表")
 
 
 class ProjectBase(BaseModel):

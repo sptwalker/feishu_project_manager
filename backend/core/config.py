@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./backend/data/feishu_pm.db"
     DATABASE_ECHO: bool = False  # SQL 日志
 
+    # 图片上传（进展详情配图）。本地默认 backend/data/uploads；
+    # Docker 通过 env 设 /data/uploads（在 backend_data 卷内，自动持久化）
+    UPLOAD_DIR: str = "backend/data/uploads"
+    UPLOAD_MAX_BYTES: int = 10 * 1024 * 1024  # 单图上限 10MB
+
     @property
     def async_database_url(self) -> str:
         """获取异步数据库 URL"""
