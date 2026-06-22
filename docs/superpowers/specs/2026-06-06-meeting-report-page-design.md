@@ -157,6 +157,8 @@
 
 ## 8. 计时模型（纯前端运行时）
 
+> ⚠️ 已演进：计时改为**服务端锚点 + 主控/协助多端同步**（[meeting_timer_service.py](../../../backend/services/meeting_timer_service.py)），不再是"纯前端、刷新即重置"。主控掉线 15s 自动暂停、3min 释放可接管，主控刷新续权。多端控制与结束/退出权限见 [docs/weekly-meeting-control.md](../../weekly-meeting-control.md)。下文为初版设计，保留作背景。
+
 - 全部在 `stores/meetingReport.ts` 用 `setInterval`(1s) 驱动，不入库。刷新页面则重置（接受）。
 - **总计时**：倒计时。总时长默认 30 分钟，可在"设置"调整并存 `SystemSetting`（`key="meeting_total_minutes"`）。归零 → 顶栏总时间区**变红 + 闪烁 + 提示音**。
 - **单人计时**：切换汇报人时，上一人时间冻结、新一人从 0 起算。超过**单人统一阈值**（默认 5 分钟，可设，`key="meeting_person_threshold_minutes"`）→ 梯形本人计时**变红 + 闪烁 + 提示音**。
@@ -181,9 +183,11 @@
 
 - **入口**：此页是周会已开启后的"汇报模式"。从现有"开启周会"后进入，或顶部入口直达 `/meeting-report`。
 - **权限**：进入与编辑沿用现有 `get_current_admin` / 项目编辑权限（与 [meeting_records.py](../../../backend/api/v1/meeting_records.py)、抽屉一致）。普通成员可看不可改。
-- **开始/结束**：
+- **开始/结束/退出**：
   - "开始汇报"：写 `started_at` + 记日志 + 启动前端计时。
-  - "结束会议"：写 `ended_at` + 记日志 + 停计时；可选跳转"查看会议纪要"（现有 `send` 流程，生成飞书文档并分享核心群）。
+  - "结束会议"（**仅主控端**）：写 `ended_at` + 记日志 + 停计时 + 关周会模式（影响所有参会端）。后端校验本端 `client_id` 是否为主控；存在主控时非主控返回 403，无主控时任意管理员可结束（兜底）。
+  - "退出会议"（**任何端**）：仅离开本端视图、停本端计时刷新，不结束会议、不影响他端进程，可随时再加入。
+- **主控/协助/掉线接管模型**：计时已由"纯前端"演进为**服务端锚点 + 主控/协助**（见 §8 注与 [meeting_timer_service.py](../../../backend/services/meeting_timer_service.py)）。完整角色与结束/退出/接管的操作说明见 **[docs/weekly-meeting-control.md](../../weekly-meeting-control.md)**。
 
 ---
 
