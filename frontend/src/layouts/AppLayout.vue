@@ -166,12 +166,14 @@ async function onToggleMeeting(val: string | number | boolean) {
     confirmSession.value = session
     confirmVisible.value = true   // 打开信息确认窗（确认后才真正开启）
   } else {
-    // 关闭：归档当前周会并关闭模式
+    // 关闭：归档当前周会并关闭模式（后端校验：会议进行中时仅主控端可结束）
     try {
       await meeting.closeMeeting()
       ElMessage.info('已结束本次周会并归档')
-    } catch {
-      ElMessage.error('操作失败（需要管理员权限）')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      // 仅主控可结束：开关受 meeting.active 控制，失败后自动回弹为"开"
+      ElMessage.error(detail || '操作失败（需要管理员权限）')
     }
   }
   await refreshMeetingLive()  // 开/关后立即刷新「进行中」状态

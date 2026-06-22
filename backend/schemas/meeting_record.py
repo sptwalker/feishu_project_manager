@@ -74,6 +74,12 @@ class TimerClientRequest(BaseModel):
     client_id: str = Field(..., max_length=64)
 
 
+class MeetingCloseRequest(BaseModel):
+    """结束周会：带本端 client_id 用于校验是否主控。
+    省略/为空时：仅在『当前无主控』（主控已释放或从未认领）时才允许结束（清理兜底）。"""
+    client_id: Optional[str] = Field(None, max_length=64)
+
+
 class TimerControlRequest(BaseModel):
     """主控计时控制：resume / pause / select_presenter"""
     client_id: str = Field(..., max_length=64)

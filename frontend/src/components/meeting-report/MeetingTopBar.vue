@@ -46,7 +46,10 @@
       </template>
 
       <el-button type="primary" @click="emit('view-minutes')">查看会议纪要</el-button>
-      <el-button class="mr-end-btn" @click="emit('end-meeting')">结束会议</el-button>
+      <!-- 结束会议：仅主控端可见（结束后归档关闭，影响所有参会端） -->
+      <el-button v-if="store.isController" class="mr-end-btn" @click="emit('end-meeting')">结束会议</el-button>
+      <!-- 退出会议：任何端均可（仅离开本端视图，不影响会议进程，可随时再加入） -->
+      <el-button class="mr-exit-btn" @click="emit('exit-meeting')">退出会议</el-button>
       <el-button @click="emit('open-settings')">⚙ 设置</el-button>
     </div>
   </header>
@@ -71,7 +74,7 @@ import BaseChart from '@/components/BaseChart.vue'
 import { buildPersonTimesBarOption } from '@/utils/meetingStats'
 
 defineProps<{ session: number; today: string }>()
-const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void; (e: 'end-meeting'): void }>()
+const emit = defineEmits<{ (e: 'view-minutes'): void; (e: 'open-settings'): void; (e: 'end-meeting'): void; (e: 'exit-meeting'): void }>()
 
 const store = useMeetingReportStore()
 const presenter = computed(() => store.presenters[store.currentPresenterIndex] ?? null)
@@ -203,4 +206,7 @@ function fmt(total: number): string {
 /* 结束会议：白字灰底 */
 .mr-end-btn { background: #909399; border-color: #909399; color: #fff; }
 .mr-end-btn:hover, .mr-end-btn:focus { background: #7d8085; border-color: #7d8085; color: #fff; }
+/* 退出会议：描边淡色，区别于"结束会议"（结束=灰底，退出=描边） */
+.mr-exit-btn { background: #fff; border-color: var(--c-border, #dcdfe6); color: var(--c-ink-2, #5a6072); }
+.mr-exit-btn:hover, .mr-exit-btn:focus { background: var(--c-surface-2, #f2f3f5); border-color: #c0c4cc; color: var(--c-ink, #303133); }
 </style>

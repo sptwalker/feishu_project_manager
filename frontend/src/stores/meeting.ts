@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { settingsApi, meetingApi } from '@/api/resources'
+import { getMeetingClientId } from '@/utils/meetingClient'
 import type { MeetingState } from '@/types'
 
 export const useMeetingStore = defineStore('meeting', () => {
@@ -39,9 +40,9 @@ export const useMeetingStore = defineStore('meeting', () => {
     return detail
   }
 
-  /** 关闭周会：归档当前周会并关闭模式，刷新状态 */
+  /** 关闭周会：归档当前周会并关闭模式，刷新状态。带本端 client_id 供后端校验是否主控。 */
   async function closeMeeting() {
-    state.value = await meetingApi.close()
+    state.value = await meetingApi.close(getMeetingClientId())
     return state.value
   }
 

@@ -1,7 +1,8 @@
 <template>
   <div class="mr-page">
     <MeetingTopBar :session="session" :today="today"
-      @view-minutes="onViewMinutes" @open-settings="settingsVisible = true" @end-meeting="onEndMeeting" />
+      @view-minutes="onViewMinutes" @open-settings="settingsVisible = true"
+      @end-meeting="onEndMeeting" @exit-meeting="onExitMeeting" />
     <div class="mr-body">
       <aside class="mr-aside"><MeetingReportTree /></aside>
       <main class="mr-main">
@@ -155,10 +156,10 @@ function onViewMinutes() {
   recordVisible.value = true
 }
 
-/* 结束会议：确认 → 捕获各汇报人用时快照 → 归档关闭 → 弹统计柱状图（关闭后再清理跳转） */
+/* 结束会议（仅主控）：确认 → 捕获各汇报人用时快照 → 归档关闭 → 弹统计柱状图（关闭后再清理跳转） */
 async function onEndMeeting() {
   try {
-    await ElMessageBox.confirm('确定结束本次周会？将记录结束时间并关闭周会模式。', '结束会议', {
+    await ElMessageBox.confirm('确定结束本次周会？将记录结束时间并关闭周会模式（影响所有参会端）。', '结束会议', {
       type: 'warning', confirmButtonText: '结束会议', cancelButtonText: '取消',
     })
   } catch {
@@ -167,20 +168,34 @@ async function onEndMeeting() {
   // 结束前捕获各汇报人累计用时（服务端锚点推算的当前值，reset 前），按用时降序
   const snapshot = [...store.personTimeStats]
   try {
-    await meetingApi.close()  // 后端：归档写 ended_at + set_active(false) + 清空 timer + 记操作日志
+    await meetingApi.close(store.clientId)  // 后端校验主控；归档写 ended_at + set_active(false) + 清空 timer + 记日志
     ElMessage.success('周会已结束')
-  } catch {
-    ElMessage.error('结束会议失败（需要管理员权限）')
-  } finally {
-    store.reset()       // 停定时器 + 清浏览/角色/过滤
-    lastPersonElapsed = 0  // 重置蜂鸣节流基准
-    if (snapshot.length) {
-      statsData.value = snapshot
-      statsVisible.value = true   // 有数据则弹统计图，关闭后跳转
-    } else {
-      router.push('/board')
-    }
+  } catch (err: unknown) {
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail || '结束会议失败（需要主控权限）')
+    return  // 结束失败：留在会议页，不跳转
   }
+  store.reset()       // 停定时器 + 清浏览/角色/过滤
+  lastPersonElapsed = 0  // 重置蜂鸣节流基准
+  if (snapshot.length) {
+    statsData.value = snapshot
+    statsVisible.value = true   // 有数据则弹统计图，关闭后跳转
+  } else {
+    router.push('/board')
+  }
+}
+
+/* 退出会议（任何端）：仅离开本端视图，不结束会议、不影响他端进程，可随时再加入。 */
+async function onExitMeeting() {
+  try {
+    await ElMessageBox.confirm('退出本次周会？会议仍在进行，你可以随时重新进入。', '退出会议', {
+      type: 'info', confirmButtonText: '退出会议', cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
+  store.disconnectTimer()   // 仅停本端定时器/心跳（服务端不受影响；主控掉线由服务端惰性判定）
+  router.push('/board')
 }
 
 /* 关闭统计图后离开汇报页 */

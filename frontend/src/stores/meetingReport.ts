@@ -1,6 +1,7 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { projectApi, departmentApi, settingsApi, timerApi } from '@/api/resources'
+import { getMeetingClientId } from '@/utils/meetingClient'
 import type { Project, Department, MeetingReportOrder, TimerState } from '@/types'
 
 /* 未分配兜底分组名（恒排在末尾） */
@@ -9,17 +10,6 @@ export const UNASSIGNED_OWNER = '未分配'
 
 /* 默认隐藏的项目状态：暂停/已完成/已取消（左侧多选可切换）；进行中/待启动默认显示 */
 const DEFAULT_HIDDEN_STATUSES = ['paused', 'completed', 'cancelled']
-
-/* 本端浏览器唯一 id（localStorage 持久化）：主控刷新后用同一 id 重连续权 */
-const CLIENT_ID_KEY = 'fpm_meeting_client_id'
-function getClientId(): string {
-  let id = localStorage.getItem(CLIENT_ID_KEY)
-  if (!id) {
-    id = `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-    localStorage.setItem(CLIENT_ID_KEY, id)
-  }
-  return id
-}
 
 export interface MemberGroup { name: string; projects: Project[] }
 export interface DeptGroup { dept: string; color?: string; members: MemberGroup[] }
@@ -42,7 +32,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   const currentProjectId = ref<number | null>(null)
 
   // ---- 服务端计时（锚点 + 本地推算）----
-  const clientId = getClientId()
+  const clientId = getMeetingClientId()
   const role = ref<'controller' | 'assistant' | 'none'>('none')
   const timer = ref<TimerState | null>(null)   // 服务端最近一次返回的计时状态
   let clockOffsetMs = 0                          // server_now - client_now，用于时钟漂移校正

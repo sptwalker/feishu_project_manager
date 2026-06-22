@@ -181,8 +181,8 @@ export const meetingApi = {
   open(payload: { session: number; recorder?: string | null; meeting_date: string }) {
     return api.post<MeetingRecordDetail>('/meeting-records/open', payload).then((r) => r.data)
   },
-  close() {
-    return api.post<MeetingState>('/meeting-records/close').then((r) => r.data)
+  close(clientId?: string) {
+    return api.post<MeetingState>('/meeting-records/close', { client_id: clientId ?? null }).then((r) => r.data)
   },
   send(session: number) {
     return api.post<MeetingSendResult>(`/meeting-records/${session}/send`).then((r) => r.data)

@@ -12,6 +12,7 @@ from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
 from backend.schemas.meeting_record import (
     MeetingRecordResponse, MeetingSessionsResponse, MeetingOpenRequest, MeetingSendResponse,
+    MeetingCloseRequest,
     TimerStateResponse, TimerClientRequest, TimerControlRequest, TimerTakeoverRequest,
 )
 from backend.schemas.setting import MeetingStateResponse
@@ -72,11 +73,22 @@ async def open_meeting(
 
 @router.post("/meeting-records/close", response_model=MeetingStateResponse)
 def close_meeting(
+    payload: MeetingCloseRequest | None = None,
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """关闭周会（管理员）：归档当前进行中的周会并关闭周会模式"""
+    """关闭周会（管理员）：归档当前进行中的周会并关闭周会模式。
+    仅主控端可结束——存在主控时只有主控 client_id 可结束；
+    无主控（已释放/从未认领）时允许任意管理员结束（清理兜底）。"""
+    client_id = payload.client_id if payload else None
     active = SettingsService.get_active_meeting_record(db)
+    if active is not None:
+        controller = active.controller_client_id
+        if controller is not None and controller != client_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="仅主控端可结束本次周会",
+            )
     session = active.session if active else None
     MeetingRecordService.close_meeting(db)
     if session is not None:
