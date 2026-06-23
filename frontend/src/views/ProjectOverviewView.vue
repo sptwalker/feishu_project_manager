@@ -49,8 +49,8 @@
     >
       <el-table-column label="" width="38" align="center" class-name="signal-col">
         <template #default="{ row }">
-          <el-tooltip v-if="row._hasRecentUpdate" content="近 3 天有进展更新" placement="top" effect="light">
-            <span class="signal-dot" aria-label="近 3 天有更新"></span>
+          <el-tooltip v-if="row._hasRecentUpdate" :content="`近 3 天有更新：${row._lastStatus || '进展'}`" placement="top" effect="light">
+            <span class="signal-dot" :style="{ background: row._lastStatusColor || '#52c41a' }" aria-label="近 3 天有更新"></span>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -620,14 +620,15 @@ onMounted(() => {
 /* 停滞 >90 天：整行淡红背景（覆盖斑马纹） */
 :deep(.el-table .row-critical td.el-table__cell) { background-color: #fdecec; }
 
-/* 更新信号灯：3 天内有进展 → 绿色圆点 */
+/* 更新信号灯：3 天内有进展 → 颜色随最新进展状态（延迟=黄、待确认=粉、已反馈=绿等） */
 .signal-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #52c41a;
-  box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+  /* background 由 :style 动态绑定到 row._lastStatusColor */
+  box-shadow: 0 0 4px currentColor;
+  opacity: 0.9;
 }
 </style>
 
