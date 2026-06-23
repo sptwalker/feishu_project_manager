@@ -47,6 +47,14 @@
       @row-dblclick="openDetail"
       :row-class-name="rowClassName"
     >
+      <el-table-column label="" width="38" align="center" class-name="signal-col">
+        <template #default="{ row }">
+          <el-tooltip v-if="row._hasRecentUpdate" content="近 3 天有进展更新" placement="top" effect="light">
+            <span class="signal-dot" aria-label="近 3 天有更新"></span>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+
       <el-table-column
         prop="department" label="部门" width="100" align="center"
         sortable :sort-method="sortDept"
@@ -425,11 +433,14 @@ const rows = computed(() => {
           lastDisplayColor = progressColor(last.status)
         }
       }
+      // 最近 3 天有更新：最后一条进展时间距今 ≤3 天
+      const hasRecentUpdate = lastTime ? (Date.now() - new Date(lastTime).getTime()) / 86400000 <= 3 : false
       return {
         ...p,
         _deptShort: getDepartmentShortName(p.department),
         _deptColor: getDepartmentColor(p.department),
         _hasProgress: log.length > 0,
+        _hasRecentUpdate: hasRecentUpdate,
         _stalledDays: stalled?.days ?? null,
         _stalledColor: stalled?.color ?? '',
         _stalledBold: stalled?.bold ?? false,
@@ -608,6 +619,16 @@ onMounted(() => {
 :deep(.el-table) { --el-table-border-color: var(--c-border); }
 /* 停滞 >90 天：整行淡红背景（覆盖斑马纹） */
 :deep(.el-table .row-critical td.el-table__cell) { background-color: #fdecec; }
+
+/* 更新信号灯：3 天内有进展 → 绿色圆点 */
+.signal-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #52c41a;
+  box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+}
 </style>
 
 <!-- 「说明」列 tooltip 样式：浅棕背景 + 黑字 + 合适尺寸。
