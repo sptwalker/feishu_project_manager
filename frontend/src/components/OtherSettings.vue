@@ -41,6 +41,16 @@
         <input ref="fileInput" type="file" accept=".json,application/json" style="display:none" @change="onFileChosen" />
         <span v-if="!isAdmin" class="muted hint">（仅管理员可操作）</span>
       </div>
+      <!-- 从 Excel 批量导入项目（周会跟进清单格式）：按行新增，追加不覆盖现有数据 -->
+      <p class="tip muted">
+        从 Excel（周会跟进清单格式：含「待办事项」「负责人」等列）批量导入项目——按行<b>新增</b>，追加导入、不影响现有数据。
+      </p>
+      <div class="backup-actions">
+        <el-button :icon="Upload" :loading="importingExcel" :disabled="!isAdmin" @click="triggerExcelImport">
+          从 Excel 导入项目
+        </el-button>
+        <input ref="excelInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" @change="onExcelChosen" />
+      </div>
     </section>
   </div>
 </template>
@@ -92,6 +102,8 @@ async function saveFeishuApp() {
 const exporting = ref(false)
 const importing = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const excelInput = ref<HTMLInputElement | null>(null)
+const importingExcel = ref(false)
 
 async function doExport() {
   exporting.value = true
@@ -142,6 +154,48 @@ async function onFileChosen(e: Event) {
     ElMessage.error(detail ? `导入失败：${detail}` : '导入失败（需要管理员权限或文件格式错误）')
   } finally {
     importing.value = false
+  }
+}
+
+/* 从 Excel 导入项目（周会跟进清单格式）：追加新增，不覆盖现有数据 */
+function triggerExcelImport() {
+  excelInput.value?.click()
+}
+
+async function onExcelChosen(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    await ElMessageBox.confirm(
+      `从「${file.name}」导入项目？将按行新增项目（追加导入，不影响现有数据）。`,
+      'Excel 导入项目',
+      { type: 'warning', confirmButtonText: '开始导入', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  importingExcel.value = true
+  try {
+    const res = await settingsApi.importProjectsExcel(file)
+    if (res.error_count > 0) {
+      // 部分失败：列出前若干行错误，便于定位
+      const sample = res.errors.slice(0, 8).map((x) => `第 ${x.row} 行：${x.error}`).join('\n')
+      const more = res.errors.length > 8 ? `\n…… 等共 ${res.error_count} 行` : ''
+      ElMessageBox.alert(
+        `成功导入 ${res.created} 个项目，${res.error_count} 行未导入：\n${sample}${more}`,
+        '导入完成',
+        { type: res.created > 0 ? 'warning' : 'error' },
+      )
+    } else {
+      ElMessage.success(`成功导入 ${res.created} 个项目`)
+    }
+  } catch (err: unknown) {
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    ElMessage.error(detail ? `导入失败：${detail}` : '导入失败（文件格式错误或权限不足）')
+  } finally {
+    importingExcel.value = false
   }
 }
 

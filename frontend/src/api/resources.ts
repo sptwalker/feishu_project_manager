@@ -151,6 +151,16 @@ export const settingsApi = {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     ).then((r) => r.data)
   },
+  /* 从 Excel（周会跟进清单格式）批量导入项目：按行新增（追加，不替换现有数据）。
+     返回 created=成功数, errors=逐行错误, error_count=出错行数。 */
+  importProjectsExcel(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<{ created: number; errors: { row: number; error: string }[]; error_count: number }>(
+      '/reports/projects/import', form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ).then((r) => r.data)
+  },
   getMeetingReportOrder() {
     return api.get<MeetingReportOrder>('/settings/meeting-report-order').then((r) => r.data)
   },
