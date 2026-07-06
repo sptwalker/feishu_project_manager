@@ -55,6 +55,9 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        # 部署时用 `APP_VERSION=$(git rev-parse --short HEAD) docker compose build frontend` 注入真实提交号
+        APP_VERSION: ${APP_VERSION:-dev}
     image: feishu_pm_frontend
     container_name: feishu_pm_frontend
     ports:

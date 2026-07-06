@@ -29,6 +29,11 @@
         <div class="nav-item" :title="collapsed ? '个人信息' : undefined" @click="onCommand('profile')">
           <el-icon><User /></el-icon><span>个人信息</span>
         </div>
+        <!-- 部署版本标记：确认线上构建是否为最新 -->
+        <div class="ver-tag" :title="`版本 ${appVersion} · 构建 ${buildTime}`">
+          <span>v{{ appVersion }}</span>
+          <span class="ver-time">{{ buildTime }}</span>
+        </div>
       </div>
     </aside>
 
@@ -126,6 +131,10 @@ function toggleSidebar() {
 const userName = computed(() => auth.currentUser?.name ?? '')
 const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+
+// 部署版本标记（构建时注入，见 vite.config.ts）
+const appVersion = __APP_VERSION__
+const buildTime = __BUILD_TIME__
 
 function onCommand(cmd: string) {
   if (cmd === 'logout') {
@@ -264,6 +273,17 @@ onBeforeUnmount(() => { if (liveTimer) clearInterval(liveTimer) })
 
 .nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .nav-foot { padding-top: var(--sp-3); border-top: 1px solid var(--c-sidebar-hover); }
+
+/* 部署版本标记 */
+.ver-tag {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: var(--sp-2) 0 2px;
+  font-size: 11px; line-height: 1.3;
+  color: var(--c-on-dark-dim); opacity: 0.6;
+  user-select: text;
+}
+.ver-time { font-size: 10px; opacity: 0.8; }
+.sidebar.collapsed .ver-time { display: none; }
 
 .nav-item {
   display: flex;

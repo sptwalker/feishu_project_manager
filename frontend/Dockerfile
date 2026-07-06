@@ -9,6 +9,9 @@ RUN npm config set registry https://registry.npmmirror.com && \
     npm ci
 
 # 构建应用
+# 部署版本号（侧栏底部显示）：compose 传入 git 短哈希，未传则 vite 内部退回 'dev'
+ARG APP_VERSION
+ENV VITE_APP_VERSION=$APP_VERSION
 COPY . .
 RUN npm run build
 
