@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode } from '@/types'
 
 /* 图片上传：进展配图（JPG/PNG ≤10MB）。返回 {url, name, size} */
 export const uploadApi = {
@@ -252,6 +252,38 @@ export const brandingApi = {
   },
   update(payload: Partial<BrandingFull>) {
     return api.put<BrandingFull>('/settings/branding', payload).then((r) => r.data)
+  },
+}
+
+/* 内部销售码管理（管理员；sales 租户）。核销失败原因由后端返回 */
+export interface RedeemResult {
+  ok: boolean
+  reason: string
+  record?: SalesCode | null
+}
+export interface BatchRedeemResponse {
+  redeemed: SalesCode[]
+  failed: { code: string; reason: string }[]
+}
+
+export const salesCodeApi = {
+  generate(payload: { count: number; issued_to: string; password: string }) {
+    return api.post<SalesCode[]>('/sales-codes/generate', payload).then((r) => r.data)
+  },
+  redeem(code: string) {
+    return api.post<RedeemResult>('/sales-codes/redeem', { code }).then((r) => r.data)
+  },
+  redeemBatch(codes: string[]) {
+    return api.post<BatchRedeemResponse>('/sales-codes/redeem-batch', { codes }).then((r) => r.data)
+  },
+  query(params: { code?: string; start?: string; end?: string; redeemed?: boolean }) {
+    return api.get<SalesCode[]>('/sales-codes', { params }).then((r) => r.data)
+  },
+  getPwdStatus() {
+    return api.get<{ is_default: boolean }>('/sales-codes/gen-password/status').then((r) => r.data)
+  },
+  setPwd(password: string) {
+    return api.put<{ is_default: boolean }>('/sales-codes/gen-password', { password }).then((r) => r.data)
   },
 }
 

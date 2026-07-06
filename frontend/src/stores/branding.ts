@@ -15,6 +15,7 @@ export interface Branding {
   logo_url: string
   favicon_url: string
   theme: Record<string, string>
+  sales_code_enabled: boolean
 }
 
 /* 内置默认值：接口失败或字段缺失时回退（与后端 config.py 默认一致） */
@@ -30,6 +31,7 @@ const DEFAULTS: Branding = {
   logo_url: '',
   favicon_url: '',
   theme: {},
+  sales_code_enabled: false,
 }
 
 export const useBrandingStore = defineStore('branding', () => {

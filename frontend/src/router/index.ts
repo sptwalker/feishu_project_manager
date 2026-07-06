@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useBrandingStore } from '@/stores/branding'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -36,6 +37,7 @@ const router = createRouter({
           props: true,
         },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
+        { path: 'sales-codes', name: 'sales-codes', component: () => import('@/views/SalesCodesView.vue') },
       ],
     },
     {
@@ -54,6 +56,10 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.name === 'login' && auth.isAuthenticated) {
+    return { name: 'board' }
+  }
+  // 内部销售码：仅 sales 租户实例可访问（部署级开关经 /branding 下发；管理员闸靠菜单隐藏 + 后端鉴权）
+  if (to.name === 'sales-codes' && !useBrandingStore().data.sales_code_enabled) {
     return { name: 'board' }
   }
 })

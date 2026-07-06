@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_db
 from backend.services.settings_service import SettingsService
 from backend.schemas.branding import BrandingResponse
+from backend.core.config import get_settings
 
 router = APIRouter()
 
@@ -40,4 +41,5 @@ def get_branding(db: Session = Depends(get_db)) -> BrandingResponse:
         logo_url=c["logo_url"],
         favicon_url=c["favicon_url"],
         theme=theme,
+        sales_code_enabled=get_settings().SALES_CODE_ENABLED,
     )

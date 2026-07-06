@@ -26,6 +26,32 @@
       </div>
     </section>
 
+    <!-- 内部销售码生成二级密码（仅 sales 租户实例显示） -->
+    <section v-if="branding.data.sales_code_enabled" class="card">
+      <h3 class="card-title">内部销售码生成密码</h3>
+      <p class="tip muted" style="margin-top:0">
+        生成内部销售码时需要的二级密码。初始为 <b>888888</b>，建议尽快修改；修改后立即生效。
+      </p>
+      <div class="form-row">
+        <span class="ilabel">新密码</span>
+        <el-input v-model="newPwd" :disabled="!isAdmin" type="password" show-password placeholder="至少 4 位" style="width: 320px" />
+      </div>
+      <div class="form-row">
+        <span class="ilabel">确认密码</span>
+        <el-input
+          v-model="confirmPwd" :disabled="!isAdmin" type="password" show-password
+          placeholder="再次输入" style="width: 320px" @keyup.enter="saveGenPwd"
+        />
+      </div>
+      <div class="form-row">
+        <span class="ilabel"></span>
+        <el-button type="primary" :loading="savingPwd" :disabled="!isAdmin" @click="saveGenPwd">保存</el-button>
+        <span v-if="genPwdIsDefault" class="muted hint warn">⚠ 当前仍为初始密码</span>
+        <span v-else class="muted hint ok">✓ 已修改</span>
+        <span v-if="!isAdmin" class="muted hint">（仅管理员可修改）</span>
+      </div>
+    </section>
+
     <section class="card">
       <h3 class="card-title">数据备份</h3>
       <p class="tip muted" style="margin-top:0">
@@ -60,10 +86,45 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Upload } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import { settingsApi } from '@/api/resources'
+import { useBrandingStore } from '@/stores/branding'
+import { settingsApi, salesCodeApi } from '@/api/resources'
 
 const auth = useAuthStore()
+const branding = useBrandingStore()
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+
+/* 内部销售码生成二级密码（仅 sales 租户实例） */
+const newPwd = ref('')
+const confirmPwd = ref('')
+const savingPwd = ref(false)
+const genPwdIsDefault = ref(true)
+
+async function loadGenPwdStatus() {
+  if (!branding.data.sales_code_enabled) return
+  try {
+    const r = await salesCodeApi.getPwdStatus()
+    genPwdIsDefault.value = r.is_default
+  } catch {
+    // 非管理员/接口故障：保持默认提示
+  }
+}
+
+async function saveGenPwd() {
+  if (newPwd.value.length < 4) { ElMessage.warning('密码至少 4 位'); return }
+  if (newPwd.value !== confirmPwd.value) { ElMessage.warning('两次输入不一致'); return }
+  savingPwd.value = true
+  try {
+    const r = await salesCodeApi.setPwd(newPwd.value)
+    genPwdIsDefault.value = r.is_default
+    newPwd.value = ''
+    confirmPwd.value = ''
+    ElMessage.success('二级密码已修改')
+  } catch {
+    ElMessage.error('修改失败（需要管理员权限）')
+  } finally {
+    savingPwd.value = false
+  }
+}
 
 /* 飞书机器人应用凭证 */
 const feishuAppId = ref('')
@@ -199,7 +260,10 @@ async function onExcelChosen(e: Event) {
   }
 }
 
-onMounted(loadFeishuApp)
+onMounted(() => {
+  loadFeishuApp()
+  loadGenPwdStatus()
+})
 </script>
 
 <style scoped>
@@ -220,5 +284,6 @@ onMounted(loadFeishuApp)
 .ilabel { width: 80px; flex-shrink: 0; color: var(--c-ink-3); font-size: 13px; }
 .hint { font-size: 12px; }
 .hint.ok { color: #3DBE7B; }
+.hint.warn { color: #E6A23C; }
 .tip { margin: var(--sp-3) 0 0; font-size: 12px; line-height: 1.6; }
 </style>

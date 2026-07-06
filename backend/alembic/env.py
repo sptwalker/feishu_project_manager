@@ -14,7 +14,7 @@ backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir.parent))
 
 from backend.models.base import Base
-from backend.models import User, Project, Task, Event, Risk, Department, SystemSetting, MeetingRecord, OperationLog
+from backend.models import User, Project, Task, Event, Risk, Department, SystemSetting, MeetingRecord, OperationLog, SalesCode
 from backend.core.config import get_settings
 
 # this is the Alembic Config object, which provides

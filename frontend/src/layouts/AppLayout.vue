@@ -17,6 +17,12 @@
         <RouterLink to="/settings" class="nav-item" active-class="active" :title="collapsed ? '系统设置' : undefined">
           <el-icon><Setting /></el-icon><span>系统设置</span>
         </RouterLink>
+        <RouterLink
+          v-if="isAdmin && branding.data.sales_code_enabled"
+          to="/sales-codes" class="nav-item" active-class="active" :title="collapsed ? '内部销售码管理' : undefined"
+        >
+          <el-icon><Ticket /></el-icon><span>内部销售码管理</span>
+        </RouterLink>
       </nav>
 
       <div class="nav-foot">

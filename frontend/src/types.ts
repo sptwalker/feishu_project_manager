@@ -21,6 +21,17 @@ export interface User {
   updated_at?: string
 }
 
+export interface SalesCode {
+  id: number
+  code: string
+  created_at: string        // 生成时间
+  generated_by: string      // 生成人
+  issued_to: string         // 发放对象
+  redeemed: boolean         // 是否核销
+  redeemed_at?: string | null   // 核销时间
+  redeemed_by?: string | null   // 核销人
+}
+
 export interface Department {
   id: number
   name: string

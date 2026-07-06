@@ -131,6 +131,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost"]
 
+    # 内部销售码管理平台（部署级开关：仅 sales 租户实例开启；经公开 /branding 下发前端控制菜单可见）
+    SALES_CODE_ENABLED: bool = False
+
     class Config:
         env_file = Path(__file__).parent.parent / ".env"
         case_sensitive = True
