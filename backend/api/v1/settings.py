@@ -11,6 +11,7 @@ from backend.schemas.setting import (
     CoreGroupChatIdResponse, CoreGroupChatIdUpdate,
     AutoOpenMeetingResponse, AutoOpenMeetingUpdate,
     AutoReminderResponse, AutoReminderUpdate,
+    SalesCodeEnabledResponse, SalesCodeEnabledUpdate,
     MeetingReportOrderResponse, MeetingReportOrderUpdate,
     MeetingTimerResponse, MeetingTimerUpdate,
     FollowupAutoResponse, FollowupAutoUpdate,
@@ -137,6 +138,26 @@ def set_auto_reminder(
     """切换周会自动催更开关（仅管理员；改后立即生效无需重启）"""
     SettingsService.set_auto_reminder_enabled(db, payload.enabled)
     return AutoReminderResponse(enabled=SettingsService.get_auto_reminder_enabled(db))
+
+
+@router.get("/settings/sales-code-enabled", response_model=SalesCodeEnabledResponse)
+def get_sales_code_enabled(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取内部销售码平台开关状态（所有登录用户可读；侧栏据此决定菜单可见）"""
+    return SalesCodeEnabledResponse(enabled=SettingsService.get_sales_code_enabled(db))
+
+
+@router.put("/settings/sales-code-enabled", response_model=SalesCodeEnabledResponse)
+def set_sales_code_enabled(
+    payload: SalesCodeEnabledUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """切换内部销售码平台开关（仅管理员；改后前端刷新即生效，无需重启/登录服务器）"""
+    SettingsService.set_sales_code_enabled(db, payload.enabled)
+    return SalesCodeEnabledResponse(enabled=SettingsService.get_sales_code_enabled(db))
 
 
 @router.get("/settings/meeting-report-order", response_model=MeetingReportOrderResponse)

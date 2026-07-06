@@ -71,3 +71,15 @@ def test_branding_logo_data_uri_roundtrip(db_session):
     SettingsService.set_branding_config(db_session, {"logo_url": data_uri})
     cfg = SettingsService.get_branding_config(db_session)
     assert cfg["logo_url"] == data_uri
+
+
+def test_sales_code_enabled_env_fallback_then_db_override(db_session):
+    s = get_settings()
+    # 未设置 → 回退 .env（默认 False）
+    assert SettingsService.get_sales_code_enabled(db_session) == s.SALES_CODE_ENABLED
+    # DB 开启覆盖 env
+    SettingsService.set_sales_code_enabled(db_session, True)
+    assert SettingsService.get_sales_code_enabled(db_session) is True
+    # DB 关闭覆盖 env
+    SettingsService.set_sales_code_enabled(db_session, False)
+    assert SettingsService.get_sales_code_enabled(db_session) is False

@@ -27,6 +27,8 @@ FEISHU_APP_ID_KEY = "feishu_app_id"
 FEISHU_APP_SECRET_KEY = "feishu_app_secret"
 # 本实例品牌配置（JSON；DB 优先于 .env，UI 可改、免登服务器）
 BRANDING_CONFIG_KEY = "branding_config"
+# 内部销售码平台开关（运行时；DB 优先于 .env 的 SALES_CODE_ENABLED，管理员可在「其他设置」切换、免登服务器）
+SALES_CODE_ENABLED_KEY = "sales_code_enabled"
 
 # 品牌字段 → 对应 .env 默认值的属性名（DB 缺省时回退 env）
 _BRANDING_ENV_MAP = {
@@ -150,6 +152,20 @@ class SettingsService:
         SettingsService.set_setting(db, FEISHU_APP_ID_KEY, (app_id or "").strip())
         if app_secret is not None and app_secret.strip():
             SettingsService.set_setting(db, FEISHU_APP_SECRET_KEY, app_secret.strip())
+
+    @staticmethod
+    def get_sales_code_enabled(db: Session) -> bool:
+        """内部销售码平台开关：DB 优先（管理员可在 UI 切换、免登服务器），
+        未设置则回退 .env 的 SALES_CODE_ENABLED（默认关）。"""
+        v = SettingsService.get_setting(db, SALES_CODE_ENABLED_KEY, None)
+        if v is None:
+            return get_settings().SALES_CODE_ENABLED
+        return v == "true"
+
+    @staticmethod
+    def set_sales_code_enabled(db: Session, enabled: bool) -> None:
+        """切换内部销售码平台开关（改后前端刷新品牌即生效，无需重启/登录服务器）。"""
+        SettingsService.set_setting(db, SALES_CODE_ENABLED_KEY, "true" if enabled else "false")
 
     @staticmethod
     def get_branding_config(db: Session) -> dict:

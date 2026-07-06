@@ -140,6 +140,12 @@ export const settingsApi = {
   setAutoReminder(enabled: boolean) {
     return api.put<{ enabled: boolean }>('/settings/auto-reminder', { enabled }).then((r) => r.data)
   },
+  getSalesCodeEnabled() {
+    return api.get<{ enabled: boolean }>('/settings/sales-code-enabled').then((r) => r.data)
+  },
+  setSalesCodeEnabled(enabled: boolean) {
+    return api.put<{ enabled: boolean }>('/settings/sales-code-enabled', { enabled }).then((r) => r.data)
+  },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
   },

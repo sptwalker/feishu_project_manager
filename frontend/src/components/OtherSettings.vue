@@ -1,5 +1,18 @@
 <template>
   <div class="other-settings">
+    <!-- 内部销售码平台开关（仅管理员可见；控制侧栏「内部销售码管理」菜单，改后即生效、免登服务器） -->
+    <section v-if="isAdmin" class="card">
+      <h3 class="card-title">内部销售码管理平台</h3>
+      <p class="tip muted" style="margin-top:0">
+        开启后，管理员侧栏出现「内部销售码管理」菜单（生成 / 核销 / 查询）。仅用于内部销售码业务的实例开启即可。
+      </p>
+      <div class="form-row">
+        <span class="ilabel">启用平台</span>
+        <el-switch v-model="salesEnabled" :loading="savingSales" @change="onToggleSales" />
+        <span class="muted hint">{{ salesEnabled ? '已启用（侧栏可见）' : '已关闭' }}</span>
+      </div>
+    </section>
+
     <!-- 飞书机器人应用：本实例独立的 App ID/Secret（DB 优先于 .env，实现各实例独立机器人） -->
     <section class="card">
       <h3 class="card-title">飞书机器人应用</h3>
@@ -92,6 +105,34 @@ import { settingsApi, salesCodeApi } from '@/api/resources'
 const auth = useAuthStore()
 const branding = useBrandingStore()
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+
+/* 内部销售码平台开关（DB 运行时开关，改后刷新品牌→侧栏菜单即时增减） */
+const salesEnabled = ref(false)
+const savingSales = ref(false)
+
+async function loadSalesEnabled() {
+  if (!isAdmin.value) return
+  try {
+    salesEnabled.value = (await settingsApi.getSalesCodeEnabled()).enabled
+  } catch {
+    salesEnabled.value = branding.data.sales_code_enabled
+  }
+}
+
+async function onToggleSales(val: string | number | boolean) {
+  const next = Boolean(val)
+  savingSales.value = true
+  try {
+    salesEnabled.value = (await settingsApi.setSalesCodeEnabled(next)).enabled
+    await branding.fetchBranding()  // 刷新品牌：侧栏菜单立即出现/消失，无需重新登录
+    ElMessage.success(next ? '已启用内部销售码平台' : '已关闭内部销售码平台')
+  } catch {
+    salesEnabled.value = !next  // 回滚开关
+    ElMessage.error('操作失败（需要管理员权限）')
+  } finally {
+    savingSales.value = false
+  }
+}
 
 /* 内部销售码生成二级密码（仅 sales 租户实例） */
 const newPwd = ref('')
@@ -263,6 +304,7 @@ async function onExcelChosen(e: Event) {
 onMounted(() => {
   loadFeishuApp()
   loadGenPwdStatus()
+  loadSalesEnabled()
 })
 </script>
 

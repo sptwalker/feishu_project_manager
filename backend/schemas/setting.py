@@ -121,6 +121,16 @@ class FollowupAutoUpdate(BaseModel):
     follow: list[str] = Field(default_factory=list)
 
 
+class SalesCodeEnabledResponse(BaseModel):
+    """内部销售码平台开关状态"""
+    enabled: bool = Field(False, description="是否启用内部销售码管理平台")
+
+
+class SalesCodeEnabledUpdate(BaseModel):
+    """切换内部销售码平台开关"""
+    enabled: bool = Field(..., description="是否启用内部销售码管理平台")
+
+
 class FeishuAppResponse(BaseModel):
     """本实例飞书机器人应用配置（不回传密钥）"""
     app_id: str = Field("", description="飞书 App ID")
