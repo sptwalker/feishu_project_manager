@@ -56,8 +56,9 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       args:
-        # 部署时用 `APP_VERSION=$(git rev-parse --short HEAD) docker compose build frontend` 注入真实提交号
-        APP_VERSION: ${APP_VERSION:-dev}
+        # 部署时用 `WEB_BUILD_REF=$(git rev-parse --short HEAD) docker compose build frontend` 注入真实提交号。
+        # 用独立变量名（非 APP_VERSION）避免与 .env 里的后端产品版本号 1.0.0 冲突。
+        APP_VERSION: ${WEB_BUILD_REF:-dev}
     image: feishu_pm_frontend
     container_name: feishu_pm_frontend
     ports:
