@@ -95,7 +95,10 @@
         </section>
 
         <section class="card">
-          <h3 class="card-title">查询结果（{{ queryResult.length }} 条）</h3>
+          <div class="card-head">
+            <h3 class="card-title">查询结果（{{ queryResult.length }} 条）</h3>
+            <el-button :icon="Download" :disabled="!queryResult.length" @click="exportQuery">导出 CSV</el-button>
+          </div>
           <el-table :data="queryResult" size="small" border max-height="520">
             <el-table-column prop="code" label="销售码" min-width="150" fixed />
             <el-table-column prop="issued_to" label="发放对象" min-width="130" />
@@ -136,6 +139,13 @@ const activeTab = ref('generate')
 /* 生成时间等 ISO 串 → 「YYYY-MM-DD HH:mm」（后端为本地朴素时间，直接截取不做时区换算） */
 function fmt(s?: string | null): string {
   return s ? s.replace('T', ' ').slice(0, 16) : ''
+}
+
+/* 导出文件名时间戳：YYYYMMDDHHmm（本地时间） */
+function nowStamp(): string {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}`
 }
 
 /* ---------- 生成 ---------- */
@@ -252,6 +262,24 @@ async function doQuery() {
   } finally {
     querying.value = false
   }
+}
+
+/* 查询结果导出 CSV：复用 csvCell 转义 + UTF-8 BOM（Excel 中文不乱码） */
+function exportQuery() {
+  if (!queryResult.value.length) return
+  const header = ['销售码', '发放对象', '生成时间', '生成人', '是否核销', '核销时间', '核销人']
+  const rows = queryResult.value.map((r) => [
+    r.code, r.issued_to, fmt(r.created_at), r.generated_by,
+    r.redeemed ? '已核销' : '未核销', fmt(r.redeemed_at), r.redeemed_by ?? '',
+  ])
+  const csv = '﻿' + [header, ...rows].map((cols) => cols.map(csvCell).join(',')).join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `sales_codes_query_${nowStamp()}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
