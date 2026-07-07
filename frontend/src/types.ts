@@ -24,12 +24,25 @@ export interface User {
 export interface SalesCode {
   id: number
   code: string
+  prefix: string            // 前缀
   created_at: string        // 生成时间
   generated_by: string      // 生成人
   issued_to: string         // 发放对象
   redeemed: boolean         // 是否核销
   redeemed_at?: string | null   // 核销时间
   redeemed_by?: string | null   // 核销人
+}
+
+export interface SalesCodePrefix {
+  id: number
+  prefix: string
+  remark: string
+  max_count?: number | null   // 数量上限（空=无限制）
+  disabled: boolean
+  created_by: string
+  created_at: string
+  used: number                // 已生成数量
+  remaining?: number | null   // 剩余可生成（无限制则为空）
 }
 
 export interface Department {

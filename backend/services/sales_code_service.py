@@ -7,11 +7,13 @@
 from datetime import datetime
 from typing import Optional
 import hashlib
+import re
 import secrets
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
-from backend.models.sales_code import SalesCode
+from backend.models.sales_code import SalesCode, SalesCodePrefix
 from backend.models.user import User
 from backend.services.settings_service import SettingsService
 
@@ -20,14 +22,25 @@ SALES_CODE_PWD_KEY = "sales_code_gen_password_hash"
 DEFAULT_GEN_PASSWORD = "888888"
 _PBKDF2_ROUNDS = 100_000
 
-# 去除易混字符（无 0 O 1 I L），码形如 SC-XXXXXXXX
+# 去除易混字符（无 0 O 1 I L）；随机段 8 位大写字母数字
 _ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 _CODE_LEN = 8
 MAX_BATCH = 1000
+# 前缀：大写字母数字，≤8 位（不含 '-'，避免与分隔符冲突）
+_PREFIX_RE = re.compile(r"^[A-Z0-9]{1,8}$")
 
 
-def _gen_code() -> str:
-    return "SC-" + "".join(secrets.choice(_ALPHABET) for _ in range(_CODE_LEN))
+def _gen_code(prefix: str) -> str:
+    return f"{prefix}-" + "".join(secrets.choice(_ALPHABET) for _ in range(_CODE_LEN))
+
+
+def _norm_prefix(prefix: str) -> str:
+    """归一化前缀：去空白转大写，并校验格式（≤8 位大写字母数字）。"""
+    p = (prefix or "").strip().upper()
+    if not _PREFIX_RE.match(p):
+        raise ValueError("前缀需为 1~8 位大写字母或数字（不含符号）")
+    return p
+
 
 
 def _hash_pwd(pwd: str) -> str:
@@ -52,15 +65,36 @@ class SalesCodeService:
     """内部销售码服务"""
 
     @staticmethod
-    def generate_batch(db: Session, count: int, issued_to: str, generator: Optional[User]) -> list[SalesCode]:
-        """批量生成 count 个唯一随机码并入库。批内去重 + 库内去重（碰撞重取）。"""
+    def generate_batch(
+        db: Session, count: int, issued_to: str, generator: Optional[User], prefix: str,
+    ) -> list[SalesCode]:
+        """批量生成 count 个「前缀-随机」唯一码并入库。
+
+        前缀须已在库且未禁用；若前缀有数量上限，剩余不足以生成 count 个则整体拒绝
+        （提示剩余量，不做部分生成）。批内去重 + 库内去重（碰撞重取）。
+        """
         if count < 1 or count > MAX_BATCH:
             raise ValueError(f"生成数量需在 1~{MAX_BATCH} 之间")
         issued_to = (issued_to or "").strip()
+        p = _norm_prefix(prefix)
+
+        pref = db.query(SalesCodePrefix).filter(SalesCodePrefix.prefix == p).first()
+        if pref is None:
+            raise ValueError(f"前缀「{p}」不在前缀库，请先在「销售码前缀管理」添加")
+        if pref.disabled:
+            raise ValueError(f"前缀「{p}」已被禁用，无法用于生成")
+        if pref.max_count is not None:
+            used = SalesCodeService.count_by_prefix(db, p)
+            remaining = pref.max_count - used
+            if remaining < count:
+                raise ValueError(
+                    f"前缀「{p}」限额 {pref.max_count}，已生成 {used}，剩余 {max(remaining, 0)} 个，"
+                    f"无法生成 {count} 个"
+                )
 
         codes: set[str] = set()
         while len(codes) < count:
-            batch = {_gen_code() for _ in range(count - len(codes))} - codes
+            batch = {_gen_code(p) for _ in range(count - len(codes))} - codes
             if batch:
                 existing = {
                     c for (c,) in db.query(SalesCode.code)
@@ -71,7 +105,7 @@ class SalesCodeService:
 
         rows = [
             SalesCode(
-                code=c, issued_to=issued_to,
+                code=c, prefix=p, issued_to=issued_to,
                 generated_by=generator.name if generator else "",
                 generated_by_id=generator.id if generator else None,
                 redeemed=False,
@@ -147,15 +181,18 @@ class SalesCodeService:
     def query(
         db: Session,
         code: Optional[str] = None,
+        prefix: Optional[str] = None,
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         redeemed: Optional[bool] = None,
         limit: int = 1000,
     ) -> list[SalesCode]:
-        """按销售码（模糊）/ 生成时间区间 / 核销状态查询，按生成时间倒序。"""
+        """按销售码（模糊）/ 前缀 / 生成时间区间 / 核销状态查询，按生成时间倒序。"""
         q = db.query(SalesCode)
         if code and code.strip():
             q = q.filter(SalesCode.code.ilike(f"%{code.strip()}%"))
+        if prefix and prefix.strip():
+            q = q.filter(SalesCode.prefix == prefix.strip().upper())
         if start is not None:
             q = q.filter(SalesCode.created_at >= start)
         if end is not None:
@@ -163,6 +200,74 @@ class SalesCodeService:
         if redeemed is not None:
             q = q.filter(SalesCode.redeemed == redeemed)
         return q.order_by(SalesCode.created_at.desc(), SalesCode.id.desc()).limit(limit).all()
+
+    # ---------- 前缀库 ----------
+
+    @staticmethod
+    def count_by_prefix(db: Session, prefix: str) -> int:
+        """某前缀已生成的销售码数量（用于限额判断/展示已用量）。"""
+        return db.query(func.count(SalesCode.id)).filter(SalesCode.prefix == prefix).scalar() or 0
+
+    @staticmethod
+    def list_prefixes(db: Session, include_disabled: bool = True) -> list[dict]:
+        """列出前缀库，附每个前缀的已用量与剩余量（无上限则剩余为 None）。"""
+        q = db.query(SalesCodePrefix)
+        if not include_disabled:
+            q = q.filter(SalesCodePrefix.disabled.is_(False))
+        prefixes = q.order_by(SalesCodePrefix.created_at.desc()).all()
+        # 一次聚合各前缀已用量，避免 N 次查询
+        used_map = dict(
+            db.query(SalesCode.prefix, func.count(SalesCode.id)).group_by(SalesCode.prefix).all()
+        )
+        out: list[dict] = []
+        for p in prefixes:
+            used = used_map.get(p.prefix, 0)
+            remaining = None if p.max_count is None else max(p.max_count - used, 0)
+            out.append({
+                "id": p.id, "prefix": p.prefix, "remark": p.remark,
+                "max_count": p.max_count, "disabled": p.disabled,
+                "created_by": p.created_by, "created_at": p.created_at,
+                "used": used, "remaining": remaining,
+            })
+        return out
+
+    @staticmethod
+    def create_prefix(
+        db: Session, prefix: str, remark: str, max_count: Optional[int], creator: Optional[User],
+    ) -> SalesCodePrefix:
+        """新增前缀（去空白转大写、校验格式，唯一）。"""
+        p = _norm_prefix(prefix)
+        if db.query(SalesCodePrefix).filter(SalesCodePrefix.prefix == p).first():
+            raise ValueError(f"前缀「{p}」已存在")
+        row = SalesCodePrefix(
+            prefix=p, remark=(remark or "").strip(), max_count=max_count,
+            disabled=False,
+            created_by=creator.name if creator else "",
+            created_by_id=creator.id if creator else None,
+        )
+        db.add(row)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        db.refresh(row)
+        return row
+
+    @staticmethod
+    def set_prefix_disabled(db: Session, prefix_id: int, disabled: bool) -> SalesCodePrefix:
+        """启用/禁用前缀。"""
+        row = db.query(SalesCodePrefix).filter(SalesCodePrefix.id == prefix_id).first()
+        if row is None:
+            raise ValueError("前缀不存在")
+        row.disabled = disabled
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        db.refresh(row)
+        return row
 
     # ---------- 生成用二级密码 ----------
 

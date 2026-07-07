@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode, SalesCodePrefix } from '@/types'
 
 /* 图片上传：进展配图（JPG/PNG ≤10MB）。返回 {url, name, size} */
 export const uploadApi = {
@@ -273,7 +273,7 @@ export interface BatchRedeemResponse {
 }
 
 export const salesCodeApi = {
-  generate(payload: { count: number; issued_to: string; password: string }) {
+  generate(payload: { count: number; prefix: string; issued_to: string; password: string }) {
     return api.post<SalesCode[]>('/sales-codes/generate', payload).then((r) => r.data)
   },
   redeem(code: string) {
@@ -282,7 +282,7 @@ export const salesCodeApi = {
   redeemBatch(codes: string[]) {
     return api.post<BatchRedeemResponse>('/sales-codes/redeem-batch', { codes }).then((r) => r.data)
   },
-  query(params: { code?: string; start?: string; end?: string; redeemed?: boolean }) {
+  query(params: { code?: string; prefix?: string; start?: string; end?: string; redeemed?: boolean }) {
     return api.get<SalesCode[]>('/sales-codes', { params }).then((r) => r.data)
   },
   getPwdStatus() {
@@ -290,6 +290,15 @@ export const salesCodeApi = {
   },
   setPwd(password: string) {
     return api.put<{ is_default: boolean }>('/sales-codes/gen-password', { password }).then((r) => r.data)
+  },
+  listPrefixes() {
+    return api.get<SalesCodePrefix[]>('/sales-codes/prefixes').then((r) => r.data)
+  },
+  createPrefix(payload: { prefix: string; remark: string; max_count?: number | null }) {
+    return api.post<SalesCodePrefix>('/sales-codes/prefixes', payload).then((r) => r.data)
+  },
+  setPrefixDisabled(id: number, disabled: boolean) {
+    return api.put<SalesCodePrefix>(`/sales-codes/prefixes/${id}`, { disabled }).then((r) => r.data)
   },
 }
 
