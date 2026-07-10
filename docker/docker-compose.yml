@@ -17,6 +17,10 @@ services:
       # 飞书真实外发总开关：开启后周会催更/纪要/自动开周会通知会真正发到飞书群。
       # 同样放 compose 以便外网无需改 .env；如需停止真实外发改成 "False" 即可。
       FEISHU_NOTIFY_ENABLED: "True"
+      # 留言讨论区独立库 + 媒体目录放持久卷 /data（否则落容器临时盘，每次重建即丢数据）。
+      # 放 compose 确保所有部署生效，无需手改服务器 .env。
+      DISCUSS_DATABASE_URL: "sqlite:////data/discuss.db"
+      DISCUSS_UPLOAD_DIR: "/data/discuss_uploads"
     restart: unless-stopped
     networks:
       - feishu_pm_network
@@ -41,6 +45,8 @@ services:
     environment:
       AUTO_OPEN_MEETING_ENABLED: "True"
       FEISHU_NOTIFY_ENABLED: "True"
+      DISCUSS_DATABASE_URL: "sqlite:////data/discuss.db"
+      DISCUSS_UPLOAD_DIR: "/data/discuss_uploads"
     restart: unless-stopped
     networks:
       - feishu_pm_network

@@ -213,6 +213,16 @@ def test_ext_token_roundtrip_and_isolation():
     assert verify_ext_token("garbage") is None
 
 
+def test_ensure_sqlite_dir_creates_missing_parent(tmp_path):
+    """discuss 库路径父目录不存在时应自动创建（修复容器里 /discuss/board 500）。"""
+    from backend.discuss.db import _ensure_sqlite_dir
+    target = tmp_path / "nested" / "sub" / "discuss.db"
+    assert not target.parent.exists()
+    _ensure_sqlite_dir(f"sqlite:///{target.as_posix()}")
+    assert target.parent.exists()          # 目录已建
+    _ensure_sqlite_dir("sqlite:///:memory:")  # 内存库不涉及目录，不应报错
+
+
 def test_send_email_verbose_surfaces_reason():
     """未配置 host → 降级成功；配置了但连接失败 → 返回真实原因（供测试邮件回显）"""
     ok, detail = S.send_email_verbose({"host": ""}, "a@b.com", "s", "b")

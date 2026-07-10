@@ -4,6 +4,7 @@
 PM 的备份、导入、迁移完全不涉及本库；本库表结构用 create_all 惰性创建
 （独立小库、模块自治，不接入主库的 alembic 迁移链）。
 """
+import os
 from typing import Generator
 
 from sqlalchemy import create_engine
@@ -18,11 +19,25 @@ _engine = None
 _SessionLocal = None
 
 
+def _ensure_sqlite_dir(url: str) -> None:
+    """SQLite：确保数据库文件所在目录存在。
+
+    容器里若 DISCUSS_DATABASE_URL 用默认相对路径（./backend/data/discuss.db），
+    该目录可能不存在，首次建库会报「unable to open database file」→ 接口 500。
+    """
+    prefix = "sqlite:///"
+    if url.startswith(prefix):
+        db_path = url[len(prefix):]
+        if db_path and db_path != ":memory:":
+            os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+
+
 def get_discuss_engine():
     """惰性创建 discuss 引擎（首次访问时建库建表）。"""
     global _engine, _SessionLocal
     if _engine is None:
         url = get_settings().DISCUSS_DATABASE_URL
+        _ensure_sqlite_dir(url)
         _engine = create_engine(
             url,
             connect_args={"check_same_thread": False} if "sqlite" in url else {},
