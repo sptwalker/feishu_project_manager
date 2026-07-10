@@ -254,3 +254,27 @@ def test_send_email_transport_derived_from_port(monkeypatch):
     ok, _ = S.send_email_verbose({"host": "h", "port": 587, "ssl": True, "username": ""}, "a@b.com", "s", "b")
     assert ok is True and _Fake.used["cls"] == "_Fake" and _Fake.used["starttls"] is True
 
+
+def test_envelope_sender_always_valid_email(monkeypatch):
+    """信封 MAIL FROM 恒用登录账号：发件人填成裸名字（walker）也不会当地址用，避免 500 bad syntax。"""
+    import backend.discuss.service as svc
+    captured = {}
+
+    class _Fake:
+        def __init__(self, host, port, timeout=10): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def starttls(self): pass
+        def login(self, u, p): pass
+        def sendmail(self, envelope_from, to, data):
+            captured["from"] = envelope_from
+
+    monkeypatch.setattr(svc.smtplib, "SMTP_SSL", _Fake)
+    monkeypatch.setattr(svc.smtplib, "SMTP", _Fake)
+
+    # 发件人填的是名字 → 信封用登录账号，不是 "walker"
+    ok, _ = S.send_email_verbose(
+        {"host": "h", "port": 465, "username": "walker@youdoogo.com", "sender": "walker"},
+        "to@x.com", "s", "b")
+    assert ok is True and captured["from"] == "walker@youdoogo.com"
+

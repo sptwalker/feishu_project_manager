@@ -54,7 +54,8 @@
       </div>
       <div class="form-row">
         <span class="ilabel">发件人</span>
-        <el-input v-model="smtp.sender" placeholder="留空则用用户名" style="width: 240px" clearable />
+        <el-input v-model="smtp.sender" placeholder="发件邮箱地址，留空则用账号" style="width: 240px" clearable />
+        <span class="muted hint">须是邮箱地址（非昵称）；一般留空即可，默认用上面的账号</span>
       </div>
       <div class="form-row">
         <span class="ilabel"></span>

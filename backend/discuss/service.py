@@ -99,8 +99,15 @@ class DiscussService:
             return True, "SMTP 未配置（已降级打印到日志）"
         msg = MIMEText(body, "plain", "utf-8")
         msg["Subject"] = Header(subject, "utf-8")
-        sender = smtp_cfg.get("sender") or smtp_cfg.get("username") or ""
-        msg["From"] = formataddr((str(Header("留言讨论区", "utf-8")), sender))
+        username = (smtp_cfg.get("username") or "").strip()
+        from_field = (smtp_cfg.get("sender") or "").strip()
+        # 发件地址：发件人填了完整邮箱才用它，否则回退登录账号
+        # （发件人填的是名字/留空时不当地址用，避免出现非法地址）。
+        from_addr = from_field if "@" in from_field else username
+        # 信封 MAIL FROM 必须是有效邮箱，且多数服务商（如阿里企业邮）要求与登录账号一致：
+        # 恒用登录账号，杜绝把「发件人显示名」误当信封地址导致 500 bad syntax。
+        envelope_from = username or from_addr
+        msg["From"] = formataddr((str(Header("留言讨论区", "utf-8")), from_addr))
         msg["To"] = to_addr
         try:
             port = int(smtp_cfg.get("port") or 465)
@@ -113,9 +120,9 @@ class DiscussService:
                 if smtp_cfg.get("ssl", True):
                     server.starttls()
             with server:
-                if smtp_cfg.get("username"):
-                    server.login(smtp_cfg["username"], smtp_cfg.get("password") or "")
-                server.sendmail(sender, [to_addr], msg.as_string())
+                if username:
+                    server.login(username, smtp_cfg.get("password") or "")
+                server.sendmail(envelope_from, [to_addr], msg.as_string())
             return True, ""
         except Exception as e:  # noqa: BLE001 - 邮件失败要转成用户可读错误
             logger.warning("[discuss] 发送邮件失败: %s", e)
