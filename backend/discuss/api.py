@@ -66,6 +66,10 @@ class PostMessageRequest(BaseModel):
     attachments: list = Field(default_factory=list)
 
 
+# 附件硬上限（防超大 payload）；按类型的数量限额在 service 层权威判定
+_MAX_ATTACHMENTS = 20
+
+
 class AdminReplyRequest(BaseModel):
     thread_id: int
     content: str = Field(..., max_length=4000)
@@ -201,9 +205,10 @@ def post_message(
 ):
     """发留言（thread_id 为空开新楼；有值则限本人楼内补充）。附件须来自本站 /discuss/media。"""
     _require_enabled(db)
-    # 附件白名单校验：仅允许本站 discuss 媒体 URL，防外链注入
+    # 附件白名单校验：仅允许本站 discuss 媒体 URL，防外链注入。
+    # 硬上限只防超大 payload；按类型的数量限额由 service.post_message 权威判定并回友好错误。
     atts = []
-    for a in (payload.attachments or [])[:10]:
+    for a in (payload.attachments or [])[:_MAX_ATTACHMENTS]:
         if not isinstance(a, dict):
             continue
         url = str(a.get("url") or "")

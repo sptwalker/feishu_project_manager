@@ -34,9 +34,10 @@
         </div>
         <div class="fm-composer-bar">
           <div class="fm-tools">
-            <button class="fm-tool-btn" :disabled="!me || uploading" @click="pickFile('image/jpeg,image/png')">📷 图片</button>
-            <button class="fm-tool-btn" :disabled="!me || uploading" @click="pickFile('video/mp4')">🎬 视频</button>
+            <button class="fm-tool-btn" :disabled="!me || uploading || imgCount >= MAX_IMAGES" @click="pickFile('image/jpeg,image/png')">📷 图片</button>
+            <button class="fm-tool-btn" :disabled="!me || uploading || vidCount >= MAX_VIDEOS" @click="pickFile('video/mp4')">🎬 视频</button>
             <span v-if="uploading" class="fm-uploading">上传中…</span>
+            <span v-else-if="me && draftAtts.length" class="fm-uploading">图片 {{ imgCount }}/{{ MAX_IMAGES }} · 视频 {{ vidCount }}/{{ MAX_VIDEOS }}</span>
           </div>
           <button class="fm-send" :disabled="!me || sending || !draft.trim()" @click="submitRoot">发布</button>
         </div>
@@ -114,9 +115,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, defineComponent, h, type PropType } from 'vue'
+import { ref, onMounted, computed, defineComponent, h, type PropType } from 'vue'
 import { discussApi, discussTokenStore } from '@/api/resources'
 import type { DiscussBoardInfo, DiscussMessage, DiscussAttachment } from '@/types'
+
+// 单帖附件数量上限（与后端 discuss/service.py 保持一致，防刷图/刷视频）
+const MAX_IMAGES = 9
+const MAX_VIDEOS = 1
 
 /* 附件展示子组件：图片自适应网格 + 视频原生播放器（纯展示，就地定义避免多余文件） */
 const MediaGrid = defineComponent({
@@ -155,6 +160,8 @@ const me = ref<{ nickname: string; email: string } | null>(null)
 
 const draft = ref('')
 const draftAtts = ref<DiscussAttachment[]>([])
+const imgCount = computed(() => draftAtts.value.filter((a) => a.type === 'image').length)
+const vidCount = computed(() => draftAtts.value.filter((a) => a.type === 'video').length)
 const sending = ref(false)
 const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -271,6 +278,9 @@ async function onFile(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   const isVideo = pickAccept.includes('video')
+  // 数量限额（防刷）：按类型拦在上传前，避免白传
+  if (isVideo && vidCount.value >= MAX_VIDEOS) { alert(`最多上传 ${MAX_VIDEOS} 个视频`); return }
+  if (!isVideo && imgCount.value >= MAX_IMAGES) { alert(`最多上传 ${MAX_IMAGES} 张图片`); return }
   const maxMB = isVideo ? 100 : 10
   if (file.size > maxMB * 1024 * 1024) {
     alert(`${isVideo ? '视频' : '图片'}不能超过 ${maxMB}MB`)

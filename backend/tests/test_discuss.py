@@ -140,6 +140,21 @@ def test_post_rate_limit(ddb):
     assert e.value.status_code == 429
 
 
+def test_media_count_limits(ddb):
+    """单帖图片/视频数量按类型限额（防刷图刷视频）；限额内允许。"""
+    user = _register(ddb)
+    imgs = [{"type": "image", "url": f"/api/v1/discuss/media/{i}.jpg"} for i in range(10)]
+    vids = [{"type": "video", "url": f"/api/v1/discuss/media/{i}.mp4"} for i in range(2)]
+    with pytest.raises(DiscussError) as e:          # 10 张图 > 9
+        S.post_message(ddb, user, "太多图", attachments=imgs)
+    assert "图片" in e.value.message
+    with pytest.raises(DiscussError) as e:          # 2 个视频 > 1
+        S.post_message(ddb, user, "太多视频", attachments=vids)
+    assert "视频" in e.value.message
+    ok = S.post_message(ddb, user, "刚好", attachments=imgs[:9] + vids[:1])  # 9 图 + 1 视频
+    assert len(ok.attachments) == 10
+
+
 def test_blocked_user_cannot_post(ddb):
     user = _register(ddb)
     S.set_user_blocked(ddb, user.id, True)

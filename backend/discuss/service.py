@@ -33,6 +33,9 @@ CODE_DAILY_LIMIT = 10      # 每邮箱每日上限
 # 发帖限流
 POST_MIN_INTERVAL_SECONDS = 60
 POST_DAILY_LIMIT = 50
+# 单帖附件数量上限（防刷图/刷视频）
+MAX_IMAGES_PER_POST = 9
+MAX_VIDEOS_PER_POST = 1
 # 注册限流
 REGISTER_IP_DAILY_LIMIT = 5
 # 内容约束
@@ -255,6 +258,14 @@ class DiscussService:
             raise DiscussError("留言内容不能为空")
         if len(content) > CONTENT_MAX_LEN:
             raise DiscussError(f"留言不能超过 {CONTENT_MAX_LEN} 字")
+        # 附件数量按类型限额（防刷图/刷视频）
+        atts = attachments or []
+        n_img = sum(1 for a in atts if isinstance(a, dict) and a.get("type") == "image")
+        n_vid = sum(1 for a in atts if isinstance(a, dict) and a.get("type") == "video")
+        if n_img > MAX_IMAGES_PER_POST:
+            raise DiscussError(f"每条留言最多 {MAX_IMAGES_PER_POST} 张图片")
+        if n_vid > MAX_VIDEOS_PER_POST:
+            raise DiscussError(f"每条留言最多 {MAX_VIDEOS_PER_POST} 个视频")
         now = datetime.now()
         # 限流：1 条/分钟、50 条/天
         last = db.query(DiscussMessage).filter(
