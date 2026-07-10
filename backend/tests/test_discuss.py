@@ -222,3 +222,35 @@ def test_send_email_verbose_surfaces_reason():
         {"host": "127.0.0.1", "port": 1, "ssl": False, "username": ""}, "a@b.com", "s", "b")
     assert ok is False and detail        # 非空原因
 
+
+def test_send_email_transport_derived_from_port(monkeypatch):
+    """传输按端口推导：465→隐式 SSL；587→明文+STARTTLS（对齐 BH，避免 SSL 勾选配错）。"""
+    import backend.discuss.service as svc
+
+    class _Fake:
+        used = {}
+
+        def __init__(self, host, port, timeout=10):
+            _Fake.used["cls"] = type(self).__name__
+            _Fake.used["starttls"] = False
+
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def starttls(self): _Fake.used["starttls"] = True
+        def login(self, u, p): pass
+        def sendmail(self, *a): pass
+
+    class _FakeSSL(_Fake): pass
+
+    monkeypatch.setattr(svc.smtplib, "SMTP", _Fake)
+    monkeypatch.setattr(svc.smtplib, "SMTP_SSL", _FakeSSL)
+
+    # 465：走 SMTP_SSL，不调用 starttls
+    _Fake.used = {}
+    ok, _ = S.send_email_verbose({"host": "h", "port": 465, "ssl": False, "username": ""}, "a@b.com", "s", "b")
+    assert ok is True and _Fake.used["cls"] == "_FakeSSL" and _Fake.used["starttls"] is False
+    # 587 + ssl：走明文 SMTP + STARTTLS
+    _Fake.used = {}
+    ok, _ = S.send_email_verbose({"host": "h", "port": 587, "ssl": True, "username": ""}, "a@b.com", "s", "b")
+    assert ok is True and _Fake.used["cls"] == "_Fake" and _Fake.used["starttls"] is True
+

@@ -104,11 +104,14 @@ class DiscussService:
         msg["To"] = to_addr
         try:
             port = int(smtp_cfg.get("port") or 465)
-            if smtp_cfg.get("ssl", True):
+            # 传输方式按端口推导（对齐经验证可用的做法，避免 SSL 勾选与端口配错）：
+            # 465 = 隐式 SSL（强制）；其余端口 = 明文 + STARTTLS（ssl 勾选时启用，默认启用）。
+            if port == 465:
                 server = smtplib.SMTP_SSL(host, port, timeout=10)
             else:
                 server = smtplib.SMTP(host, port, timeout=10)
-                server.starttls()
+                if smtp_cfg.get("ssl", True):
+                    server.starttls()
             with server:
                 if smtp_cfg.get("username"):
                     server.login(smtp_cfg["username"], smtp_cfg.get("password") or "")

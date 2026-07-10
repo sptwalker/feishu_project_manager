@@ -37,7 +37,11 @@
         <span class="ilabel">服务器</span>
         <el-input v-model="smtp.host" placeholder="如 smtp.exmail.qq.com" style="width: 240px" clearable />
         <el-input-number v-model="smtp.port" :min="1" :max="65535" controls-position="right" style="width: 110px" />
-        <el-checkbox v-model="smtp.ssl">SSL</el-checkbox>
+        <el-checkbox v-model="smtp.ssl" :disabled="smtp.port === 465">SSL/TLS</el-checkbox>
+      </div>
+      <div class="form-row">
+        <span class="ilabel"></span>
+        <span class="muted hint">465 端口自动走 SSL；587/25 端口勾选则用 STARTTLS。按你的邮箱服务商填端口即可。</span>
       </div>
       <div class="form-row">
         <span class="ilabel">用户名</span>
