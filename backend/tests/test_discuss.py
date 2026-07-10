@@ -211,3 +211,14 @@ def test_ext_token_roundtrip_and_isolation():
     assert verify_ext_token(token) == 42
     assert verify_internal_token(token) is None       # 内部校验不认
     assert verify_ext_token("garbage") is None
+
+
+def test_send_email_verbose_surfaces_reason():
+    """未配置 host → 降级成功；配置了但连接失败 → 返回真实原因（供测试邮件回显）"""
+    ok, detail = S.send_email_verbose({"host": ""}, "a@b.com", "s", "b")
+    assert ok is True and "SMTP" in detail
+    # 指向无监听端口 → 快速失败，detail 携带具体异常（不再被吞成通用文案）
+    ok, detail = S.send_email_verbose(
+        {"host": "127.0.0.1", "port": 1, "ssl": False, "username": ""}, "a@b.com", "s", "b")
+    assert ok is False and detail        # 非空原因
+

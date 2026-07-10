@@ -217,16 +217,20 @@ def test_smtp(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    """发送测试邮件到指定地址，验证 SMTP 配置有效（仅管理员）"""
+    """发送测试邮件到指定地址，验证 SMTP 配置有效（仅管理员）。
+    读取的是「已保存」的 SMTP 配置，故前端会在测试前先保存当前表单。失败时回显真实原因。"""
     from backend.discuss.service import DiscussService
     to = str((payload or {}).get("to") or "").strip()
     if "@" not in to:
         return {"ok": False, "message": "请填写有效的收件邮箱"}
-    ok = DiscussService.send_email(
-        SettingsService.get_smtp_config(db), to,
+    cfg = SettingsService.get_smtp_config(db)
+    if not (cfg.get("host") or "").strip():
+        return {"ok": False, "message": "尚未配置 SMTP 服务器地址（请先填写并保存）"}
+    ok, detail = DiscussService.send_email_verbose(
+        cfg, to,
         "SMTP 测试邮件", "这是一封来自留言讨论区的 SMTP 配置测试邮件。收到即配置成功。",
     )
-    return {"ok": ok, "message": "已发送，请查收" if ok else "发送失败，请检查配置"}
+    return {"ok": ok, "message": "已发送，请查收" if ok else f"发送失败：{detail}"}
 
 
 @router.get("/settings/meeting-report-order", response_model=MeetingReportOrderResponse)

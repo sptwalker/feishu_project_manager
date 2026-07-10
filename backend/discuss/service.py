@@ -84,12 +84,19 @@ class DiscussService:
 
     @staticmethod
     def send_email(smtp_cfg: dict, to_addr: str, subject: str, body: str) -> bool:
-        """发送邮件。SMTP 未配置（host 为空）→ 降级：打印到日志并返回 True（本地测试模式）。"""
+        """发送邮件（布尔结果，供验证码流程用）。"""
+        ok, _ = DiscussService.send_email_verbose(smtp_cfg, to_addr, subject, body)
+        return ok
+
+    @staticmethod
+    def send_email_verbose(smtp_cfg: dict, to_addr: str, subject: str, body: str) -> tuple[bool, str]:
+        """发送邮件，返回 (是否成功, 失败原因)。原因用于「测试邮件」直接回显给管理员定位问题。
+        SMTP 未配置（host 为空）→ 降级：打印到日志并返回成功（本地测试模式）。"""
         host = (smtp_cfg.get("host") or "").strip()
         if not host:
             logger.warning("[discuss] SMTP 未配置，邮件降级打印 → to=%s subject=%s body=%s",
                            to_addr, subject, body)
-            return True
+            return True, "SMTP 未配置（已降级打印到日志）"
         msg = MIMEText(body, "plain", "utf-8")
         msg["Subject"] = Header(subject, "utf-8")
         sender = smtp_cfg.get("sender") or smtp_cfg.get("username") or ""
@@ -106,10 +113,10 @@ class DiscussService:
                 if smtp_cfg.get("username"):
                     server.login(smtp_cfg["username"], smtp_cfg.get("password") or "")
                 server.sendmail(sender, [to_addr], msg.as_string())
-            return True
+            return True, ""
         except Exception as e:  # noqa: BLE001 - 邮件失败要转成用户可读错误
             logger.warning("[discuss] 发送邮件失败: %s", e)
-            return False
+            return False, f"{type(e).__name__}: {e}"
 
     @staticmethod
     def request_code(db: Session, email: str, smtp_cfg: dict) -> None:

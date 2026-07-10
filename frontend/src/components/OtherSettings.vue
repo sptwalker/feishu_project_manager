@@ -236,10 +236,17 @@ async function testSmtp() {
   if (!smtpTestTo.value.includes('@')) { ElMessage.warning('请填写测试收件邮箱'); return }
   testingSmtp.value = true
   try {
+    // 测试用的是「已保存」配置，故先把当前表单保存下来，保证测试的就是你眼前填的值
+    await saveSmtp()
     const r = await settingsApi.testSmtp(smtpTestTo.value.trim())
-    ElMessage[r.ok ? 'success' : 'error'](r.message)
+    if (r.ok) {
+      ElMessage.success(r.message)
+    } else {
+      // 失败原因可能较长（含 SMTP 服务器返回），用带关闭的持久提示，便于阅读排查
+      ElMessage({ type: 'error', message: r.message, duration: 8000, showClose: true })
+    }
   } catch {
-    ElMessage.error('发送失败')
+    ElMessage.error('发送失败（需要管理员权限或接口异常）')
   } finally {
     testingSmtp.value = false
   }
