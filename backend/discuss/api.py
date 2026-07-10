@@ -190,10 +190,12 @@ def list_threads(
     size: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
     ddb: Session = Depends(get_discuss_db),
+    user: DiscussUser = Depends(_ext_user),
 ):
-    """公开楼列表（仅可见留言；不含任何用户隐私字段）。"""
+    """楼列表（需登录）：只返回当前用户自己发的楼 + 官方回复，看不到其他用户的内容。"""
     _require_enabled(db)
-    return DiscussService.list_threads(ddb, page=page, size=size, include_hidden=False)
+    return DiscussService.list_threads(
+        ddb, page=page, size=size, include_hidden=False, ext_user_id=user.id)
 
 
 @router.post("/discuss/messages")

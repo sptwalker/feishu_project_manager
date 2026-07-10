@@ -388,12 +388,17 @@ class DiscussService:
                      include_hidden: bool = False,
                      only_unreplied: bool = False,
                      keyword: str = "",
-                     min_star: int = 0) -> Dict[str, Any]:
+                     min_star: int = 0,
+                     ext_user_id: Optional[int] = None) -> Dict[str, Any]:
         """楼列表（根留言分页倒序）+ 每楼全部回复。
-        公开端 include_hidden=False；内部端可含隐藏、筛未回复、搜索、按星级过滤。"""
+        公开端 include_hidden=False 且传 ext_user_id：只返回该用户自己的楼（含官方回复），
+        看不到其他用户的内容；内部端可含隐藏、筛未回复、搜索、按星级过滤。"""
         q = db.query(DiscussMessage).filter(DiscussMessage.parent_id.is_(None))
         if not include_hidden:
             q = q.filter(DiscussMessage.status == "visible")
+        if ext_user_id is not None:
+            # 只看自己发的楼（官方对该楼的回复因 thread_id 归属仍会带出）
+            q = q.filter(DiscussMessage.ext_user_id == ext_user_id)
         if only_unreplied:
             q = q.filter(DiscussMessage.replied == 0)
         if min_star > 0:

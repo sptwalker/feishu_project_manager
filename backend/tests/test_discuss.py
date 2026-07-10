@@ -155,6 +155,26 @@ def test_media_count_limits(ddb):
     assert len(ok.attachments) == 10
 
 
+def test_user_only_sees_own_threads(ddb):
+    """公开端按 ext_user_id 过滤：用户只看到自己的楼 + 官方回复，看不到他人内容。"""
+    a = _register(ddb, email="a@x.com", ip="1.1.1.1")
+    b = _register(ddb, email="b@x.com", ip="2.2.2.2")
+    a_root = S.post_message(ddb, a, "A 的留言")
+    S.post_message(ddb, b, "B 的留言")
+    S.internal_reply(ddb, a_root.id, "客服小王", "A 你好，已收到")
+
+    res_a = S.list_threads(ddb, include_hidden=False, ext_user_id=a.id)
+    assert res_a["total"] == 1
+    assert res_a["items"][0]["content"] == "A 的留言"
+    assert any(r["author_type"] == "internal" for r in res_a["items"][0]["replies"])  # 官方回复可见
+
+    res_b = S.list_threads(ddb, include_hidden=False, ext_user_id=b.id)
+    assert res_b["total"] == 1 and res_b["items"][0]["content"] == "B 的留言"
+
+    # 内部端不传 ext_user_id → 看到全部
+    assert S.list_threads(ddb, include_hidden=True)["total"] == 2
+
+
 def test_blocked_user_cannot_post(ddb):
     user = _register(ddb)
     S.set_user_blocked(ddb, user.id, True)

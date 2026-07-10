@@ -44,8 +44,9 @@
         <input ref="fileInput" type="file" style="display:none" @change="onFile" />
       </section>
 
-      <!-- 留言列表（楼） -->
-      <section class="fm-list" v-loading="loading">
+      <!-- 留言列表（楼）：仅登录后显示，且只含本人的留言 + 官方回复 -->
+      <section v-if="me" class="fm-list" v-loading="loading">
+        <p class="fm-mine-tip">这里只显示你自己的留言与官方回复，其他用户看不到你的内容。</p>
         <article v-for="t in threads" :key="t.id" class="fm-thread">
           <div class="fm-msg">
             <div class="fm-msg-head">
@@ -79,8 +80,12 @@
             <button v-else class="fm-link-btn" @click="appendFor = t.id; appendDraft = ''">＋ 补充留言</button>
           </div>
         </article>
-        <div v-if="!threads.length && !loading" class="fm-empty">还没有留言，来做第一个吧。</div>
+        <div v-if="!threads.length && !loading" class="fm-empty">你还没有留言，在上方写下第一条吧。</div>
         <button v-if="threads.length < total" class="fm-more" :disabled="loading" @click="loadMore">加载更多</button>
+      </section>
+      <!-- 未登录：不展示任何留言（用户只能看到自己的内容） -->
+      <section v-else class="fm-list">
+        <div class="fm-empty">登录后即可查看并管理你的留言。</div>
       </section>
     </template>
 
@@ -191,7 +196,7 @@ onMounted(async () => {
   } catch {
     board.value = { enabled: false }
   }
-  if (board.value?.enabled) await load()
+  if (board.value?.enabled && me.value) await load()  // 仅登录用户加载（且只含本人留言）
 })
 
 async function load() {
@@ -249,6 +254,7 @@ async function doAuth() {
     localStorage.setItem('dsc_me', JSON.stringify(me.value))
     authVisible.value = false
     authCode.value = ''
+    await load()  // 登录后加载本人留言
   } catch (e) {
     authError.value = (e as { detail?: string }).detail || '操作失败'
   } finally {
@@ -260,6 +266,8 @@ function logout() {
   discussTokenStore.clear()
   localStorage.removeItem('dsc_me')
   me.value = null
+  threads.value = []   // 退出后不再展示任何留言
+  total.value = 0
 }
 
 /* ---- 发帖 / 附件 ---- */
@@ -379,6 +387,7 @@ async function submitAppend(threadId: number) {
 .fm-link-btn { background: none; border: none; color: var(--c-accent, #3a5bd9); font-size: 13px;
   cursor: pointer; padding: 4px 0; }
 .fm-empty { text-align: center; color: var(--c-ink-3); padding: 40px 0; font-size: 14px; }
+.fm-mine-tip { margin: 0 0 10px; font-size: 12px; color: var(--c-ink-3); }
 .fm-more { display: block; width: 100%; padding: 12px; margin-top: 4px; background: none;
   border: 1px dashed var(--c-border); border-radius: 10px; color: var(--c-ink-2); cursor: pointer; font-size: 14px; }
 
