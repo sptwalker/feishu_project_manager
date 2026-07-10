@@ -134,6 +134,13 @@ class Settings(BaseSettings):
     # 内部销售码管理平台（部署级开关：仅 sales 租户实例开启；经公开 /branding 下发前端控制菜单可见）
     SALES_CODE_ENABLED: bool = False
 
+    # ========== 外部留言讨论区（独立 discuss.db，与 PM 数据物理隔离）==========
+    DISCUSS_DATABASE_URL: str = "sqlite:///./backend/data/discuss.db"  # Docker 设 sqlite:////data/discuss.db
+    DISCUSS_UPLOAD_DIR: str = "backend/data/discuss_uploads"           # 讨论区媒体目录（与 PM 上传分开）
+    DISCUSS_IMAGE_MAX_MB: int = 10        # 图片单文件上限
+    DISCUSS_VIDEO_MAX_MB: int = 100       # 视频单文件上限
+    DISCUSS_TOKEN_EXPIRE_DAYS: int = 30   # 外部用户登录凭证有效期（天）
+
     class Config:
         env_file = Path(__file__).parent.parent / ".env"
         case_sensitive = True

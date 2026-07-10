@@ -41,4 +41,5 @@ def get_branding(db: Session = Depends(get_db)) -> BrandingResponse:
         favicon_url=c["favicon_url"],
         theme=theme,
         sales_code_enabled=SettingsService.get_sales_code_enabled(db),
+        discuss_enabled=SettingsService.get_discuss_enabled(db),
     )

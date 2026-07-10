@@ -160,6 +160,75 @@ def set_sales_code_enabled(
     return SalesCodeEnabledResponse(enabled=SettingsService.get_sales_code_enabled(db))
 
 
+# ---------- 外部留言讨论区：开关 + SMTP ----------
+
+@router.get("/settings/discuss-enabled", response_model=SalesCodeEnabledResponse)
+def get_discuss_enabled(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取留言讨论区开关（登录用户可读；侧栏据此决定菜单可见）"""
+    return SalesCodeEnabledResponse(enabled=SettingsService.get_discuss_enabled(db))
+
+
+@router.put("/settings/discuss-enabled", response_model=SalesCodeEnabledResponse)
+def set_discuss_enabled(
+    payload: SalesCodeEnabledUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """切换留言讨论区开关（仅管理员；关闭后公开页显示已关闭、公开接口 404）"""
+    SettingsService.set_discuss_enabled(db, payload.enabled)
+    return SalesCodeEnabledResponse(enabled=SettingsService.get_discuss_enabled(db))
+
+
+@router.get("/settings/smtp")
+def get_smtp(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """SMTP 邮件配置（仅管理员；密码不回显，仅返回是否已配置）"""
+    cfg = SettingsService.get_smtp_config(db)
+    return {
+        "host": cfg["host"], "port": cfg["port"], "ssl": cfg["ssl"],
+        "username": cfg["username"], "sender": cfg["sender"],
+        "password_set": bool(cfg["password"]),
+    }
+
+
+@router.put("/settings/smtp")
+def set_smtp(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """保存 SMTP 配置（仅管理员；password 留空=保持现有密码）"""
+    cfg = SettingsService.set_smtp_config(db, payload or {})
+    return {
+        "host": cfg["host"], "port": cfg["port"], "ssl": cfg["ssl"],
+        "username": cfg["username"], "sender": cfg["sender"],
+        "password_set": bool(cfg["password"]),
+    }
+
+
+@router.post("/settings/smtp/test")
+def test_smtp(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """发送测试邮件到指定地址，验证 SMTP 配置有效（仅管理员）"""
+    from backend.discuss.service import DiscussService
+    to = str((payload or {}).get("to") or "").strip()
+    if "@" not in to:
+        return {"ok": False, "message": "请填写有效的收件邮箱"}
+    ok = DiscussService.send_email(
+        SettingsService.get_smtp_config(db), to,
+        "SMTP 测试邮件", "这是一封来自留言讨论区的 SMTP 配置测试邮件。收到即配置成功。",
+    )
+    return {"ok": ok, "message": "已发送，请查收" if ok else "发送失败，请检查配置"}
+
+
 @router.get("/settings/meeting-report-order", response_model=MeetingReportOrderResponse)
 def get_meeting_report_order(
     db: Session = Depends(get_db),

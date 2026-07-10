@@ -29,6 +29,9 @@ FEISHU_APP_SECRET_KEY = "feishu_app_secret"
 BRANDING_CONFIG_KEY = "branding_config"
 # 内部销售码平台开关（运行时；DB 优先于 .env 的 SALES_CODE_ENABLED，管理员可在「其他设置」切换、免登服务器）
 SALES_CODE_ENABLED_KEY = "sales_code_enabled"
+# 外部留言讨论区：运行时开关 + SMTP 邮件配置（验证码发送；均在「其他设置」配置）
+DISCUSS_ENABLED_KEY = "discuss_enabled"
+SMTP_CONFIG_KEY = "smtp_config"
 
 # 品牌字段 → 对应 .env 默认值的属性名（DB 缺省时回退 env）
 _BRANDING_ENV_MAP = {
@@ -166,6 +169,47 @@ class SettingsService:
     def set_sales_code_enabled(db: Session, enabled: bool) -> None:
         """切换内部销售码平台开关（改后前端刷新品牌即生效，无需重启/登录服务器）。"""
         SettingsService.set_setting(db, SALES_CODE_ENABLED_KEY, "true" if enabled else "false")
+
+    # ---------- 外部留言讨论区：开关 + SMTP 配置 ----------
+
+    @staticmethod
+    def get_discuss_enabled(db: Session) -> bool:
+        """留言讨论区运行时开关（默认关）。开启后公开页可访问、内部侧栏出现菜单。"""
+        return SettingsService.get_setting(db, DISCUSS_ENABLED_KEY, "false") == "true"
+
+    @staticmethod
+    def set_discuss_enabled(db: Session, enabled: bool) -> None:
+        SettingsService.set_setting(db, DISCUSS_ENABLED_KEY, "true" if enabled else "false")
+
+    @staticmethod
+    def get_smtp_config(db: Session) -> dict:
+        """SMTP 邮件配置（验证码发送用）。返回 {host, port, ssl, username, password, sender}。"""
+        raw = SettingsService.get_setting(db, SMTP_CONFIG_KEY, "")
+        try:
+            cfg = json.loads(raw) if raw else {}
+        except (ValueError, TypeError):
+            cfg = {}
+        return {
+            "host": cfg.get("host") or "",
+            "port": int(cfg.get("port") or 465),
+            "ssl": bool(cfg.get("ssl", True)),
+            "username": cfg.get("username") or "",
+            "password": cfg.get("password") or "",
+            "sender": cfg.get("sender") or "",
+        }
+
+    @staticmethod
+    def set_smtp_config(db: Session, updates: dict) -> dict:
+        """合并保存 SMTP 配置。password 仅在传入非空时更新（留空=保持现有密码）。"""
+        cfg = SettingsService.get_smtp_config(db)
+        for k in ("host", "port", "ssl", "username", "sender"):
+            if k in updates and updates[k] is not None:
+                cfg[k] = updates[k]
+        pwd = updates.get("password")
+        if pwd is not None and str(pwd).strip():
+            cfg["password"] = str(pwd).strip()
+        SettingsService.set_setting(db, SMTP_CONFIG_KEY, json.dumps(cfg, ensure_ascii=False))
+        return cfg
 
     @staticmethod
     def get_branding_config(db: Session) -> dict:

@@ -20,6 +20,7 @@ class BrandingResponse(BaseModel):
     favicon_url: str = Field("", description="favicon 地址（空则用默认）")
     theme: Dict[str, str] = Field(default_factory=dict, description="CSS 变量覆盖（仅含非空项）")
     sales_code_enabled: bool = Field(False, description="是否启用内部销售码管理（部署级；控制菜单可见）")
+    discuss_enabled: bool = Field(False, description="是否启用外部留言讨论区（控制内部侧栏菜单 + 公开页可访问）")
 
 
 class BrandingFull(BaseModel):
