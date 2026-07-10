@@ -10,9 +10,10 @@ from backend.main import app
 from backend.models.user import User, UserRole
 from backend.models.department import Department
 from backend.models.project import Project, ProjectStatus, ProjectUrgency
+from backend.models.sales_code import SalesCode, SalesCodePrefix
 from backend.models import (  # noqa: F401 确保所有表注册
     User as _U, Project as _P, Task as _T, Event as _E, Risk as _R,
-    Department as _D, SystemSetting as _S,
+    Department as _D, SystemSetting as _S, SalesCode as _SC, SalesCodePrefix as _SCP,
 )
 from backend.db.base import Base
 from backend.api.deps import get_db
@@ -112,6 +113,40 @@ def test_import_missing_table_raises(db_session):
     _seed(db_session)
     with pytest.raises(ValueError):
         BackupService.import_all(db_session, {"version": 1, "tables": {"users": []}})
+
+
+# ---------- 销售码表纳入备份（近期功能，防止导出/导入漏表） ----------
+
+def test_sales_codes_round_trip(db_session):
+    """销售码前缀 + 销售码应随快照导出，并在全量替换导入后恢复。"""
+    _seed(db_session)
+    db_session.add(SalesCodePrefix(prefix="ABC", remark="渠道", max_count=100, created_by="刘丹"))
+    db_session.add(SalesCode(code="ABC-4DMSE2TG", prefix="ABC", generated_by="刘丹", issued_to="华东"))
+    db_session.commit()
+
+    snap = BackupService.export_all(db_session)
+    assert len(snap["tables"]["sales_code_prefixes"]) == 1
+    assert snap["tables"]["sales_codes"][0]["code"] == "ABC-4DMSE2TG"
+
+    # 全量替换导入后应精确还原
+    counts = BackupService.import_all(db_session, snap)
+    assert counts["sales_codes"] == 1 and counts["sales_code_prefixes"] == 1
+    assert db_session.query(SalesCode).one().code == "ABC-4DMSE2TG"
+    assert db_session.query(SalesCodePrefix).one().prefix == "ABC"
+
+
+def test_import_legacy_snapshot_without_sales_tables(db_session):
+    """老快照（无 sales_codes 键）仍可导入，且不误删现有销售码数据。"""
+    _seed(db_session)
+    db_session.add(SalesCode(code="ABC-KEEP0001", prefix="ABC", generated_by="刘丹", issued_to="保留"))
+    db_session.commit()
+    legacy = BackupService.export_all(db_session)
+    legacy["tables"].pop("sales_codes")          # 模拟功能上线前的老快照
+    legacy["tables"].pop("sales_code_prefixes")
+
+    BackupService.import_all(db_session, legacy)  # 不应抛错
+    # 现有销售码保持不动（老快照缺该表 → 跳过，不删）
+    assert db_session.query(SalesCode).one().code == "ABC-KEEP0001"
 
 
 # ---------- API 权限 ----------
