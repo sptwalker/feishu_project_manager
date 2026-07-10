@@ -35,10 +35,10 @@
         <div class="nav-item" :title="collapsed ? '个人信息' : undefined" @click="onCommand('profile')">
           <el-icon><User /></el-icon><span>个人信息</span>
         </div>
-        <!-- 部署版本标记：确认线上构建是否为最新 -->
-        <div class="ver-tag" :title="`版本 ${appVersion} · 构建 ${buildTime}`">
-          <span>v{{ appVersion }}</span>
-          <span class="ver-time">{{ buildTime }}</span>
+        <!-- 部署版本标记：确认线上构建是否为最新（version.ts 由 pre-commit 钩子自动更新） -->
+        <div class="ver-tag" :title="`版本 ${APP_VERSION} · 更新 ${APP_UPDATED}`">
+          <span>v{{ APP_VERSION }}</span>
+          <span class="ver-time">{{ APP_UPDATED }}</span>
         </div>
       </div>
     </aside>
@@ -118,6 +118,7 @@ import { timerApi } from '@/api/resources'
 import MeetingRecordDialog from '@/components/MeetingRecordDialog.vue'
 import MeetingConfirmDialog from '@/components/MeetingConfirmDialog.vue'
 import { useBrandingStore } from '@/stores/branding'
+import { APP_VERSION, APP_UPDATED } from '@/version'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -137,10 +138,6 @@ function toggleSidebar() {
 const userName = computed(() => auth.currentUser?.name ?? '')
 const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
-
-// 部署版本标记（构建时注入，见 vite.config.ts）
-const appVersion = __APP_VERSION__
-const buildTime = __BUILD_TIME__
 
 function onCommand(cmd: string) {
   if (cmd === 'logout') {
