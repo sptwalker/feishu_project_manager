@@ -1,5 +1,5 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode, SalesCodePrefix } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode, SalesCodePrefix, SmtpConfig, DiscussBoardInfo, DiscussAuthResult, DiscussThreadList, DiscussMessage, DiscussAttachment } from '@/types'
 
 /* 图片上传：进展配图（JPG/PNG ≤10MB）。返回 {url, name, size} */
 export const uploadApi = {
@@ -145,6 +145,22 @@ export const settingsApi = {
   },
   setSalesCodeEnabled(enabled: boolean) {
     return api.put<{ enabled: boolean }>('/settings/sales-code-enabled', { enabled }).then((r) => r.data)
+  },
+  // 留言讨论区：开关 + SMTP 配置
+  getDiscussEnabled() {
+    return api.get<{ enabled: boolean }>('/settings/discuss-enabled').then((r) => r.data)
+  },
+  setDiscussEnabled(enabled: boolean) {
+    return api.put<{ enabled: boolean }>('/settings/discuss-enabled', { enabled }).then((r) => r.data)
+  },
+  getSmtp() {
+    return api.get<SmtpConfig>('/settings/smtp').then((r) => r.data)
+  },
+  setSmtp(payload: Partial<SmtpConfig> & { password?: string }) {
+    return api.put<SmtpConfig>('/settings/smtp', payload).then((r) => r.data)
+  },
+  testSmtp(to: string) {
+    return api.post<{ ok: boolean; message: string }>('/settings/smtp/test', { to }).then((r) => r.data)
   },
   exportBackup() {
     return api.get('/backup/export', { responseType: 'blob' })
@@ -315,5 +331,82 @@ export const followupApi = {
   },
   setAuto(cfg: FollowupAuto) {
     return api.put<FollowupAuto>('/settings/followup-auto', cfg).then((r) => r.data)
+  },
+}
+
+/* ---------- 留言讨论区 ----------
+   公开端（外部用户）：独立 token 存 localStorage 'dsc_token'（与内部 fpm_access_token 完全隔离），
+   用原生 fetch 携带，不走 axios 实例（其拦截器会注入内部 token）。
+   管理端（内部用户）：走现有 api 实例（内部 JWT）。 */
+const DSC_TOKEN_KEY = 'dsc_token'
+
+export const discussTokenStore = {
+  get(): string { return localStorage.getItem(DSC_TOKEN_KEY) || '' },
+  set(t: string) { localStorage.setItem(DSC_TOKEN_KEY, t) },
+  clear() { localStorage.removeItem(DSC_TOKEN_KEY) },
+}
+
+async function dscFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { ...(init?.headers as Record<string, string> | undefined) }
+  const token = discussTokenStore.get()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const resp = await fetch(`/api/v1${path}`, { ...init, headers })
+  const data = await resp.json().catch(() => ({}))
+  if (!resp.ok) throw Object.assign(new Error(data.detail || '请求失败'), { status: resp.status, detail: data.detail })
+  return data as T
+}
+
+export const discussApi = {
+  /* --- 公开端 --- */
+  board() {
+    return dscFetch<DiscussBoardInfo>('/discuss/board')
+  },
+  requestCode(email: string) {
+    return dscFetch<{ ok: boolean }>('/discuss/code', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, website: '' }),
+    })
+  },
+  register(payload: { email: string; code: string; nickname: string; phone: string }) {
+    return dscFetch<DiscussAuthResult>('/discuss/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, website: '' }),
+    })
+  },
+  login(payload: { email: string; code: string }) {
+    return dscFetch<DiscussAuthResult>('/discuss/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  },
+  threads(page = 1, size = 10) {
+    return dscFetch<DiscussThreadList>(`/discuss/threads?page=${page}&size=${size}`)
+  },
+  postMessage(payload: { content: string; thread_id?: number | null; attachments?: DiscussAttachment[] }) {
+    return dscFetch<DiscussMessage>('/discuss/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  },
+  upload(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return dscFetch<DiscussAttachment>('/discuss/upload', { method: 'POST', body: form })
+  },
+  /* --- 管理端（内部 JWT） --- */
+  adminThreads(params: { page?: number; size?: number; keyword?: string; only_unreplied?: boolean; min_star?: number }) {
+    return api.get<DiscussThreadList>('/discuss/admin/threads', { params }).then((r) => r.data)
+  },
+  adminReply(thread_id: number, content: string) {
+    return api.post<DiscussMessage>('/discuss/admin/reply', { thread_id, content }).then((r) => r.data)
+  },
+  adminStar(message_id: number, star: number) {
+    return api.put<{ id: number; star: number }>('/discuss/admin/star', { message_id, star }).then((r) => r.data)
+  },
+  adminVisibility(message_id: number, visible: boolean) {
+    return api.put<{ id: number; status: string }>('/discuss/admin/visibility', { message_id, visible }).then((r) => r.data)
+  },
+  adminBlock(ext_user_id: number, blocked: boolean) {
+    return api.put<{ id: number; status: string }>('/discuss/admin/block', { ext_user_id, blocked }).then((r) => r.data)
   },
 }

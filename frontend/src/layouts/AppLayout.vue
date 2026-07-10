@@ -23,6 +23,12 @@
         >
           <el-icon><Ticket /></el-icon><span>内部销售码管理</span>
         </RouterLink>
+        <RouterLink
+          v-if="branding.data.discuss_enabled"
+          to="/discuss-admin" class="nav-item" active-class="active" :title="collapsed ? '留言讨论区' : undefined"
+        >
+          <el-icon><ChatDotRound /></el-icon><span>留言讨论区</span>
+        </RouterLink>
       </nav>
 
       <div class="nav-foot">

@@ -277,3 +277,61 @@ export interface FollowupAuto {
   follow: string[]
   last_run_date?: string
 }
+
+/* ---------- 留言讨论区 ---------- */
+
+export interface SmtpConfig {
+  host: string
+  port: number
+  ssl: boolean
+  username: string
+  sender: string
+  password_set: boolean
+}
+
+export interface DiscussBoardInfo {
+  enabled: boolean
+  title?: string
+  welcome_text?: string
+  status?: string
+}
+
+export interface DiscussAuthResult {
+  token: string
+  nickname: string
+  email: string
+}
+
+export interface DiscussAttachment {
+  type: 'image' | 'video'
+  url: string
+  name: string
+  size: number
+}
+
+export interface DiscussMessage {
+  id: number
+  thread_id: number
+  parent_id: number | null
+  author_type: 'external' | 'internal'
+  author_name: string
+  content: string
+  attachments: DiscussAttachment[]
+  star: number
+  created_at: string
+  replies?: DiscussMessage[]
+  // 内部管理端附加字段
+  status?: string
+  replied?: boolean
+  ext_user_id?: number | null
+  ext_email?: string | null
+  ext_phone?: string | null
+  ext_blocked?: boolean
+}
+
+export interface DiscussThreadList {
+  total: number
+  page: number
+  size: number
+  items: DiscussMessage[]
+}

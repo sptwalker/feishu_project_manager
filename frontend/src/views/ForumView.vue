@@ -1,0 +1,410 @@
+<template>
+  <div class="forum">
+    <!-- 顶部：标题 + 登录态 -->
+    <header class="fm-head">
+      <div class="fm-title-row">
+        <h1 class="fm-title">{{ board?.title || '用户留言区' }}</h1>
+        <div class="fm-user">
+          <template v-if="me">
+            <span class="fm-nick">{{ me.nickname }}</span>
+            <button class="fm-link-btn" @click="logout">退出</button>
+          </template>
+          <button v-else class="fm-link-btn" @click="authVisible = true">登录 / 注册</button>
+        </div>
+      </div>
+      <p v-if="board?.welcome_text" class="fm-welcome">{{ board.welcome_text }}</p>
+    </header>
+
+    <!-- 讨论区关闭态 -->
+    <div v-if="board && !board.enabled" class="fm-closed">留言区暂未开放，请稍后再来。</div>
+
+    <template v-else-if="board">
+      <!-- 发留言入口 -->
+      <section class="fm-composer">
+        <textarea v-model="draft" class="fm-input" rows="3"
+          :placeholder="me ? '写下你的留言…（支持图片 / MP4 视频）' : '登录后即可留言'"
+          :disabled="!me" maxlength="2000"></textarea>
+        <!-- 已选附件预览 -->
+        <div v-if="draftAtts.length" class="fm-att-list">
+          <div v-for="(a, i) in draftAtts" :key="a.url" class="fm-att-item">
+            <img v-if="a.type === 'image'" :src="a.url" class="fm-att-thumb" alt="" />
+            <span v-else class="fm-att-video">🎬 {{ a.name }}</span>
+            <button class="fm-att-del" @click="draftAtts.splice(i, 1)">✕</button>
+          </div>
+        </div>
+        <div class="fm-composer-bar">
+          <div class="fm-tools">
+            <button class="fm-tool-btn" :disabled="!me || uploading" @click="pickFile('image/jpeg,image/png')">📷 图片</button>
+            <button class="fm-tool-btn" :disabled="!me || uploading" @click="pickFile('video/mp4')">🎬 视频</button>
+            <span v-if="uploading" class="fm-uploading">上传中…</span>
+          </div>
+          <button class="fm-send" :disabled="!me || sending || !draft.trim()" @click="submitRoot">发布</button>
+        </div>
+        <input ref="fileInput" type="file" style="display:none" @change="onFile" />
+      </section>
+
+      <!-- 留言列表（楼） -->
+      <section class="fm-list" v-loading="loading">
+        <article v-for="t in threads" :key="t.id" class="fm-thread">
+          <div class="fm-msg">
+            <div class="fm-msg-head">
+              <span class="fm-author">{{ t.author_name }}</span>
+              <span v-if="t.star > 0" class="fm-star" title="官方评价">{{ '★'.repeat(t.star) }}</span>
+              <span class="fm-time">{{ t.created_at }}</span>
+            </div>
+            <!-- 外部内容永远纯文本渲染（{{}} 插值），绝不 v-html -->
+            <p class="fm-content">{{ t.content }}</p>
+            <MediaGrid :attachments="t.attachments" />
+          </div>
+          <!-- 楼内回复 -->
+          <div v-for="r in t.replies" :key="r.id" class="fm-reply" :class="{ official: r.author_type === 'internal' }">
+            <div class="fm-msg-head">
+              <span class="fm-author">{{ r.author_name }}</span>
+              <span v-if="r.author_type === 'internal'" class="fm-badge">官方</span>
+              <span class="fm-time">{{ r.created_at }}</span>
+            </div>
+            <p class="fm-content">{{ r.content }}</p>
+            <MediaGrid :attachments="r.attachments" />
+          </div>
+          <!-- 本人楼内补充 -->
+          <div v-if="me && t.author_name === me.nickname" class="fm-append">
+            <template v-if="appendFor === t.id">
+              <textarea v-model="appendDraft" class="fm-input" rows="2" placeholder="补充内容…" maxlength="2000"></textarea>
+              <div class="fm-composer-bar">
+                <button class="fm-link-btn" @click="appendFor = null">取消</button>
+                <button class="fm-send" :disabled="sending || !appendDraft.trim()" @click="submitAppend(t.id)">提交</button>
+              </div>
+            </template>
+            <button v-else class="fm-link-btn" @click="appendFor = t.id; appendDraft = ''">＋ 补充留言</button>
+          </div>
+        </article>
+        <div v-if="!threads.length && !loading" class="fm-empty">还没有留言，来做第一个吧。</div>
+        <button v-if="threads.length < total" class="fm-more" :disabled="loading" @click="loadMore">加载更多</button>
+      </section>
+    </template>
+
+    <!-- 登录 / 注册弹层（底部抽屉式，移动端友好） -->
+    <div v-if="authVisible" class="fm-mask" @click.self="authVisible = false">
+      <div class="fm-sheet">
+        <div class="fm-sheet-head">
+          <button class="fm-tab" :class="{ on: authMode === 'login' }" @click="authMode = 'login'">登录</button>
+          <button class="fm-tab" :class="{ on: authMode === 'register' }" @click="authMode = 'register'">注册</button>
+          <button class="fm-sheet-close" @click="authVisible = false">✕</button>
+        </div>
+        <div class="fm-form">
+          <input v-model="authEmail" class="fm-field" type="email" placeholder="邮箱" maxlength="200" />
+          <div class="fm-code-row">
+            <input v-model="authCode" class="fm-field" placeholder="验证码" maxlength="6" />
+            <button class="fm-code-btn" :disabled="codeCooldown > 0 || !authEmail.includes('@')" @click="sendCode">
+              {{ codeCooldown > 0 ? `${codeCooldown}s` : '获取验证码' }}
+            </button>
+          </div>
+          <template v-if="authMode === 'register'">
+            <input v-model="authNickname" class="fm-field" placeholder="昵称（公开显示）" maxlength="50" />
+            <input v-model="authPhone" class="fm-field" type="tel" placeholder="手机号" maxlength="30" />
+          </template>
+          <button class="fm-send fm-auth-submit" :disabled="authing" @click="doAuth">
+            {{ authing ? '处理中…' : authMode === 'login' ? '登录' : '注册并登录' }}
+          </button>
+          <p v-if="authError" class="fm-error">{{ authError }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, defineComponent, h, type PropType } from 'vue'
+import { discussApi, discussTokenStore } from '@/api/resources'
+import type { DiscussBoardInfo, DiscussMessage, DiscussAttachment } from '@/types'
+
+/* 附件展示子组件：图片自适应网格 + 视频原生播放器（纯展示，就地定义避免多余文件） */
+const MediaGrid = defineComponent({
+  props: { attachments: { type: Array as PropType<DiscussAttachment[]>, default: () => [] } },
+  setup(props) {
+    const zoom = ref<string | null>(null)
+    return () => {
+      const atts = props.attachments || []
+      if (!atts.length) return null
+      return h('div', { class: 'fm-media' }, [
+        ...atts.map((a) =>
+          a.type === 'image'
+            ? h('img', {
+                class: 'fm-media-img', src: a.url, alt: a.name, loading: 'lazy',
+                onClick: () => { zoom.value = a.url },
+              })
+            : h('video', { class: 'fm-media-video', src: a.url, controls: true, preload: 'metadata' }),
+        ),
+        zoom.value
+          ? h('div', { class: 'fm-zoom', onClick: () => { zoom.value = null } },
+              [h('img', { src: zoom.value, class: 'fm-zoom-img' })])
+          : null,
+      ])
+    }
+  },
+})
+
+const board = ref<DiscussBoardInfo | null>(null)
+const threads = ref<DiscussMessage[]>([])
+const total = ref(0)
+const page = ref(1)
+const loading = ref(false)
+
+/* 外部登录态：token 存 dsc_token，昵称/邮箱缓存本地便于显示 */
+const me = ref<{ nickname: string; email: string } | null>(null)
+
+const draft = ref('')
+const draftAtts = ref<DiscussAttachment[]>([])
+const sending = ref(false)
+const uploading = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+const appendFor = ref<number | null>(null)
+const appendDraft = ref('')
+
+/* 登录/注册弹层 */
+const authVisible = ref(false)
+const authMode = ref<'login' | 'register'>('login')
+const authEmail = ref('')
+const authCode = ref('')
+const authNickname = ref('')
+const authPhone = ref('')
+const authing = ref(false)
+const authError = ref('')
+const codeCooldown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(async () => {
+  document.title = '用户留言区'
+  const cached = localStorage.getItem('dsc_me')
+  if (discussTokenStore.get() && cached) {
+    try { me.value = JSON.parse(cached) } catch { /* 忽略损坏缓存 */ }
+  }
+  try {
+    board.value = await discussApi.board()
+  } catch {
+    board.value = { enabled: false }
+  }
+  if (board.value?.enabled) await load()
+})
+
+async function load() {
+  loading.value = true
+  try {
+    const r = await discussApi.threads(1, 10)
+    threads.value = r.items
+    total.value = r.total
+    page.value = 1
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadMore() {
+  loading.value = true
+  try {
+    const r = await discussApi.threads(page.value + 1, 10)
+    threads.value = [...threads.value, ...r.items]
+    page.value += 1
+  } finally {
+    loading.value = false
+  }
+}
+
+/* ---- 登录 / 注册 ---- */
+
+async function sendCode() {
+  authError.value = ''
+  try {
+    await discussApi.requestCode(authEmail.value.trim())
+    codeCooldown.value = 60
+    if (cooldownTimer) clearInterval(cooldownTimer)
+    cooldownTimer = setInterval(() => {
+      codeCooldown.value -= 1
+      if (codeCooldown.value <= 0 && cooldownTimer) clearInterval(cooldownTimer)
+    }, 1000)
+  } catch (e) {
+    authError.value = (e as { detail?: string }).detail || '发送失败'
+  }
+}
+
+async function doAuth() {
+  authError.value = ''
+  authing.value = true
+  try {
+    const r = authMode.value === 'login'
+      ? await discussApi.login({ email: authEmail.value.trim(), code: authCode.value.trim() })
+      : await discussApi.register({
+          email: authEmail.value.trim(), code: authCode.value.trim(),
+          nickname: authNickname.value.trim(), phone: authPhone.value.trim(),
+        })
+    discussTokenStore.set(r.token)
+    me.value = { nickname: r.nickname, email: r.email }
+    localStorage.setItem('dsc_me', JSON.stringify(me.value))
+    authVisible.value = false
+    authCode.value = ''
+  } catch (e) {
+    authError.value = (e as { detail?: string }).detail || '操作失败'
+  } finally {
+    authing.value = false
+  }
+}
+
+function logout() {
+  discussTokenStore.clear()
+  localStorage.removeItem('dsc_me')
+  me.value = null
+}
+
+/* ---- 发帖 / 附件 ---- */
+
+let pickAccept = ''
+function pickFile(accept: string) {
+  pickAccept = accept
+  if (fileInput.value) {
+    fileInput.value.accept = accept
+    fileInput.value.value = ''
+    fileInput.value.click()
+  }
+}
+
+async function onFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const isVideo = pickAccept.includes('video')
+  const maxMB = isVideo ? 100 : 10
+  if (file.size > maxMB * 1024 * 1024) {
+    alert(`${isVideo ? '视频' : '图片'}不能超过 ${maxMB}MB`)
+    return
+  }
+  uploading.value = true
+  try {
+    const att = await discussApi.upload(file)
+    draftAtts.value.push(att)
+  } catch (err) {
+    alert((err as { detail?: string }).detail || '上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function submitRoot() {
+  sending.value = true
+  try {
+    await discussApi.postMessage({ content: draft.value.trim(), attachments: draftAtts.value })
+    draft.value = ''
+    draftAtts.value = []
+    await load()
+  } catch (e) {
+    alert((e as { detail?: string }).detail || '发布失败')
+  } finally {
+    sending.value = false
+  }
+}
+
+async function submitAppend(threadId: number) {
+  sending.value = true
+  try {
+    await discussApi.postMessage({ content: appendDraft.value.trim(), thread_id: threadId })
+    appendFor.value = null
+    appendDraft.value = ''
+    await load()
+  } catch (e) {
+    alert((e as { detail?: string }).detail || '提交失败')
+  } finally {
+    sending.value = false
+  }
+}
+</script>
+
+<style scoped>
+/* 移动端优先：单列窄版心，触控友好的按钮尺寸；桌面端只是加宽居中 */
+.forum { max-width: 720px; margin: 0 auto; padding: 16px 14px 60px;
+  font-family: var(--font-body, system-ui, sans-serif); color: var(--c-ink, #1a1a1a); }
+
+.fm-head { margin-bottom: 14px; }
+.fm-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fm-title { font-size: 22px; font-weight: 800; margin: 0; }
+.fm-user { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.fm-nick { font-weight: 600; font-size: 14px; color: var(--c-accent, #3a5bd9); }
+.fm-welcome { margin: 6px 0 0; color: var(--c-ink-2, #55555f); font-size: 14px; }
+.fm-closed { padding: 60px 0; text-align: center; color: var(--c-ink-3, #8a8a94); font-size: 15px; }
+
+/* 发帖区 */
+.fm-composer { background: var(--c-surface, #fff); border: 1px solid var(--c-border, #e7e5e0);
+  border-radius: 12px; padding: 12px; margin-bottom: 18px; }
+.fm-input { width: 100%; border: none; outline: none; resize: vertical; font-size: 15px;
+  line-height: 1.6; font-family: inherit; background: transparent; }
+.fm-composer-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.fm-tools { display: flex; align-items: center; gap: 10px; }
+.fm-tool-btn { background: none; border: 1px solid var(--c-border, #e7e5e0); border-radius: 8px;
+  padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--c-ink-2, #55555f); }
+.fm-tool-btn:disabled { opacity: .4; cursor: not-allowed; }
+.fm-uploading { font-size: 12px; color: var(--c-ink-3); }
+.fm-send { background: var(--c-accent, #3a5bd9); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 22px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.fm-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 附件预览 */
+.fm-att-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.fm-att-item { position: relative; }
+.fm-att-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; }
+.fm-att-video { display: inline-block; padding: 8px 12px; background: var(--c-surface-2, #fbfaf8);
+  border-radius: 8px; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-att-del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; cursor: pointer; line-height: 1; }
+
+/* 留言楼 */
+.fm-thread { background: var(--c-surface, #fff); border: 1px solid var(--c-border, #e7e5e0);
+  border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.fm-msg-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.fm-author { font-weight: 700; font-size: 14px; }
+.fm-star { color: #f59e0b; font-size: 13px; letter-spacing: 1px; }
+.fm-badge { background: var(--c-accent, #3a5bd9); color: #fff; font-size: 11px; padding: 1px 8px;
+  border-radius: 999px; font-weight: 600; }
+.fm-time { color: var(--c-ink-3, #8a8a94); font-size: 12px; margin-left: auto; }
+.fm-content { margin: 0; font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.fm-reply { margin-top: 10px; padding: 10px 12px; background: var(--c-surface-2, #fbfaf8); border-radius: 10px; }
+.fm-reply.official { background: var(--c-accent-soft, #e9edfb); }
+.fm-append { margin-top: 10px; }
+.fm-link-btn { background: none; border: none; color: var(--c-accent, #3a5bd9); font-size: 13px;
+  cursor: pointer; padding: 4px 0; }
+.fm-empty { text-align: center; color: var(--c-ink-3); padding: 40px 0; font-size: 14px; }
+.fm-more { display: block; width: 100%; padding: 12px; margin-top: 4px; background: none;
+  border: 1px dashed var(--c-border); border-radius: 10px; color: var(--c-ink-2); cursor: pointer; font-size: 14px; }
+
+/* 媒体展示：图片自适应宽度，视频响应式 */
+:deep(.fm-media) { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+:deep(.fm-media-img) { max-width: 100%; width: auto; max-height: 260px; border-radius: 10px;
+  cursor: zoom-in; display: block; }
+:deep(.fm-media-video) { width: 100%; max-height: 320px; border-radius: 10px; background: #000; }
+:deep(.fm-zoom) { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 99;
+  display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+:deep(.fm-zoom-img) { max-width: 96vw; max-height: 92vh; object-fit: contain; }
+
+/* 登录 / 注册底部抽屉（移动端习惯；桌面端自动居中变窄卡） */
+.fm-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center; }
+.fm-sheet { background: var(--c-surface, #fff); width: 100%; max-width: 480px;
+  border-radius: 16px 16px 0 0; padding: 16px 18px 28px; }
+@media (min-width: 640px) {
+  .fm-mask { align-items: center; }
+  .fm-sheet { border-radius: 16px; padding-bottom: 20px; }
+}
+.fm-sheet-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.fm-tab { background: none; border: none; font-size: 17px; font-weight: 600; color: var(--c-ink-3);
+  cursor: pointer; padding: 4px 2px; border-bottom: 2px solid transparent; }
+.fm-tab.on { color: var(--c-ink); border-bottom-color: var(--c-accent, #3a5bd9); }
+.fm-sheet-close { margin-left: auto; background: none; border: none; font-size: 16px;
+  color: var(--c-ink-3); cursor: pointer; }
+.fm-form { display: flex; flex-direction: column; gap: 10px; }
+.fm-field { padding: 12px 14px; border: 1px solid var(--c-border, #e7e5e0); border-radius: 10px;
+  font-size: 15px; outline: none; width: 100%; box-sizing: border-box; }
+.fm-field:focus { border-color: var(--c-accent, #3a5bd9); }
+.fm-code-row { display: flex; gap: 8px; }
+.fm-code-row .fm-field { flex: 1; }
+.fm-code-btn { flex-shrink: 0; padding: 0 14px; border: 1px solid var(--c-accent, #3a5bd9);
+  background: none; color: var(--c-accent, #3a5bd9); border-radius: 10px; font-size: 13px; cursor: pointer; }
+.fm-code-btn:disabled { opacity: .4; cursor: not-allowed; }
+.fm-auth-submit { padding: 12px; font-size: 15px; }
+.fm-error { color: #d94b3a; font-size: 13px; margin: 0; }
+</style>

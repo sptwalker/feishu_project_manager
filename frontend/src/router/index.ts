@@ -38,7 +38,16 @@ const router = createRouter({
         },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
         { path: 'sales-codes', name: 'sales-codes', component: () => import('@/views/SalesCodesView.vue') },
+        // 留言讨论区内部管理页（菜单可见性由 discuss_enabled 控制；数据独立于 PM）
+        { path: 'discuss-admin', name: 'discuss-admin', component: () => import('@/views/DiscussAdminView.vue') },
       ],
+    },
+    {
+      // 外部留言讨论区公开页：免登录、不套 AppLayout（无侧栏，不泄露内部信息面），移动端优先
+      path: '/forum',
+      name: 'forum',
+      component: () => import('@/views/ForumView.vue'),
+      meta: { public: true },
     },
     {
       // 周会汇报页：独立顶层路由（不套 AppLayout 侧边栏，全屏汇报模式）

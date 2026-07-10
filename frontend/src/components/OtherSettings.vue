@@ -13,6 +13,53 @@
       </div>
     </section>
 
+    <!-- 外部留言讨论区开关（仅管理员；开启后公开页 /forum 可访问、侧栏出现管理菜单） -->
+    <section v-if="isAdmin" class="card">
+      <h3 class="card-title">外部留言讨论区</h3>
+      <p class="tip muted" style="margin-top:0">
+        开启后，外部用户可通过公开链接 <b>/forum</b> 注册留言（邮箱验证码，需配置下方 SMTP），
+        内部侧栏出现「留言讨论区」管理菜单。关闭后公开页显示已关闭。
+      </p>
+      <div class="form-row">
+        <span class="ilabel">启用留言区</span>
+        <el-switch v-model="discussEnabled" :loading="savingDiscuss" @change="onToggleDiscuss" />
+        <span class="muted hint">{{ discussEnabled ? '已开启（公开页可访问）' : '已关闭' }}</span>
+      </div>
+    </section>
+
+    <!-- SMTP 邮件服务器（留言区验证码发送用；密码只写不回显） -->
+    <section v-if="isAdmin" class="card">
+      <h3 class="card-title">SMTP 邮件服务器</h3>
+      <p class="tip muted" style="margin-top:0">
+        留言区注册/登录验证码通过此邮箱发送。未配置时验证码仅打印到服务器日志（仅适合本地测试）。
+      </p>
+      <div class="form-row">
+        <span class="ilabel">服务器</span>
+        <el-input v-model="smtp.host" placeholder="如 smtp.exmail.qq.com" style="width: 240px" clearable />
+        <el-input-number v-model="smtp.port" :min="1" :max="65535" controls-position="right" style="width: 110px" />
+        <el-checkbox v-model="smtp.ssl">SSL</el-checkbox>
+      </div>
+      <div class="form-row">
+        <span class="ilabel">用户名</span>
+        <el-input v-model="smtp.username" placeholder="邮箱账号" style="width: 240px" clearable />
+      </div>
+      <div class="form-row">
+        <span class="ilabel">密码</span>
+        <el-input v-model="smtpPassword" type="password" show-password
+          :placeholder="smtp.password_set ? '已配置（留空保持不变）' : '邮箱密码 / 授权码'" style="width: 240px" />
+      </div>
+      <div class="form-row">
+        <span class="ilabel">发件人</span>
+        <el-input v-model="smtp.sender" placeholder="留空则用用户名" style="width: 240px" clearable />
+      </div>
+      <div class="form-row">
+        <span class="ilabel"></span>
+        <el-button type="primary" :loading="savingSmtp" @click="saveSmtp">保存</el-button>
+        <el-input v-model="smtpTestTo" placeholder="测试收件邮箱" style="width: 200px" clearable />
+        <el-button :loading="testingSmtp" @click="testSmtp">发送测试邮件</el-button>
+      </div>
+    </section>
+
     <!-- 飞书机器人应用：本实例独立的 App ID/Secret（DB 优先于 .env，实现各实例独立机器人） -->
     <section class="card">
       <h3 class="card-title">飞书机器人应用</h3>
@@ -101,6 +148,7 @@ import { Download, Upload } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBrandingStore } from '@/stores/branding'
 import { settingsApi, salesCodeApi } from '@/api/resources'
+import type { SmtpConfig } from '@/types'
 
 const auth = useAuthStore()
 const branding = useBrandingStore()
@@ -131,6 +179,69 @@ async function onToggleSales(val: string | number | boolean) {
     ElMessage.error('操作失败（需要管理员权限）')
   } finally {
     savingSales.value = false
+  }
+}
+
+/* 外部留言讨论区：运行时开关 + SMTP 配置 */
+const discussEnabled = ref(false)
+const savingDiscuss = ref(false)
+const smtp = ref<SmtpConfig>({ host: '', port: 465, ssl: true, username: '', sender: '', password_set: false })
+const smtpPassword = ref('')
+const savingSmtp = ref(false)
+const smtpTestTo = ref('')
+const testingSmtp = ref(false)
+
+async function loadDiscuss() {
+  if (!isAdmin.value) return
+  try {
+    discussEnabled.value = (await settingsApi.getDiscussEnabled()).enabled
+    smtp.value = await settingsApi.getSmtp()
+  } catch { /* 非管理员/接口故障保持默认 */ }
+}
+
+async function onToggleDiscuss(val: string | number | boolean) {
+  const next = Boolean(val)
+  savingDiscuss.value = true
+  try {
+    discussEnabled.value = (await settingsApi.setDiscussEnabled(next)).enabled
+    await branding.fetchBranding()  // 刷新品牌：侧栏「留言讨论区」菜单即时出现/消失
+    ElMessage.success(next ? '已开启留言讨论区' : '已关闭留言讨论区')
+  } catch {
+    discussEnabled.value = !next
+    ElMessage.error('操作失败（需要管理员权限）')
+  } finally {
+    savingDiscuss.value = false
+  }
+}
+
+async function saveSmtp() {
+  savingSmtp.value = true
+  try {
+    const payload: Partial<SmtpConfig> & { password?: string } = {
+      host: smtp.value.host.trim(), port: smtp.value.port, ssl: smtp.value.ssl,
+      username: smtp.value.username.trim(), sender: smtp.value.sender.trim(),
+    }
+    if (smtpPassword.value.trim()) payload.password = smtpPassword.value.trim()
+    smtp.value = await settingsApi.setSmtp(payload)
+    smtpPassword.value = ''  // 保存后清空，不回显密码
+    ElMessage.success('SMTP 配置已保存')
+  } catch {
+    ElMessage.error('保存失败（需要管理员权限）')
+  } finally {
+    savingSmtp.value = false
+  }
+}
+
+async function testSmtp() {
+  if (!smtpTestTo.value.includes('@')) { ElMessage.warning('请填写测试收件邮箱'); return }
+  testingSmtp.value = true
+  try {
+    const r = await settingsApi.testSmtp(smtpTestTo.value.trim())
+    ElMessage[r.ok ? 'success' : 'error'](r.message)
+  } catch {
+    ElMessage.error('发送失败')
+  } finally {
+    testingSmtp.value = false
   }
 }
 
@@ -305,6 +416,7 @@ onMounted(() => {
   loadFeishuApp()
   loadGenPwdStatus()
   loadSalesEnabled()
+  loadDiscuss()
 })
 </script>
 
