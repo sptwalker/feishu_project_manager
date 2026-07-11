@@ -83,3 +83,12 @@ def test_sales_code_enabled_env_fallback_then_db_override(db_session):
     # DB 关闭覆盖 env
     SettingsService.set_sales_code_enabled(db_session, False)
     assert SettingsService.get_sales_code_enabled(db_session) is False
+
+
+def test_discuss_announcement_get_set_clear(db_session):
+    # 默认空 → 设置 → 清空
+    assert SettingsService.get_discuss_announcement(db_session) == ""
+    SettingsService.set_discuss_announcement(db_session, "# 欢迎\n- 规则一\n- 规则二")
+    assert SettingsService.get_discuss_announcement(db_session).startswith("# 欢迎")
+    SettingsService.set_discuss_announcement(db_session, "")
+    assert SettingsService.get_discuss_announcement(db_session) == ""

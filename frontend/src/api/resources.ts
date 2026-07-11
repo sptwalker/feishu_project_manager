@@ -400,6 +400,10 @@ export const discussApi = {
   adminReply(thread_id: number, content: string) {
     return api.post<DiscussMessage>('/discuss/admin/reply', { thread_id, content }).then((r) => r.data)
   },
+  /* 设置公告（PMS 管理员；内部 JWT）。公开页顶部展示。 */
+  setAnnouncement(content: string) {
+    return api.put<{ content: string }>('/discuss/admin/announcement', { content }).then((r) => r.data)
+  },
   adminStar(message_id: number, star: number) {
     return api.put<{ id: number; star: number }>('/discuss/admin/star', { message_id, star }).then((r) => r.data)
   },

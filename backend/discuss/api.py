@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
 from backend.core.config import get_settings
-from backend.core.dependencies import get_current_user
+from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
 from backend.services.settings_service import SettingsService
 from backend.discuss.db import get_discuss_db
@@ -88,6 +88,10 @@ class VisibilityRequest(BaseModel):
 class BlockRequest(BaseModel):
     ext_user_id: int
     blocked: bool
+
+
+class AnnouncementRequest(BaseModel):
+    content: str = Field("", max_length=20000)   # markdown 源文
 
 
 # ---------- 公共依赖 ----------
@@ -181,7 +185,8 @@ def get_board(
         return {"enabled": False}
     board = DiscussService.get_or_create_board(ddb)
     return {"enabled": True, "title": board.title,
-            "welcome_text": board.welcome_text or "", "status": board.status}
+            "welcome_text": board.welcome_text or "", "status": board.status,
+            "announcement": SettingsService.get_discuss_announcement(db)}
 
 
 @router.get("/discuss/threads")
@@ -371,3 +376,14 @@ def admin_block(
     except DiscussError as e:
         _raise(e)
     return {"id": user.id, "status": user.status}
+
+
+@router.put("/discuss/admin/announcement")
+def admin_set_announcement(
+    payload: AnnouncementRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """设置留言区公告（markdown 源文）。仅 PMS 管理员；公开页顶部展示。"""
+    SettingsService.set_discuss_announcement(db, payload.content)
+    return {"content": SettingsService.get_discuss_announcement(db)}

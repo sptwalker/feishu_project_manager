@@ -294,6 +294,7 @@ export interface DiscussBoardInfo {
   title?: string
   welcome_text?: string
   status?: string
+  announcement?: string   // 公告 markdown 源文（公开展示于 /forum 顶部）
 }
 
 export interface DiscussAuthResult {

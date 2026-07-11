@@ -32,6 +32,8 @@ SALES_CODE_ENABLED_KEY = "sales_code_enabled"
 # 外部留言讨论区：运行时开关 + SMTP 邮件配置（验证码发送；均在「其他设置」配置）
 DISCUSS_ENABLED_KEY = "discuss_enabled"
 SMTP_CONFIG_KEY = "smtp_config"
+# 留言区公告（markdown 源文；PMS 管理员在 /forum 顶部编辑，公开展示）
+DISCUSS_ANNOUNCEMENT_KEY = "discuss_announcement"
 
 # 品牌字段 → 对应 .env 默认值的属性名（DB 缺省时回退 env）
 _BRANDING_ENV_MAP = {
@@ -180,6 +182,15 @@ class SettingsService:
     @staticmethod
     def set_discuss_enabled(db: Session, enabled: bool) -> None:
         SettingsService.set_setting(db, DISCUSS_ENABLED_KEY, "true" if enabled else "false")
+
+    @staticmethod
+    def get_discuss_announcement(db: Session) -> str:
+        """留言区公告（markdown 源文，公开展示于 /forum 顶部）。默认空。"""
+        return SettingsService.get_setting(db, DISCUSS_ANNOUNCEMENT_KEY, "") or ""
+
+    @staticmethod
+    def set_discuss_announcement(db: Session, text: str) -> None:
+        SettingsService.set_setting(db, DISCUSS_ANNOUNCEMENT_KEY, text or "")
 
     @staticmethod
     def get_smtp_config(db: Session) -> dict:

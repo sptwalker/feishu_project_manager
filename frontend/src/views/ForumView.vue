@@ -19,6 +19,17 @@
     <div v-if="board && !board.enabled" class="fm-closed">留言区暂未开放，请稍后再来。</div>
 
     <template v-else-if="board">
+      <!-- 公告区（Markdown 渲染；PMS 管理员可编辑，其余用户只读） -->
+      <section v-if="announcementHtml || canEditAnnouncement" class="fm-announce">
+        <div class="fm-announce-head">
+          <span class="fm-announce-title">📢 公告</span>
+          <button v-if="canEditAnnouncement" class="fm-link-btn" @click="openAnnounceEdit">编辑</button>
+        </div>
+        <!-- 公告为管理员录入的可信内容，marked 渲染后 v-html 展示 -->
+        <div v-if="announcementHtml" class="fm-md" v-html="announcementHtml"></div>
+        <div v-else class="fm-announce-empty">暂无公告，点击「编辑」添加。</div>
+      </section>
+
       <!-- 发留言入口 -->
       <section class="fm-composer">
         <textarea v-model="draft" class="fm-input" rows="3"
@@ -116,11 +127,31 @@
         </div>
       </div>
     </div>
+    <!-- 编辑公告弹层（仅 PMS 管理员）：Markdown 录入 + 实时预览 -->
+    <div v-if="announceEditVisible" class="fm-mask" @click.self="announceEditVisible = false">
+      <div class="fm-sheet fm-announce-sheet">
+        <div class="fm-sheet-head">
+          <span class="fm-sheet-title">编辑公告（支持 Markdown）</span>
+          <button class="fm-sheet-close" @click="announceEditVisible = false">✕</button>
+        </div>
+        <textarea v-model="announceDraft" class="fm-announce-input"
+          placeholder="支持 Markdown：# 标题、**加粗**、- 列表、[链接](https://…)、`代码` 等"></textarea>
+        <div class="fm-announce-preview-label">预览</div>
+        <div class="fm-md fm-announce-preview" v-html="draftHtml"></div>
+        <div class="fm-announce-actions">
+          <button class="fm-link-btn" @click="announceEditVisible = false">取消</button>
+          <button class="fm-send" :disabled="savingAnnounce" @click="saveAnnounce">
+            {{ savingAnnounce ? '保存中…' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, defineComponent, h, type PropType } from 'vue'
+import { marked } from 'marked'
 import { discussApi, discussTokenStore } from '@/api/resources'
 import type { DiscussBoardInfo, DiscussMessage, DiscussAttachment } from '@/types'
 
@@ -163,6 +194,42 @@ const loading = ref(false)
 /* 外部登录态：token 存 dsc_token，昵称/邮箱缓存本地便于显示 */
 const me = ref<{ nickname: string; email: string } | null>(null)
 
+/* 公告：markdown 源文存于 board.announcement，marked 渲染展示。
+   编辑权限判定：同浏览器已登录内部系统且 role=admin（不触发登录跳转）。 */
+const canEditAnnouncement = ref(false)
+const announceEditVisible = ref(false)
+const announceDraft = ref('')
+const savingAnnounce = ref(false)
+const announcementHtml = computed(() => (board.value?.announcement ? (marked.parse(board.value.announcement) as string) : ''))
+const draftHtml = computed(() => (announceDraft.value ? (marked.parse(announceDraft.value) as string) : '<span style="color:#8a8a94">（空）</span>'))
+
+async function checkAdmin() {
+  const t = localStorage.getItem('fpm_access_token')
+  if (!t) return
+  try {
+    const r = await fetch('/api/v1/users/me', { headers: { Authorization: `Bearer ${t}` } })
+    if (r.ok) canEditAnnouncement.value = (await r.json()).role === 'admin'
+  } catch { /* 非管理员/无效 token：不显示编辑按钮，不跳转登录 */ }
+}
+
+function openAnnounceEdit() {
+  announceDraft.value = board.value?.announcement || ''
+  announceEditVisible.value = true
+}
+
+async function saveAnnounce() {
+  savingAnnounce.value = true
+  try {
+    const r = await discussApi.setAnnouncement(announceDraft.value)
+    if (board.value) board.value.announcement = r.content
+    announceEditVisible.value = false
+  } catch {
+    alert('保存失败（需要 PMS 管理员权限）')
+  } finally {
+    savingAnnounce.value = false
+  }
+}
+
 const draft = ref('')
 const draftAtts = ref<DiscussAttachment[]>([])
 const imgCount = computed(() => draftAtts.value.filter((a) => a.type === 'image').length)
@@ -196,6 +263,7 @@ onMounted(async () => {
   } catch {
     board.value = { enabled: false }
   }
+  if (board.value?.enabled) checkAdmin()  // 公告编辑权限（不阻塞、不跳转）
   if (board.value?.enabled && me.value) await load()  // 仅登录用户加载（且只含本人留言）
 })
 
@@ -388,6 +456,42 @@ async function submitAppend(threadId: number) {
   cursor: pointer; padding: 4px 0; }
 .fm-empty { text-align: center; color: var(--c-ink-3); padding: 40px 0; font-size: 14px; }
 .fm-mine-tip { margin: 0 0 10px; font-size: 12px; color: var(--c-ink-3); }
+
+/* 公告区 */
+.fm-announce { background: var(--c-surface, #fff); border: 1px solid var(--c-border, #e7e5e0);
+  border-left: 3px solid var(--c-accent, #3a5bd9); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+.fm-announce-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.fm-announce-title { font-weight: 700; font-size: 14px; color: var(--c-accent, #3a5bd9); }
+.fm-announce-empty { color: var(--c-ink-3, #8a8a94); font-size: 13px; }
+
+/* Markdown 渲染通用样式（公告 + 预览） */
+.fm-md { font-size: 14px; line-height: 1.7; color: var(--c-ink, #1a1a1a); word-break: break-word; }
+.fm-md :deep(h1) { font-size: 20px; margin: 8px 0; }
+.fm-md :deep(h2) { font-size: 17px; margin: 8px 0; }
+.fm-md :deep(h3) { font-size: 15px; margin: 6px 0; }
+.fm-md :deep(p) { margin: 6px 0; }
+.fm-md :deep(ul), .fm-md :deep(ol) { margin: 6px 0; padding-left: 22px; }
+.fm-md :deep(a) { color: var(--c-accent, #3a5bd9); text-decoration: underline; }
+.fm-md :deep(code) { background: var(--c-surface-2, #f4f3f0); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.fm-md :deep(pre) { background: var(--c-surface-2, #f4f3f0); padding: 10px; border-radius: 8px; overflow-x: auto; }
+.fm-md :deep(pre code) { background: none; padding: 0; }
+.fm-md :deep(blockquote) { margin: 6px 0; padding: 2px 12px; border-left: 3px solid var(--c-border, #e7e5e0); color: var(--c-ink-2, #55555f); }
+.fm-md :deep(img) { max-width: 100%; border-radius: 8px; }
+.fm-md :deep(hr) { border: none; border-top: 1px solid var(--c-border, #e7e5e0); margin: 10px 0; }
+.fm-md :deep(table) { border-collapse: collapse; }
+.fm-md :deep(th), .fm-md :deep(td) { border: 1px solid var(--c-border, #e7e5e0); padding: 4px 8px; }
+
+/* 公告编辑弹层 */
+.fm-announce-sheet { max-width: 620px; }
+.fm-sheet-title { font-size: 16px; font-weight: 600; }
+.fm-announce-input { width: 100%; box-sizing: border-box; min-height: 160px; resize: vertical;
+  border: 1px solid var(--c-border, #e7e5e0); border-radius: 10px; padding: 10px 12px; font-size: 14px;
+  line-height: 1.6; font-family: ui-monospace, Menlo, Consolas, monospace; outline: none; }
+.fm-announce-input:focus { border-color: var(--c-accent, #3a5bd9); }
+.fm-announce-preview-label { font-size: 12px; color: var(--c-ink-3, #8a8a94); margin: 10px 0 4px; }
+.fm-announce-preview { border: 1px dashed var(--c-border, #e7e5e0); border-radius: 10px; padding: 10px 12px;
+  max-height: 220px; overflow-y: auto; background: var(--c-surface-2, #fbfaf8); }
+.fm-announce-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 14px; }
 .fm-more { display: block; width: 100%; padding: 12px; margin-top: 4px; background: none;
   border: 1px dashed var(--c-border); border-radius: 10px; color: var(--c-ink-2); cursor: pointer; font-size: 14px; }
 
