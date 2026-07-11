@@ -15,7 +15,7 @@ from backend.discuss import models as dmodels  # noqa: F401 - 注册表
 from backend.discuss.models import DiscussUser, DiscussCode, DiscussMessage
 from backend.discuss.service import (
     DiscussService as S, DiscussError, create_ext_token, verify_ext_token,
-    CODE_RESEND_SECONDS, POST_MIN_INTERVAL_SECONDS,
+    CODE_RESEND_SECONDS, POST_MIN_INTERVAL_SECONDS, REGISTER_IP_DAILY_LIMIT,
 )
 from backend.core.security import verify_token as verify_internal_token
 
@@ -100,13 +100,13 @@ def test_register_duplicate_email(ddb):
 
 
 def test_register_ip_daily_limit(ddb):
-    """单 IP 每日 ≤5 个新账号"""
-    for i in range(5):
+    """单 IP 每日新账号上限（超过 REGISTER_IP_DAILY_LIMIT 即拒绝）"""
+    for i in range(REGISTER_IP_DAILY_LIMIT):
         _register(ddb, email=f"u{i}@x.com", ip="9.9.9.9")
-    S.request_code(ddb, "u5@x.com", SMTP_OFF)
-    code = _get_code(ddb, "u5@x.com")
+    S.request_code(ddb, "over@x.com", SMTP_OFF)
+    code = _get_code(ddb, "over@x.com")
     with pytest.raises(DiscussError) as e:
-        S.register(ddb, "u5@x.com", code, "n", "1", "9.9.9.9")
+        S.register(ddb, "over@x.com", code, "n", "1", "9.9.9.9")
     assert e.value.status_code == 429
 
 
@@ -246,6 +246,21 @@ def test_ext_token_roundtrip_and_isolation():
     assert verify_ext_token(token) == 42
     assert verify_internal_token(token) is None       # 内部校验不认
     assert verify_ext_token("garbage") is None
+
+
+def test_client_ip_prefers_forwarded_headers():
+    """反代后取真实客户端 IP：优先 XFF 最左，其次 X-Real-IP，最后回退直连。
+    修复所有用户共用代理 IP 导致首个用户之后就"注册过于频繁"的问题。"""
+    from backend.discuss.api import _client_ip
+
+    class _Req:
+        def __init__(self, headers, host="10.0.0.1"):
+            self.headers = headers
+            self.client = type("C", (), {"host": host})()
+
+    assert _client_ip(_Req({"x-forwarded-for": "203.0.113.7, 172.16.0.1"})) == "203.0.113.7"
+    assert _client_ip(_Req({"x-real-ip": "203.0.113.9"})) == "203.0.113.9"
+    assert _client_ip(_Req({})) == "10.0.0.1"          # 无转发头 → 直连 IP
 
 
 def test_ensure_sqlite_dir_creates_missing_parent(tmp_path):

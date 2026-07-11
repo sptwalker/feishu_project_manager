@@ -36,8 +36,9 @@ POST_DAILY_LIMIT = 50
 # 单帖附件数量上限（防刷图/刷视频）
 MAX_IMAGES_PER_POST = 9
 MAX_VIDEOS_PER_POST = 1
-# 注册限流
-REGISTER_IP_DAILY_LIMIT = 5
+# 注册限流：单 IP 每日新账号上限。邮箱验证码（唯一邮箱 + 冷却 + 每日上限）才是主要防线；
+# 此限额仅防单机批量注册，故放宽到较高值，避免共享出口/运营商 NAT 下误伤正常用户。
+REGISTER_IP_DAILY_LIMIT = 30
 # 内容约束
 CONTENT_MAX_LEN = 2000
 NICKNAME_MAX_LEN = 50

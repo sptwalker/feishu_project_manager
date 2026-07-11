@@ -121,6 +121,19 @@ def _raise(e: DiscussError):
     raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+def _client_ip(request: Request) -> str:
+    """真实客户端 IP：反代（nginx）后 request.client.host 只是代理 IP，会导致所有用户
+    共用一个 IP、首个用户之后就误触发注册限流。优先取代理转发头。
+    X-Forwarded-For 取最左（最初客户端），其次 X-Real-IP，最后回退直连 IP。"""
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff.strip():
+        return xff.split(",")[0].strip()
+    xri = request.headers.get("x-real-ip", "").strip()
+    if xri:
+        return xri
+    return request.client.host if request.client else ""
+
+
 # ---------- 公开接口 ----------
 
 @router.post("/discuss/code")
@@ -151,7 +164,7 @@ def register(
     _require_enabled(db)
     if payload.website:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请求无效")
-    ip = request.client.host if request.client else ""
+    ip = _client_ip(request)
     try:
         user = DiscussService.register(ddb, payload.email, payload.code,
                                        payload.nickname, payload.phone, ip)
