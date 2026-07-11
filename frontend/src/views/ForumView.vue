@@ -38,7 +38,7 @@
         <!-- 已选附件预览 -->
         <div v-if="draftAtts.length" class="fm-att-list">
           <div v-for="(a, i) in draftAtts" :key="a.url" class="fm-att-item">
-            <img v-if="a.type === 'image'" :src="a.url" class="fm-att-thumb" alt="" />
+            <img v-if="a.type === 'image'" :src="a.url" class="fm-att-thumb" alt="" @click="zoomSrc = a.url" />
             <span v-else class="fm-att-video">🎬 {{ a.name }}</span>
             <button class="fm-att-del" @click="draftAtts.splice(i, 1)">✕</button>
           </div>
@@ -146,6 +146,10 @@
         </div>
       </div>
     </div>
+    <!-- 图片放大遮罩：根级单例，点击任意处关闭 -->
+    <div v-if="zoomSrc" class="fm-zoom" @click="zoomSrc = null">
+      <img :src="zoomSrc" class="fm-zoom-img" alt="" />
+    </div>
   </div>
 </template>
 
@@ -160,28 +164,26 @@ import type { DiscussBoardInfo, DiscussMessage, DiscussAttachment } from '@/type
 const MAX_IMAGES = 9
 const MAX_VIDEOS = 1
 
+// 图片放大：单一根级遮罩（避免嵌在消息树里被祖先裁剪/层叠影响），composer 预览与已发消息共用
+const zoomSrc = ref<string | null>(null)
+
 /* 附件展示子组件：图片自适应网格 + 视频原生播放器（纯展示，就地定义避免多余文件） */
 const MediaGrid = defineComponent({
   props: { attachments: { type: Array as PropType<DiscussAttachment[]>, default: () => [] } },
   setup(props) {
-    const zoom = ref<string | null>(null)
     return () => {
       const atts = props.attachments || []
       if (!atts.length) return null
-      return h('div', { class: 'fm-media' }, [
-        ...atts.map((a) =>
+      return h('div', { class: 'fm-media' },
+        atts.map((a) =>
           a.type === 'image'
             ? h('img', {
                 class: 'fm-media-img', src: a.url, alt: a.name, loading: 'lazy',
-                onClick: () => { zoom.value = a.url },
+                onClick: () => { zoomSrc.value = a.url },
               })
             : h('video', { class: 'fm-media-video', src: a.url, controls: true, preload: 'metadata' }),
         ),
-        zoom.value
-          ? h('div', { class: 'fm-zoom', onClick: () => { zoom.value = null } },
-              [h('img', { src: zoom.value, class: 'fm-zoom-img' })])
-          : null,
-      ])
+      )
     }
   },
 })
@@ -440,7 +442,7 @@ async function submitAppend(threadId: number) {
 /* 附件预览 */
 .fm-att-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .fm-att-item { position: relative; }
-.fm-att-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; }
+.fm-att-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; cursor: zoom-in; }
 .fm-att-video { display: inline-block; padding: 8px 12px; background: var(--c-surface-2, #fbfaf8);
   border-radius: 8px; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fm-att-del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
@@ -507,9 +509,9 @@ async function submitAppend(threadId: number) {
 :deep(.fm-media-img) { max-width: 100%; width: auto; max-height: 260px; border-radius: 10px;
   cursor: zoom-in; display: block; }
 :deep(.fm-media-video) { width: 100%; max-height: 320px; border-radius: 10px; background: #000; }
-:deep(.fm-zoom) { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 99;
+.fm-zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 99;
   display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
-:deep(.fm-zoom-img) { max-width: 96vw; max-height: 92vh; object-fit: contain; }
+.fm-zoom-img { max-width: 96vw; max-height: 92vh; object-fit: contain; }
 
 /* 登录 / 注册底部抽屉（移动端习惯；桌面端自动居中变窄卡） */
 .fm-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50;

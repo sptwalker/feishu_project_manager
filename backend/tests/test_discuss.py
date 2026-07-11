@@ -155,6 +155,16 @@ def test_media_count_limits(ddb):
     assert len(ok.attachments) == 10
 
 
+def test_check_magic_gates_by_file_header():
+    """上传安全门：类型放宽 content-type 后，真伪仍由文件头魔数把关。"""
+    from backend.discuss.api import _check_magic
+    assert _check_magic(".mp4", b"\x00\x00\x00\x18ftypmp42") is True   # ftyp 在偏移 4
+    assert _check_magic(".mp4", b"not a real video") is False
+    assert _check_magic(".png", b"\x89PNG\r\n\x1a\n") is True
+    assert _check_magic(".jpg", b"\xff\xd8\xff\xe0") is True
+    assert _check_magic(".jpg", b"\x89PNG\r\n") is False               # 伪装：png 头 + jpg 扩展名
+
+
 def test_user_only_sees_own_threads(ddb):
     """公开端按 ext_user_id 过滤：用户只看到自己的楼 + 官方回复，看不到他人内容。"""
     a = _register(ddb, email="a@x.com", ip="1.1.1.1")

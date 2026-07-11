@@ -246,10 +246,8 @@ def post_message(
 # ---------- 媒体上传 / 访问 ----------
 
 _IMG_EXT = {".jpg", ".jpeg", ".png"}
-_IMG_CT = {"image/jpeg", "image/png"}
 _VID_EXT = {".mp4"}
-_VID_CT = {"video/mp4"}
-# 魔数（文件头）校验：防改扩展名伪装
+# 魔数（文件头）校验：防改扩展名伪装（content-type 不可靠，故以文件头为准）
 _MAGIC = {
     ".jpg": [b"\xff\xd8\xff"],
     ".png": [b"\x89PNG"],
@@ -283,10 +281,12 @@ async def upload_media(
     _require_enabled(db)
     s = get_settings()
     ext = os.path.splitext(file.filename or "")[1].lower()
-    ct = (file.content_type or "").lower()
-    if ext in _IMG_EXT and ct in _IMG_CT:
+    # 类型按扩展名判定（白名单）；内容真伪由下方魔数校验把关。
+    # 不再强卡 content-type：手机/各浏览器给 MP4 的 content-type 五花八门
+    # （video/mp4 / application/octet-stream / 空），强卡会导致视频"经常失败"。
+    if ext in _IMG_EXT:
         kind, max_bytes = "image", s.DISCUSS_IMAGE_MAX_MB * 1024 * 1024
-    elif ext in _VID_EXT and ct in _VID_CT:
+    elif ext in _VID_EXT:
         kind, max_bytes = "video", s.DISCUSS_VIDEO_MAX_MB * 1024 * 1024
     else:
         raise HTTPException(status_code=400, detail="仅支持 JPG/PNG 图片或 MP4 视频")
