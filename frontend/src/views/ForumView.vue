@@ -152,6 +152,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, defineComponent, h, type PropType } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { discussApi, discussTokenStore } from '@/api/resources'
 import type { DiscussBoardInfo, DiscussMessage, DiscussAttachment } from '@/types'
 
@@ -200,8 +201,14 @@ const canEditAnnouncement = ref(false)
 const announceEditVisible = ref(false)
 const announceDraft = ref('')
 const savingAnnounce = ref(false)
-const announcementHtml = computed(() => (board.value?.announcement ? (marked.parse(board.value.announcement) as string) : ''))
-const draftHtml = computed(() => (announceDraft.value ? (marked.parse(announceDraft.value) as string) : '<span style="color:#8a8a94">（空）</span>'))
+const announcementHtml = computed(() => (board.value?.announcement ? renderMd(board.value.announcement) : ''))
+const draftHtml = computed(() => (announceDraft.value ? renderMd(announceDraft.value) : '<span style="color:#8a8a94">（空）</span>'))
+
+/* Markdown → HTML → 白名单消毒：即便管理员账号被盗写入带脚本的公告，
+   DOMPurify 也会剔除 <script>/onerror/javascript: 等危险内容，只保留安全排版标签。 */
+function renderMd(src: string): string {
+  return DOMPurify.sanitize(marked.parse(src) as string)
+}
 
 async function checkAdmin() {
   const t = localStorage.getItem('fpm_access_token')
