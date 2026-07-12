@@ -52,7 +52,7 @@
           <el-button size="small" :type="t.ext_blocked ? 'success' : 'danger'" plain @click="toggleBlock(t)">
             {{ t.ext_blocked ? '解封用户' : '封禁用户' }}
           </el-button>
-          <el-button size="small" type="danger" plain @click="deletePost(t)">删除帖子</el-button>
+          <el-button size="small" type="danger" plain v-if="isAdmin" @click="deletePost(t)">删除帖子</el-button>
         </div>
         <div v-if="replyFor === t.id" class="da-reply-box">
           <el-input v-model="replyDraft" type="textarea" :rows="2" maxlength="2000" placeholder="回复内容…" />
@@ -73,10 +73,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { discussApi } from '@/api/resources'
+import { useAuthStore } from '@/stores/auth'
 import type { DiscussMessage } from '@/types'
+
+const auth = useAuthStore()
+const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 
 const threads = ref<DiscussMessage[]>([])
 const total = ref(0)

@@ -411,9 +411,9 @@ def admin_block(
 def admin_delete_thread(
     thread_id: int,
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_admin: User = Depends(get_current_admin),
 ):
-    """删除整楼（根留言 + 全部回复 + 其媒体文件）。管理员操作，前端二次确认。"""
+    """删除整楼（根留言 + 全部回复 + 其媒体文件）。仅管理员；前端二次确认。"""
     try:
         attachments = DiscussService.delete_thread(ddb, thread_id)
     except DiscussError as e:
