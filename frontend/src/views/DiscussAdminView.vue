@@ -32,7 +32,7 @@
         <!-- 附件 -->
         <div v-if="t.attachments?.length" class="da-media">
           <template v-for="a in t.attachments" :key="a.url">
-            <img v-if="a.type === 'image'" :src="a.url" class="da-img" alt="" />
+            <img v-if="a.type === 'image'" :src="a.url" class="da-img" alt="" @click="zoomSrc = a.url" />
             <video v-else :src="a.url" class="da-video" controls preload="metadata" />
           </template>
         </div>
@@ -46,7 +46,7 @@
         <!-- 操作行：星级 + 回复 + 隐藏 + 封禁 -->
         <div class="da-actions">
           <el-rate :model-value="t.star" :max="5" clearable
-            @update:model-value="(v: number) => setStar(t, v)" />
+            @change="(v: number) => setStar(t, v)" />
           <el-button size="small" type="primary" plain @click="replyFor = replyFor === t.id ? null : t.id">回复</el-button>
           <el-button size="small" plain @click="toggleVisible(t)">{{ t.status === 'hidden' ? '恢复显示' : '隐藏' }}</el-button>
           <el-button size="small" :type="t.ext_blocked ? 'success' : 'danger'" plain @click="toggleBlock(t)">
@@ -62,6 +62,11 @@
       <el-empty v-if="!threads.length && !loading" description="暂无留言" />
       <el-pagination v-if="total > size" layout="prev, pager, next" :total="total" :page-size="size"
         :current-page="page" @current-change="(p: number) => { page = p; load() }" style="margin-top: 12px" />
+    </div>
+
+    <!-- 图片放大遮罩：根级单例，点击任意处关闭 -->
+    <div v-if="zoomSrc" class="da-zoom" @click="zoomSrc = null">
+      <img :src="zoomSrc" class="da-zoom-img" alt="" />
     </div>
   </div>
 </template>
@@ -84,6 +89,7 @@ const minStar = ref(0)
 const replyFor = ref<number | null>(null)
 const replyDraft = ref('')
 const replying = ref(false)
+const zoomSrc = ref<string | null>(null)   // 图片放大遮罩
 
 onMounted(load)
 
@@ -120,8 +126,10 @@ async function submitReply(threadId: number) {
 }
 
 async function setStar(t: DiscussMessage, star: number) {
+  const next = star ?? 0
+  if (next === (t.star ?? 0)) return   // 无变化（含初始/重复触发）不调接口、不弹提示
   try {
-    const r = await discussApi.adminStar(t.id, star ?? 0)
+    const r = await discussApi.adminStar(t.id, next)
     t.star = r.star
     ElMessage.success(r.star > 0 ? `已评 ${r.star} 星` : '已取消星级')
   } catch {
@@ -174,11 +182,14 @@ async function toggleBlock(t: DiscussMessage) {
 .da-time { font-size: 12px; margin-left: auto; }
 .da-content { margin: 4px 0; font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
 .da-media { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
-.da-img { max-height: 140px; border-radius: 8px; }
+.da-img { max-height: 140px; border-radius: 8px; cursor: zoom-in; }
 .da-video { max-height: 200px; max-width: 320px; border-radius: 8px; background: #000; }
 .da-reply { margin-top: 8px; padding: 8px 12px; background: var(--c-surface-2); border-radius: 8px; font-size: 13px; }
 .da-reply.official { background: var(--c-accent-soft); }
 .da-badge { background: var(--c-accent); color: #fff; font-size: 11px; padding: 0 7px; border-radius: 999px; margin-left: 6px; }
 .da-actions { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); flex-wrap: wrap; }
 .da-reply-box { margin-top: var(--sp-2); }
+.da-zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 3000;
+  display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+.da-zoom-img { max-width: 96vw; max-height: 92vh; object-fit: contain; }
 </style>
