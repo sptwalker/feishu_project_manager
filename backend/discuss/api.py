@@ -341,9 +341,11 @@ def admin_reply(
     ddb: Session = Depends(get_discuss_db),
     current_user: User = Depends(get_current_user),
 ):
-    """内部回复某楼（显示内部真名 + 官方徽章；楼标记为已回复）。"""
+    """内部回复某楼（对外显示英文名 + 官方徽章；楼标记为已回复）。"""
     try:
-        msg = DiscussService.internal_reply(ddb, payload.thread_id, current_user.name, payload.content)
+        # 对外公开页展示英文名（name_en）；未设置英文名时回退中文名
+        author = (current_user.name_en or "").strip() or current_user.name
+        msg = DiscussService.internal_reply(ddb, payload.thread_id, author, payload.content)
     except DiscussError as e:
         _raise(e)
     return DiscussService._msg_public(msg)

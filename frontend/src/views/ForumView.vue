@@ -67,7 +67,12 @@
             </div>
             <!-- 外部内容永远纯文本渲染（{{}} 插值），绝不 v-html -->
             <p class="fm-content">{{ t.content }}</p>
-            <MediaGrid :attachments="t.attachments" />
+            <div v-if="t.attachments && t.attachments.length" class="fm-media">
+              <template v-for="(a, i) in t.attachments" :key="i">
+                <img v-if="a.type === 'image'" class="fm-media-img" :src="a.url" :alt="a.name" loading="lazy" @click="zoomSrc = a.url" />
+                <video v-else class="fm-media-video" :src="a.url" controls preload="metadata"></video>
+              </template>
+            </div>
           </div>
           <!-- 楼内回复 -->
           <div v-for="r in t.replies" :key="r.id" class="fm-reply" :class="{ official: r.author_type === 'internal' }">
@@ -77,7 +82,12 @@
               <span class="fm-time">{{ r.created_at }}</span>
             </div>
             <p class="fm-content">{{ r.content }}</p>
-            <MediaGrid :attachments="r.attachments" />
+            <div v-if="r.attachments && r.attachments.length" class="fm-media">
+              <template v-for="(a, i) in r.attachments" :key="i">
+                <img v-if="a.type === 'image'" class="fm-media-img" :src="a.url" :alt="a.name" loading="lazy" @click="zoomSrc = a.url" />
+                <video v-else class="fm-media-video" :src="a.url" controls preload="metadata"></video>
+              </template>
+            </div>
           </div>
           <!-- 本人楼内补充 -->
           <div v-if="me && t.author_name === me.nickname" class="fm-append">
@@ -154,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, defineComponent, h, type PropType } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { discussApi, discussTokenStore } from '@/api/resources'
@@ -166,27 +176,6 @@ const MAX_VIDEOS = 1
 
 // 图片放大：单一根级遮罩（避免嵌在消息树里被祖先裁剪/层叠影响），composer 预览与已发消息共用
 const zoomSrc = ref<string | null>(null)
-
-/* 附件展示子组件：图片自适应网格 + 视频原生播放器（纯展示，就地定义避免多余文件） */
-const MediaGrid = defineComponent({
-  props: { attachments: { type: Array as PropType<DiscussAttachment[]>, default: () => [] } },
-  setup(props) {
-    return () => {
-      const atts = props.attachments || []
-      if (!atts.length) return null
-      return h('div', { class: 'fm-media' },
-        atts.map((a) =>
-          a.type === 'image'
-            ? h('img', {
-                class: 'fm-media-img', src: a.url, alt: a.name, loading: 'lazy',
-                onClick: () => { zoomSrc.value = a.url },
-              })
-            : h('video', { class: 'fm-media-video', src: a.url, controls: true, preload: 'metadata' }),
-        ),
-      )
-    }
-  },
-})
 
 const board = ref<DiscussBoardInfo | null>(null)
 const threads = ref<DiscussMessage[]>([])
@@ -505,10 +494,10 @@ async function submitAppend(threadId: number) {
   border: 1px dashed var(--c-border); border-radius: 10px; color: var(--c-ink-2); cursor: pointer; font-size: 14px; }
 
 /* 媒体展示：图片自适应宽度，视频响应式 */
-:deep(.fm-media) { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-:deep(.fm-media-img) { max-width: 100%; width: auto; max-height: 260px; border-radius: 10px;
+.fm-media { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.fm-media-img { max-width: 100%; width: auto; max-height: 260px; border-radius: 10px;
   cursor: zoom-in; display: block; }
-:deep(.fm-media-video) { width: 100%; max-height: 320px; border-radius: 10px; background: #000; }
+.fm-media-video { width: 100%; max-height: 320px; border-radius: 10px; background: #000; }
 .fm-zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 99;
   display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
 .fm-zoom-img { max-width: 96vw; max-height: 92vh; object-fit: contain; }
