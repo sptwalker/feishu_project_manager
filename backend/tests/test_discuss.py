@@ -159,7 +159,12 @@ def test_check_magic_gates_by_file_header():
     """上传安全门：类型放宽 content-type 后，真伪仍由文件头魔数把关。"""
     from backend.discuss.api import _check_magic
     assert _check_magic(".mp4", b"\x00\x00\x00\x18ftypmp42") is True   # ftyp 在偏移 4
+    assert _check_magic(".mov", b"\x00\x00\x00\x14ftypqt  ") is True   # 苹果 .mov (ftyp/qt)
+    assert _check_magic(".mov", b"\x00\x00\x00\x08moov....") is True   # 经典 .mov 以 moov 开头
+    assert _check_magic(".3gp", b"\x00\x00\x00\x18ftyp3gp5") is True   # 安卓 .3gp
+    assert _check_magic(".webm", b"\x1aE\xdf\xa3\x01\x00\x00") is True # webm EBML 头
     assert _check_magic(".mp4", b"not a real video") is False
+    assert _check_magic(".webm", b"\x00\x00\x00\x18ftypmp42") is False # webm 却是 mp4 头 → 拒
     assert _check_magic(".png", b"\x89PNG\r\n\x1a\n") is True
     assert _check_magic(".jpg", b"\xff\xd8\xff\xe0") is True
     assert _check_magic(".jpg", b"\x89PNG\r\n") is False               # 伪装：png 头 + jpg 扩展名

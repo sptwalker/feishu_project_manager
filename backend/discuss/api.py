@@ -246,12 +246,22 @@ def post_message(
 # ---------- 媒体上传 / 访问 ----------
 
 _IMG_EXT = {".jpg", ".jpeg", ".png"}
-_VID_EXT = {".mp4"}
+# 手机常见视频：mp4(通用) / mov·m4v(苹果) / 3gp(安卓旧) / webm(部分安卓)
+_VID_EXT = {".mp4", ".mov", ".m4v", ".3gp", ".webm"}
 # 魔数（文件头）校验：防改扩展名伪装（content-type 不可靠，故以文件头为准）
-_MAGIC = {
+_IMG_MAGIC = {
     ".jpg": [b"\xff\xd8\xff"],
     ".png": [b"\x89PNG"],
-    ".mp4": [b"ftyp"],   # mp4 的 ftyp 在偏移 4
+}
+# ISO-BMFF/QuickTime 家族(mp4/mov/m4v/3gp)：偏移 4-8 为首个 box 类型
+_ISO_VID = {".mp4", ".mov", ".m4v", ".3gp"}
+_ISO_BOX = {b"ftyp", b"moov", b"mdat", b"free", b"skip", b"wide", b"pnot"}
+_EBML_HEAD = b"\x1aE\xdf\xa3"   # webm/mkv 的 EBML 头（偏移 0）
+# 媒体访问时按扩展名回填 Content-Type，确保 <video> 能正确播放
+_MEDIA_CT = {
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+    ".mp4": "video/mp4", ".mov": "video/quicktime", ".m4v": "video/x-m4v",
+    ".3gp": "video/3gpp", ".webm": "video/webm",
 }
 
 
@@ -262,10 +272,12 @@ def _media_dir() -> Path:
 
 
 def _check_magic(ext: str, head: bytes) -> bool:
-    """文件头魔数校验（mp4 的 ftyp 在偏移 4-8）。"""
-    if ext == ".mp4":
-        return head[4:8] == b"ftyp"
-    for m in _MAGIC.get(ext, []):
+    """文件头魔数校验：ISO/QuickTime 家族看偏移 4-8 的 box 类型；webm 看 EBML 头；图片看头几字节。"""
+    if ext in _ISO_VID:
+        return len(head) >= 8 and head[4:8] in _ISO_BOX
+    if ext == ".webm":
+        return head.startswith(_EBML_HEAD)
+    for m in _IMG_MAGIC.get(ext, []):
         if head.startswith(m):
             return True
     return False
@@ -277,19 +289,19 @@ async def upload_media(
     db: Session = Depends(get_db),
     user: DiscussUser = Depends(_ext_user),
 ):
-    """外部用户上传图片（JPG/PNG ≤10MB）或视频（MP4 ≤100MB）。仅注册用户可传（滥用防线）。"""
+    """外部用户上传图片（JPG/PNG ≤10MB）或视频（MP4/MOV/M4V/3GP/WEBM ≤100MB）。仅注册用户可传（滥用防线）。"""
     _require_enabled(db)
     s = get_settings()
     ext = os.path.splitext(file.filename or "")[1].lower()
     # 类型按扩展名判定（白名单）；内容真伪由下方魔数校验把关。
-    # 不再强卡 content-type：手机/各浏览器给 MP4 的 content-type 五花八门
-    # （video/mp4 / application/octet-stream / 空），强卡会导致视频"经常失败"。
+    # 不再强卡 content-type：手机/各浏览器给视频的 content-type 五花八门
+    # （video/mp4 / video/quicktime / application/octet-stream / 空），强卡会导致视频"经常失败"。
     if ext in _IMG_EXT:
         kind, max_bytes = "image", s.DISCUSS_IMAGE_MAX_MB * 1024 * 1024
     elif ext in _VID_EXT:
         kind, max_bytes = "video", s.DISCUSS_VIDEO_MAX_MB * 1024 * 1024
     else:
-        raise HTTPException(status_code=400, detail="仅支持 JPG/PNG 图片或 MP4 视频")
+        raise HTTPException(status_code=400, detail="仅支持 JPG/PNG 图片或常见手机视频（MP4/MOV/M4V/3GP/WEBM）")
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="空文件")
@@ -313,7 +325,9 @@ def get_media(filename: str):
     path = _media_dir() / filename
     if not path.is_file():
         raise HTTPException(status_code=404, detail="文件不存在")
-    return FileResponse(path)
+    # 显式回填 Content-Type（尤其 .mov/.3gp，mimetypes 未必识别），保证 <video> 正常播放
+    ext = os.path.splitext(filename)[1].lower()
+    return FileResponse(path, media_type=_MEDIA_CT.get(ext))
 
 
 # ---------- 内部接口（现有飞书 JWT） ----------

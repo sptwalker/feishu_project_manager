@@ -33,7 +33,7 @@
       <!-- 发留言入口 -->
       <section class="fm-composer">
         <textarea v-model="draft" class="fm-input" rows="3"
-          :placeholder="me ? '写下你的留言…（支持图片 / MP4 视频）' : '登录后即可留言'"
+          :placeholder="me ? '写下你的留言…（支持图片 / 视频）' : '登录后即可留言'"
           :disabled="!me" maxlength="2000"></textarea>
         <!-- 已选附件预览 -->
         <div v-if="draftAtts.length" class="fm-att-list">
@@ -46,7 +46,7 @@
         <div class="fm-composer-bar">
           <div class="fm-tools">
             <button class="fm-tool-btn" :disabled="!me || uploading || imgCount >= MAX_IMAGES" @click="pickFile('image/jpeg,image/png')">📷 图片</button>
-            <button class="fm-tool-btn" :disabled="!me || uploading || vidCount >= MAX_VIDEOS" @click="pickFile('video/mp4')">🎬 视频</button>
+            <button class="fm-tool-btn" :disabled="!me || uploading || vidCount >= MAX_VIDEOS" @click="pickFile('video/*')">🎬 视频</button>
             <span v-if="uploading" class="fm-uploading">上传中…</span>
             <span v-else-if="me && draftAtts.length" class="fm-uploading">图片 {{ imgCount }}/{{ MAX_IMAGES }} · 视频 {{ vidCount }}/{{ MAX_VIDEOS }}</span>
           </div>
