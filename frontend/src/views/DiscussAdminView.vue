@@ -32,8 +32,11 @@
         <!-- 附件 -->
         <div v-if="t.attachments?.length" class="da-media">
           <template v-for="a in t.attachments" :key="a.url">
-            <img v-if="a.type === 'image'" :src="a.url" class="da-img" alt="" @click="zoomSrc = a.url" />
-            <video v-else :src="a.url" class="da-video" controls preload="metadata" />
+            <img v-if="a.type === 'image'" :src="a.url" class="da-img" alt="" @click="zoom = { url: a.url, type: 'image' }" />
+            <div v-else class="da-video-wrap">
+              <video :src="a.url" class="da-video" controls preload="metadata" />
+              <button class="da-video-zoom" title="放大 / 全屏" @click="zoom = { url: a.url, type: 'video' }">⛶ 放大</button>
+            </div>
           </template>
         </div>
         <!-- 楼内回复 -->
@@ -65,9 +68,11 @@
         :current-page="page" @current-change="(p: number) => { page = p; load() }" style="margin-top: 12px" />
     </div>
 
-    <!-- 图片放大遮罩：根级单例，点击任意处关闭 -->
-    <div v-if="zoomSrc" class="da-zoom" @click="zoomSrc = null">
-      <img :src="zoomSrc" class="da-zoom-img" alt="" />
+    <!-- 图片/视频放大遮罩：根级单例；点背景或 ✕ 关闭，视频带控件与全屏 -->
+    <div v-if="zoom" class="da-zoom" @click.self="zoom = null">
+      <button class="da-zoom-close" title="关闭" @click="zoom = null">✕</button>
+      <img v-if="zoom.type === 'image'" :src="zoom.url" class="da-zoom-img" alt="" @click="zoom = null" />
+      <video v-else :src="zoom.url" class="da-zoom-video" controls autoplay playsinline />
     </div>
   </div>
 </template>
@@ -94,7 +99,7 @@ const minStar = ref(0)
 const replyFor = ref<number | null>(null)
 const replyDraft = ref('')
 const replying = ref(false)
-const zoomSrc = ref<string | null>(null)   // 图片放大遮罩
+const zoom = ref<{ url: string; type: 'image' | 'video' } | null>(null)   // 图片/视频放大遮罩
 
 onMounted(load)
 
@@ -207,7 +212,11 @@ async function deletePost(t: DiscussMessage) {
 .da-content { margin: 4px 0; font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
 .da-media { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
 .da-img { max-height: 140px; border-radius: 8px; cursor: zoom-in; }
-.da-video { max-height: 200px; max-width: 320px; border-radius: 8px; background: #000; }
+.da-video { max-height: 200px; max-width: 320px; border-radius: 8px; background: #000; display: block; }
+.da-video-wrap { position: relative; display: inline-block; }
+.da-video-zoom { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.6); color: #fff;
+  border: none; border-radius: 6px; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+.da-video-zoom:hover { background: rgba(0,0,0,.8); }
 .da-reply { margin-top: 8px; padding: 8px 12px; background: var(--c-surface-2); border-radius: 8px; font-size: 13px; }
 .da-reply.official { background: var(--c-accent-soft); }
 .da-badge { background: var(--c-accent); color: #fff; font-size: 11px; padding: 0 7px; border-radius: 999px; margin-left: 6px; }
@@ -216,4 +225,9 @@ async function deletePost(t: DiscussMessage) {
 .da-zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 3000;
   display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
 .da-zoom-img { max-width: 96vw; max-height: 92vh; object-fit: contain; }
+.da-zoom-video { max-width: 92vw; max-height: 88vh; background: #000; border-radius: 6px; cursor: default; }
+.da-zoom-close { position: fixed; top: 18px; right: 24px; z-index: 3001;
+  width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(255,255,255,.18); color: #fff; font-size: 18px; line-height: 1; }
+.da-zoom-close:hover { background: rgba(255,255,255,.32); }
 </style>
