@@ -407,6 +407,28 @@ def admin_block(
     return {"id": user.id, "status": user.status}
 
 
+@router.delete("/discuss/admin/threads/{thread_id}")
+def admin_delete_thread(
+    thread_id: int,
+    ddb: Session = Depends(get_discuss_db),
+    current_user: User = Depends(get_current_user),
+):
+    """删除整楼（根留言 + 全部回复 + 其媒体文件）。管理员操作，前端二次确认。"""
+    try:
+        attachments = DiscussService.delete_thread(ddb, thread_id)
+    except DiscussError as e:
+        _raise(e)
+    # 清理媒体文件（best-effort，不阻断删除结果）
+    for a in attachments:
+        fname = str(a.get("url") or "").rsplit("/", 1)[-1]
+        if fname and "/" not in fname and "\\" not in fname and ".." not in fname:
+            try:
+                (_media_dir() / fname).unlink(missing_ok=True)
+            except OSError:
+                pass
+    return {"ok": True}
+
+
 @router.put("/discuss/admin/announcement")
 def admin_set_announcement(
     payload: AnnouncementRequest,

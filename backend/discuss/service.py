@@ -372,6 +372,28 @@ class DiscussService:
         db.refresh(user)
         return user
 
+    @staticmethod
+    def delete_thread(db: Session, thread_id: int) -> list[dict]:
+        """删除整楼（根留言 + 全部回复）。返回被删消息的附件列表，供上层清理媒体文件。"""
+        root = db.query(DiscussMessage).filter(
+            DiscussMessage.id == thread_id, DiscussMessage.parent_id.is_(None),
+        ).first()
+        if root is None:
+            raise DiscussError("楼层不存在", 404)
+        msgs = db.query(DiscussMessage).filter(DiscussMessage.thread_id == root.id).all()
+        attachments = [
+            a for m in msgs for a in (m.attachments or [])
+            if isinstance(a, dict) and a.get("url")
+        ]
+        for m in msgs:
+            db.delete(m)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        return attachments
+
     # ---------- 查询 ----------
 
     @staticmethod

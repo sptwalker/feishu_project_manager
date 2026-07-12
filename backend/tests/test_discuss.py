@@ -155,6 +155,20 @@ def test_media_count_limits(ddb):
     assert len(ok.attachments) == 10
 
 
+def test_delete_thread_removes_root_and_replies(ddb):
+    """删除整楼：根留言 + 全部回复一并删除，返回附件供清理；非根/不存在报错。"""
+    user = _register(ddb)
+    root = S.post_message(ddb, user, "待删楼", attachments=[{"type": "image", "url": "/api/v1/discuss/media/x.jpg"}])
+    S.internal_reply(ddb, root.id, "官方", "回复1")
+    S.internal_reply(ddb, root.id, "官方", "回复2")
+    assert ddb.query(DiscussMessage).filter(DiscussMessage.thread_id == root.id).count() == 3
+    atts = S.delete_thread(ddb, root.id)
+    assert ddb.query(DiscussMessage).filter(DiscussMessage.thread_id == root.id).count() == 0
+    assert any(a["url"].endswith("x.jpg") for a in atts)   # 返回附件供上层删文件
+    with pytest.raises(DiscussError):                       # 已删/不存在
+        S.delete_thread(ddb, root.id)
+
+
 def test_check_magic_gates_by_file_header():
     """上传安全门：类型放宽 content-type 后，真伪仍由文件头魔数把关。"""
     from backend.discuss.api import _check_magic

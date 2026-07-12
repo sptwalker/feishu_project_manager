@@ -413,4 +413,7 @@ export const discussApi = {
   adminBlock(ext_user_id: number, blocked: boolean) {
     return api.put<{ id: number; status: string }>('/discuss/admin/block', { ext_user_id, blocked }).then((r) => r.data)
   },
+  adminDeleteThread(thread_id: number) {
+    return api.delete<{ ok: boolean }>(`/discuss/admin/threads/${thread_id}`).then((r) => r.data)
+  },
 }

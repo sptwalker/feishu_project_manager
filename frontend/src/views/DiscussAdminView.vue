@@ -52,6 +52,7 @@
           <el-button size="small" :type="t.ext_blocked ? 'success' : 'danger'" plain @click="toggleBlock(t)">
             {{ t.ext_blocked ? '解封用户' : '封禁用户' }}
           </el-button>
+          <el-button size="small" type="danger" plain @click="deletePost(t)">删除帖子</el-button>
         </div>
         <div v-if="replyFor === t.id" class="da-reply-box">
           <el-input v-model="replyDraft" type="textarea" :rows="2" maxlength="2000" placeholder="回复内容…" />
@@ -161,6 +162,25 @@ async function toggleBlock(t: DiscussMessage) {
     ElMessage.success(blocking ? '已封禁' : '已解封')
   } catch {
     ElMessage.error('操作失败')
+  }
+}
+
+async function deletePost(t: DiscussMessage) {
+  // 二次确认：删除整楼（根留言 + 全部回复 + 媒体），不可恢复
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${t.author_name}」的这条帖子？将连同该楼的全部回复与图片/视频一并永久删除，不可恢复。`,
+      '删除帖子确认',
+      { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消', confirmButtonClass: 'el-button--danger' },
+    )
+  } catch { return }
+  try {
+    await discussApi.adminDeleteThread(t.id)
+    threads.value = threads.value.filter((x) => x.id !== t.id)
+    total.value = Math.max(0, total.value - 1)
+    ElMessage.success('已删除')
+  } catch {
+    ElMessage.error('删除失败')
   }
 }
 </script>
