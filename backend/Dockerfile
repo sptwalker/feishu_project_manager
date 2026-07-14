@@ -7,7 +7,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 # 容器时区设为北京时间：datetime.now() 等按本地(中国)时间，修正留言/日志/周会等时间偏差
 # （python:slim 默认 UTC，会导致展示时间比实际早 8 小时）
-RUN apt-get update && apt-get install -y --no-install-recommends tzdata && \
+# apt 换用华为云镜像（同 pip），避免默认 deb.debian.org 在国内极慢导致构建卡住
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do \
+        [ -f "$f" ] && sed -i 's|deb.debian.org|mirrors.huaweicloud.com|g; s|security.debian.org|mirrors.huaweicloud.com|g' "$f" || true; \
+    done && \
+    apt-get update && apt-get install -y --no-install-recommends tzdata && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     rm -rf /var/lib/apt/lists/*
 
