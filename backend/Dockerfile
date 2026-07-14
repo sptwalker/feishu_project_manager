@@ -5,16 +5,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     TZ=Asia/Shanghai
 
-# 容器时区设为北京时间：datetime.now() 等按本地(中国)时间，修正留言/日志/周会等时间偏差
-# （python:slim 默认 UTC，会导致展示时间比实际早 8 小时）
-# apt 换用华为云镜像（同 pip），避免默认 deb.debian.org 在国内极慢导致构建卡住
-RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do \
-        [ -f "$f" ] && sed -i 's|deb.debian.org|mirrors.huaweicloud.com|g; s|security.debian.org|mirrors.huaweicloud.com|g' "$f" || true; \
-    done && \
-    apt-get update && apt-get install -y --no-install-recommends tzdata && \
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
-    rm -rf /var/lib/apt/lists/*
-
 # 工作目录设为 /app/backend，使代码以 `backend` 包形式被导入（PYTHONPATH=/app）
 WORKDIR /app/backend
 
@@ -23,7 +13,12 @@ COPY requirements.txt ./
 RUN pip config set global.index-url https://repo.huaweicloud.com/repository/pypi/simple && \
     pip config set global.trusted-host repo.huaweicloud.com && \
     pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt tzdata && \
+    # 时区=北京时间：用 pip 的 tzdata（走已配置的国内 pip 源，快且稳）把 zoneinfo 拷进系统目录，
+    # 使 datetime.now() 按本地(中国)时间。避开 apt（默认 debian 源国内极慢/易失败）。
+    SP="$(python -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")" && \
+    mkdir -p /usr/share/zoneinfo && cp -r "$SP/tzdata/zoneinfo/." /usr/share/zoneinfo/ && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # 复制应用代码到 /app/backend
 COPY . /app/backend
