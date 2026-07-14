@@ -2,7 +2,14 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    TZ=Asia/Shanghai
+
+# 容器时区设为北京时间：datetime.now() 等按本地(中国)时间，修正留言/日志/周会等时间偏差
+# （python:slim 默认 UTC，会导致展示时间比实际早 8 小时）
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    rm -rf /var/lib/apt/lists/*
 
 # 工作目录设为 /app/backend，使代码以 `backend` 包形式被导入（PYTHONPATH=/app）
 WORKDIR /app/backend

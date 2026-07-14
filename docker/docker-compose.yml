@@ -21,6 +21,8 @@ services:
       # 放 compose 确保所有部署生效，无需手改服务器 .env。
       DISCUSS_DATABASE_URL: "sqlite:////data/discuss.db"
       DISCUSS_UPLOAD_DIR: "/data/discuss_uploads"
+      # 容器时区=北京时间：修正 datetime.now() 导致的留言/日志/周会时间偏差（默认 UTC 会早 8 小时）
+      TZ: "Asia/Shanghai"
     restart: unless-stopped
     networks:
       - feishu_pm_network
@@ -47,6 +49,7 @@ services:
       FEISHU_NOTIFY_ENABLED: "True"
       DISCUSS_DATABASE_URL: "sqlite:////data/discuss.db"
       DISCUSS_UPLOAD_DIR: "/data/discuss_uploads"
+      TZ: "Asia/Shanghai"
     restart: unless-stopped
     networks:
       - feishu_pm_network
