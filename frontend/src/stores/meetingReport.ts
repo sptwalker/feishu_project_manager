@@ -41,6 +41,10 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
   let pollHandle: ReturnType<typeof setInterval> | null = null
   let heartbeatHandle: ReturnType<typeof setInterval> | null = null
 
+  // ---- 项目信息实时同步（会议模式）----
+  let lastRevision = ''                 // 上次见到的项目集合变更签名（count:sum(version)）
+  const editingLock = ref(false)        // 本端正在编辑详情时置真：暂停后台刷新，避免打断编辑
+
   /* 角色 / 计时运行态 / 主控在线 */
   const isController = computed(() => role.value === 'controller')
   const running = computed(() => timer.value?.status === 'running')
@@ -206,6 +210,15 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     }
   })
 
+  /* 保证选中项有效：当前选中项仍在则不动，否则回落到第一个可见项目 */
+  function ensureSelection() {
+    const stillExists = projects.value.some((p) => p.id === currentProjectId.value)
+    if (!stillExists) {
+      const firstProj = grouped.value[0]?.members[0]?.projects[0]
+      currentProjectId.value = firstProj?.id ?? null
+    }
+  }
+
   /* 加载数据：项目 + 部门 + 顺序 + 计时设置 */
   async function load() {
     loading.value = true
@@ -223,15 +236,36 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
       personThresholdMinutes.value = timerCfg.person_threshold_minutes
       // 不在此重置计时（load 可能被「编辑后刷新」再次调用，避免清零正在走的计时）
       // 选中项目：保留当前选中（若仍存在），否则默认第一个汇报位的第一个项目
-      const stillExists = projects.value.some((p) => p.id === currentProjectId.value)
-      if (!stillExists) {
-        const firstProj = grouped.value[0]?.members[0]?.projects[0]
-        currentProjectId.value = firstProj?.id ?? null
-      }
+      ensureSelection()
+      // 记录 revision 基线，避免刚 load 完又触发一次多余全量拉
+      try { lastRevision = await projectApi.revision() } catch { /* 忽略 */ }
     } finally {
       loading.value = false
     }
   }
+
+  /* 实时同步：只重拉项目列表替换（不碰计时/部门/顺序），保留选中项。会议轮询命中 revision 变化时调用。 */
+  async function refreshProjects() {
+    try {
+      projects.value = await projectApi.list({ limit: 500 })
+      ensureSelection()
+    } catch { /* 忽略瞬时失败，下一轮再试 */ }
+  }
+
+  /* 会议轮询搭车：编辑中跳过；否则比对 revision，变了才重拉项目列表 */
+  async function maybeRefreshProjects() {
+    if (editingLock.value) return
+    try {
+      const rev = await projectApi.revision()
+      if (rev && rev !== lastRevision) {
+        lastRevision = rev
+        await refreshProjects()
+      }
+    } catch { /* 忽略瞬时失败 */ }
+  }
+
+  /* 详情面板编辑态同步：编辑时置真 → 本端暂停后台刷新，避免表单被打断（每端本地状态，不影响他端） */
+  function setEditingLock(v: boolean) { editingLock.value = v }
 
   /* 选中某项目（浏览焦点，本端本地切换，任何端都可自由浏览，不影响计时）。
      主控选中时若该项目属于不同汇报人，则同步推进服务端计时焦点。 */
@@ -302,6 +336,8 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
 
   async function refreshTimer() {
     try { applyTimerState(await timerApi.state(clientId)) } catch { /* 忽略瞬时失败 */ }
+    // 搭同一 4s 节拍做项目信息实时同步（他端改动 → 本端自动更新，无需刷新页面）
+    await maybeRefreshProjects()
   }
 
   async function sendHeartbeat() {
@@ -314,6 +350,8 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     if (tickHandle) { clearInterval(tickHandle); tickHandle = null }
     if (pollHandle) { clearInterval(pollHandle); pollHandle = null }
     if (heartbeatHandle) { clearInterval(heartbeatHandle); heartbeatHandle = null }
+    lastRevision = ''
+    editingLock.value = false
   }
 
   /* 主控：开始/继续计时 */
@@ -370,6 +408,7 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
     load, selectProject, nextPresenter, prevPresenter, prevPresenterTail,
     nextProjectInMember, prevProjectInMember,
     reset, saveOrder, findDepartment,
+    setEditingLock,
   }
 })
 

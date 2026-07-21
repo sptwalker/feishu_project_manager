@@ -353,6 +353,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useMeetingStore } from '@/stores/meeting'
+import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadRequestOptions } from 'element-plus'
@@ -379,6 +380,7 @@ const emit = defineEmits<{
 }>()
 
 const meeting = useMeetingStore()
+const reportStore = useMeetingReportStore()
 const auth = useAuthStore()
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const departmentList = ref<Department[]>([])
@@ -671,6 +673,14 @@ async function removeProject() {
 /* ---------- 项目进展详情：表格 ↔ 时间线 ---------- */
 const editingProgress = ref(false)
 const progressDraft = ref<ProgressEntry[]>([])
+
+/* 会议模式：本端进入任一编辑态（字段/进展）时暂停会议页的后台实时刷新，
+   避免他端改动触发的列表刷新重置正在填写的表单。离开编辑即恢复同步。 */
+watch(
+  () => props.layout === 'meeting' && (editing.value || editingProgress.value),
+  (locked) => { if (props.layout === 'meeting') reportStore.setEditingLock(locked) },
+)
+onBeforeUnmount(() => { if (props.layout === 'meeting') reportStore.setEditingLock(false) })
 
 /* 编辑态渲染视图：与展示态时间线一致按「上新下旧」倒序显示；
    数据 progressDraft 仍按时间升序存储（保存格式与对比逻辑不变），行操作经 draftIndex 换算回原数组下标 */

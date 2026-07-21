@@ -94,3 +94,8 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectRevision(BaseModel):
+    """项目集合变更签名（count:sum(version)）——会议页轮询检测他端改动用"""
+    revision: str = Field(..., description="项目集合变更签名，形如 '12:345'")

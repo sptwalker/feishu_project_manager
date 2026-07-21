@@ -32,6 +32,10 @@ export const projectApi = {
   history(id: number) {
     return api.get<OperationLog[]>(`/projects/${id}/history`).then((r) => r.data)
   },
+  // 项目集合变更签名（count:sum(version)）：会议页轮询检测他端改动，变化才重拉列表
+  revision() {
+    return api.get<{ revision: string }>('/projects/revision').then((r) => r.data.revision)
+  },
 }
 
 export const taskApi = {

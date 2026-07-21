@@ -3,11 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
+from sqlalchemy import func
 from backend.api.deps import get_db
 from backend.core.dependencies import get_current_user, get_current_admin
 from backend.models.user import User
-from backend.models.project import ProjectStatus
-from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
+from backend.models.project import Project, ProjectStatus
+from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectRevision
 from backend.services.project_service import ProjectService, ProjectVersionConflict
 from backend.services.operation_log_service import OperationLogService
 from backend.services.project_diff import build_field_change_desc
@@ -54,6 +55,20 @@ def get_projects(
         status=status_filter, owner_name=owner_name, department=department
     )
     return projects
+
+@router.get("/revision", response_model=ProjectRevision)
+def get_projects_revision(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """项目集合的廉价变更签名：count:sum(version)。任一项目增/删/改都会改变此签名。
+    会议汇报页据此低成本轮询检测「他端改了项目」，变化才重拉列表，实现实时同步。
+    注意：必须注册在 /{project_id} 之前，否则 'revision' 会被当成 project_id。"""
+    count, sum_version = db.query(
+        func.count(Project.id), func.coalesce(func.sum(Project.version), 0)
+    ).one()
+    return ProjectRevision(revision=f"{count}:{sum_version}")
+
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
