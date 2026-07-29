@@ -15,6 +15,9 @@ class UserStatus(str, enum.Enum):
     ACTIVE = "active"        # 已启用：正常访问
     DISABLED = "disabled"    # 已禁用：被踢出
 
+# 留言区细粒度授权键（唯一真源）：与系统角色解耦，逐用户勾选。评星复用 reply。
+DISCUSS_PERM_KEYS = ("reply", "hide", "delete", "block", "announce")
+
 class User(BaseModel):
     """用户模型"""
     __tablename__ = "users"
@@ -33,6 +36,12 @@ class User(BaseModel):
         comment="准入状态 pending待审/active启用/disabled禁用",
     )
     last_login_at = Column(DateTime, comment="最后登录时间")
+    # 留言区权限（CSV，键取自 DISCUSS_PERM_KEYS）：与系统角色脱钩，逐项授权。空串=无任何留言区权限。
+    discuss_perms = Column(String(200), default="", server_default="", nullable=False, comment="留言区权限CSV")
+
+    def has_discuss_perm(self, key: str) -> bool:
+        """是否持有某留言区权限键。"""
+        return key in (self.discuss_perms or "").split(",")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name={self.name}, role={self.role})>"

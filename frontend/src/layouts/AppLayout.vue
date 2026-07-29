@@ -24,7 +24,7 @@
           <el-icon><Ticket /></el-icon><span>内部销售码管理</span>
         </RouterLink>
         <RouterLink
-          v-if="branding.data.discuss_enabled"
+          v-if="branding.data.discuss_enabled && hasAnyDiscussPerm"
           to="/discuss-admin" class="nav-item" active-class="active" :title="collapsed ? '留言讨论区' : undefined"
         >
           <el-icon><ChatDotRound /></el-icon><span>留言讨论区</span>
@@ -138,6 +138,8 @@ function toggleSidebar() {
 const userName = computed(() => auth.currentUser?.name ?? '')
 const initial = computed(() => (auth.currentUser?.name ? auth.currentUser.name.slice(0, 1) : '我'))
 const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+/* 有任一留言区权限才显示后台菜单（无权者进不去，与端点门控一致） */
+const hasAnyDiscussPerm = computed(() => (auth.currentUser?.discuss_perms || []).length > 0)
 
 function onCommand(cmd: string) {
   if (cmd === 'logout') {

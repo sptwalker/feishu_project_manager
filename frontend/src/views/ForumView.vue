@@ -187,7 +187,7 @@ const loading = ref(false)
 const me = ref<{ nickname: string; email: string } | null>(null)
 
 /* 公告：markdown 源文存于 board.announcement，marked 渲染展示。
-   编辑权限判定：同浏览器已登录内部系统且 role=admin（不触发登录跳转）。 */
+   编辑权限判定：同浏览器已登录内部系统且持有留言区「公告」权限（不触发登录跳转）。 */
 const canEditAnnouncement = ref(false)
 const announceEditVisible = ref(false)
 const announceDraft = ref('')
@@ -206,7 +206,7 @@ async function checkAdmin() {
   if (!t) return
   try {
     const r = await fetch('/api/v1/users/me', { headers: { Authorization: `Bearer ${t}` } })
-    if (r.ok) canEditAnnouncement.value = (await r.json()).role === 'admin'
+    if (r.ok) canEditAnnouncement.value = ((await r.json()).discuss_perms || []).includes('announce')
   } catch { /* 非管理员/无效 token：不显示编辑按钮，不跳转登录 */ }
 }
 

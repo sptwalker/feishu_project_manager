@@ -46,16 +46,16 @@
           <span class="muted da-time">{{ r.created_at }}</span>
           <p class="da-content">{{ r.content }}</p>
         </div>
-        <!-- 操作行：星级 + 回复 + 隐藏 + 封禁 -->
+        <!-- 操作行：星级 + 回复 + 隐藏 + 封禁 + 删除（按留言区权限门控） -->
         <div class="da-actions">
-          <el-rate :model-value="t.star" :max="5" clearable
+          <el-rate v-if="can('reply')" :model-value="t.star" :max="5" clearable
             @change="(v: number) => setStar(t, v)" />
-          <el-button size="small" type="primary" plain @click="replyFor = replyFor === t.id ? null : t.id">回复</el-button>
-          <el-button size="small" plain @click="toggleVisible(t)">{{ t.status === 'hidden' ? '恢复显示' : '隐藏' }}</el-button>
-          <el-button size="small" :type="t.ext_blocked ? 'success' : 'danger'" plain @click="toggleBlock(t)">
+          <el-button v-if="can('reply')" size="small" type="primary" plain @click="replyFor = replyFor === t.id ? null : t.id">回复</el-button>
+          <el-button v-if="can('hide')" size="small" plain @click="toggleVisible(t)">{{ t.status === 'hidden' ? '恢复显示' : '隐藏' }}</el-button>
+          <el-button v-if="can('block')" size="small" :type="t.ext_blocked ? 'success' : 'danger'" plain @click="toggleBlock(t)">
             {{ t.ext_blocked ? '解封用户' : '封禁用户' }}
           </el-button>
-          <el-button size="small" type="danger" plain v-if="isAdmin" @click="deletePost(t)">删除帖子</el-button>
+          <el-button size="small" type="danger" plain v-if="can('delete')" @click="deletePost(t)">删除帖子</el-button>
         </div>
         <div v-if="replyFor === t.id" class="da-reply-box">
           <el-input v-model="replyDraft" type="textarea" :rows="2" maxlength="2000" placeholder="回复内容…" />
@@ -78,14 +78,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { discussApi } from '@/api/resources'
 import { useAuthStore } from '@/stores/auth'
 import type { DiscussMessage } from '@/types'
 
 const auth = useAuthStore()
-const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+/* 留言区权限门控（键与后端一致）：无对应权限则隐藏该操作按钮 */
+const can = (k: string) => (auth.currentUser?.discuss_perms || []).includes(k)
 
 const threads = ref<DiscussMessage[]>([])
 const total = ref(0)

@@ -114,6 +114,10 @@ class UserService:
         if not user:
             return None
         update_data = data.model_dump(exclude_unset=True)
+        # discuss_perms 前端传 list（schema 已过滤到白名单），落库为 CSV 字符串列
+        if "discuss_perms" in update_data:
+            perms = update_data["discuss_perms"] or []
+            update_data["discuss_perms"] = ",".join(perms)
         for field, value in update_data.items():
             setattr(user, field, value)
         try:

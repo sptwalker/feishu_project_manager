@@ -29,8 +29,8 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
 from backend.core.config import get_settings
-from backend.core.dependencies import get_current_user, get_current_admin
-from backend.models.user import User
+from backend.core.dependencies import get_current_user
+from backend.models.user import User, DISCUSS_PERM_KEYS
 from backend.services.settings_service import SettingsService
 from backend.discuss.db import get_discuss_db
 from backend.discuss.service import (
@@ -119,6 +119,23 @@ def _ext_user(
 
 def _raise(e: DiscussError):
     raise HTTPException(status_code=e.status_code, detail=e.message)
+
+
+def require_discuss_perm(key: str):
+    """留言区细粒度授权：登录内部用户须持有 key 权限，否则 403。与系统角色脱钩，逐用户勾选。"""
+    async def dep(user: User = Depends(get_current_user)) -> User:
+        if not user.has_discuss_perm(key):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无该留言区操作权限")
+        return user
+    return dep
+
+
+async def require_any_discuss_perm(user: User = Depends(get_current_user)) -> User:
+    """进入留言后台（列表含用户联系方式）：须至少持有一项留言区权限。"""
+    if not any(user.has_discuss_perm(k) for k in DISCUSS_PERM_KEYS):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无留言区管理权限")
+    return user
+
 
 
 def _client_ip(request: Request) -> str:
@@ -340,7 +357,7 @@ def admin_list_threads(
     only_unreplied: bool = Query(False),
     min_star: int = Query(0, ge=0, le=5),
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_discuss_perm),
 ):
     """内部楼列表：含隐藏与用户资料；支持搜索（内容/昵称/邮箱/手机）、未回复筛选、星级过滤。"""
     return DiscussService.list_threads(
@@ -353,7 +370,7 @@ def admin_list_threads(
 def admin_reply(
     payload: AdminReplyRequest,
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_discuss_perm("reply")),
 ):
     """内部回复某楼（对外显示英文名 + 官方徽章；楼标记为已回复）。"""
     try:
@@ -369,9 +386,9 @@ def admin_reply(
 def admin_star(
     payload: StarRequest,
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_discuss_perm("reply")),
 ):
-    """评定奖励星级（0-5；0=取消）。"""
+    """评定奖励星级（0-5；0=取消）。评星并入「回复」权限。"""
     try:
         msg = DiscussService.set_star(ddb, payload.message_id, payload.star)
     except DiscussError as e:
@@ -383,7 +400,7 @@ def admin_star(
 def admin_visibility(
     payload: VisibilityRequest,
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_discuss_perm("hide")),
 ):
     """隐藏 / 恢复留言（先发后审的事后管控）。"""
     try:
@@ -397,7 +414,7 @@ def admin_visibility(
 def admin_block(
     payload: BlockRequest,
     ddb: Session = Depends(get_discuss_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_discuss_perm("block")),
 ):
     """封禁 / 解封外部用户（封禁后不能发帖/上传/登录）。"""
     try:
@@ -411,9 +428,9 @@ def admin_block(
 def admin_delete_thread(
     thread_id: int,
     ddb: Session = Depends(get_discuss_db),
-    current_admin: User = Depends(get_current_admin),
+    current_admin: User = Depends(require_discuss_perm("delete")),
 ):
-    """删除整楼（根留言 + 全部回复 + 其媒体文件）。仅管理员；前端二次确认。"""
+    """删除整楼（根留言 + 全部回复 + 其媒体文件）。需删除权限；前端二次确认。"""
     try:
         attachments = DiscussService.delete_thread(ddb, thread_id)
     except DiscussError as e:
@@ -433,8 +450,8 @@ def admin_delete_thread(
 def admin_set_announcement(
     payload: AnnouncementRequest,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
+    current_admin: User = Depends(require_discuss_perm("announce")),
 ):
-    """设置留言区公告（markdown 源文）。仅 PMS 管理员；公开页顶部展示。"""
+    """设置留言区公告（markdown 源文）。需公告权限；公开页顶部展示。"""
     SettingsService.set_discuss_announcement(db, payload.content)
     return {"content": SettingsService.get_discuss_announcement(db)}

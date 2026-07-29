@@ -43,7 +43,7 @@
               type="primary"
               @click="openRole(row)"
             >
-              修改角色
+              编辑
             </el-button>
             <span v-else class="muted">—</span>
           </template>
@@ -51,12 +51,22 @@
       </el-table>
     </div>
 
-    <!-- 修改角色对话框 -->
-    <el-dialog v-model="roleVisible" title="修改角色" width="380px">
+    <!-- 编辑用户：角色 + 留言区权限 -->
+    <el-dialog v-model="roleVisible" title="编辑用户" width="440px">
       <p class="dialog-user">成员：<b>{{ editing?.name }}</b></p>
-      <el-select v-model="newRole" style="width: 100%">
-        <el-option v-for="r in ROLE_OPTIONS" :key="r.value" :label="r.label" :value="r.value" />
-      </el-select>
+      <div class="edit-field">
+        <label class="edit-label">系统角色</label>
+        <el-select v-model="newRole" style="width: 100%">
+          <el-option v-for="r in ROLE_OPTIONS" :key="r.value" :label="r.label" :value="r.value" />
+        </el-select>
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">留言区权限</label>
+        <p class="muted edit-hint">独立于系统角色，勾选即授权对应操作</p>
+        <el-checkbox-group v-model="newPerms" class="perm-group">
+          <el-checkbox v-for="p in DISCUSS_PERM_OPTIONS" :key="p.value" :value="p.value">{{ p.label }}</el-checkbox>
+        </el-checkbox-group>
+      </div>
       <template #footer>
         <el-button @click="roleVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="submitRole">保存</el-button>
@@ -82,6 +92,15 @@ const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const roleText = (r: string) => roleLabel[r] ?? r
 const initial = (name: string) => (name ? name.slice(0, 1) : '?')
 
+/* 留言区权限项（键与后端 DISCUSS_PERM_KEYS 一致；评星并入「回复」） */
+const DISCUSS_PERM_OPTIONS = [
+  { value: 'reply', label: '回复 / 评星' },
+  { value: 'hide', label: '隐藏 / 恢复' },
+  { value: 'delete', label: '删除帖子' },
+  { value: 'block', label: '封禁用户' },
+  { value: 'announce', label: '发布 / 修改公告' },
+]
+
 function fmtDate(s?: string | null) {
   if (!s) return '从未登录'
   return new Date(s).toLocaleString('zh-CN', { hour12: false })
@@ -100,15 +119,17 @@ async function load() {
   }
 }
 
-/* 修改角色 */
+/* 编辑用户：角色 + 留言区权限 */
 const roleVisible = ref(false)
 const editing = ref<User | null>(null)
 const newRole = ref('member')
+const newPerms = ref<string[]>([])
 const saving = ref(false)
 
 function openRole(u: User) {
   editing.value = u
   newRole.value = u.role
+  newPerms.value = [...(u.discuss_perms || [])]
   roleVisible.value = true
 }
 
@@ -116,12 +137,14 @@ async function submitRole() {
   if (!editing.value) return
   saving.value = true
   try {
-    await userApi.updateRole(editing.value.id, newRole.value)
-    ElMessage.success('角色已更新')
+    await userApi.update(editing.value.id, { role: newRole.value, discuss_perms: newPerms.value })
+    ElMessage.success('已保存')
     roleVisible.value = false
+    // 若改的是自己，刷新登录态，让菜单/按钮门控立即生效
+    if (editing.value.id === auth.currentUser?.id) await auth.fetchCurrentUser()
     await load()
   } catch {
-    ElMessage.error('更新失败（需要管理员权限）')
+    ElMessage.error('保存失败（需要管理员权限）')
   } finally {
     saving.value = false
   }
@@ -149,5 +172,9 @@ onMounted(load)
 .role-observer { color: var(--c-ink-3); background: var(--c-surface-2); }
 
 .dialog-user { margin: 0 0 var(--sp-4); color: var(--c-ink-2); }
+.edit-field { margin-bottom: var(--sp-4); }
+.edit-label { display: block; font-weight: 600; font-size: 13px; color: var(--c-ink-2); margin-bottom: 6px; }
+.edit-hint { font-size: 12px; margin: 0 0 8px; }
+.perm-group { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 :deep(.el-table) { --el-table-border-color: var(--c-border); }
 </style>

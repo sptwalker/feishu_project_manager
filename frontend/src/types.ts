@@ -16,6 +16,7 @@ export interface User {
   department?: string | null
   role: string
   status?: string
+  discuss_perms?: string[]
   last_login_at?: string | null
   created_at?: string
   updated_at?: string
