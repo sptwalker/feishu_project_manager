@@ -91,6 +91,14 @@
             <el-option v-for="r in ROLE_OPTIONS" :key="r.value" :label="r.label" :value="r.value" />
           </el-select>
         </el-form-item>
+        <el-form-item label="留言区权限">
+          <div>
+            <p class="muted perm-hint">独立于系统角色，勾选即授权对应操作</p>
+            <el-checkbox-group v-model="form.discuss_perms" class="perm-group">
+              <el-checkbox v-for="p in DISCUSS_PERM_OPTIONS" :key="p.value" :value="p.value">{{ p.label }}</el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editVisible = false">取消</el-button>
@@ -119,6 +127,15 @@ const isAdmin = computed(() => auth.currentUser?.role === 'admin')
 const roleText = (r: string) => roleLabel[r] ?? r
 const statusText = (s?: string) => userStatusLabel[s || 'active'] ?? (s || 'active')
 const initial = (name: string) => (name ? name.slice(0, 1) : '?')
+
+/* 留言区权限项（键与后端 DISCUSS_PERM_KEYS 一致；评星并入「回复」） */
+const DISCUSS_PERM_OPTIONS = [
+  { value: 'reply', label: '回复 / 评星' },
+  { value: 'hide', label: '隐藏 / 恢复' },
+  { value: 'delete', label: '删除帖子' },
+  { value: 'block', label: '封禁用户' },
+  { value: 'announce', label: '发布 / 修改公告' },
+]
 
 function getDepartmentColor(deptName?: string | null) {
   if (!deptName) return undefined
@@ -177,6 +194,7 @@ const form = ref({
   position: '',
   department: '',
   role: 'member',
+  discuss_perms: [] as string[],
 })
 
 function openEdit(u: User) {
@@ -187,6 +205,7 @@ function openEdit(u: User) {
     position: u.position || '',
     department: u.department || '',
     role: u.role || 'member',
+    discuss_perms: [...(u.discuss_perms || [])],
   }
   editVisible.value = true
 }
@@ -205,10 +224,13 @@ async function submitEdit() {
       position: form.value.position || null,
       department: form.value.department || null,
       role: form.value.role,
+      discuss_perms: form.value.discuss_perms,
     }
     await userApi.update(editingId.value, payload as Partial<User>)
     ElMessage.success('已保存')
     editVisible.value = false
+    // 若改的是自己，刷新登录态，让菜单/按钮门控立即生效
+    if (editingId.value === auth.currentUser?.id) await auth.fetchCurrentUser()
     await load()
   } catch {
     ElMessage.error('保存失败（需要管理员权限）')
@@ -256,4 +278,7 @@ onMounted(() => {
 .status-disabled { color: var(--c-ink-3); background: var(--c-surface-2); }
 
 :deep(.el-table) { --el-table-border-color: var(--c-border); }
+
+.perm-hint { font-size: 12px; margin: 0 0 6px; }
+.perm-group { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 </style>
