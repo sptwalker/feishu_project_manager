@@ -35,6 +35,13 @@ class ImageItem(BaseModel):
     size: Optional[int] = Field(None, description="字节大小")
 
 
+class VideoItem(BaseModel):
+    """进展视频（上传的 MP4/MOV/M4V/3GP/WEBM）"""
+    url: str = Field(..., description="视频访问地址（/api/v1/uploads/<filename>）")
+    name: Optional[str] = Field(None, description="原文件名")
+    size: Optional[int] = Field(None, description="字节大小")
+
+
 class ProgressEntry(BaseModel):
     """项目进展记录条目"""
     time: str = Field(..., description="更新时间")
@@ -46,6 +53,7 @@ class ProgressEntry(BaseModel):
     annotations: Optional[List[Annotation]] = Field(default=None, description="批注列表")
     attachments: Optional[List[DocumentAttachment]] = Field(default=None, description="文档附件列表")
     images: Optional[List[ImageItem]] = Field(default=None, description="配图列表")
+    videos: Optional[List[VideoItem]] = Field(default=None, description="视频列表")
 
 
 class ProjectBase(BaseModel):

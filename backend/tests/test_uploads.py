@@ -130,3 +130,60 @@ def test_fetch_path_traversal_rejected():
     r = TestClient(app).get("/api/v1/uploads/..%2f..%2fsecret")
     # 路径穿越被拒（400 非法文件名 或 404）
     assert r.status_code in (400, 404)
+
+
+# ---- 视频上传 ----
+
+# 最小合法 mp4 头：偏移 4-8 为 box 类型 "ftyp"
+_MP4_HEAD = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 16
+# webm 的 EBML 头
+_WEBM_HEAD = b"\x1aE\xdf\xa3" + b"\x00" * 16
+
+
+def test_upload_mp4_ok_and_fetch(db_session, admin_user):
+    client = _client(db_session, admin_user)
+    r = client.post("/api/v1/uploads/video",
+                    files={"file": ("clip.mp4", io.BytesIO(_MP4_HEAD), "video/mp4")})
+    app.dependency_overrides.clear()
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["url"].startswith("/api/v1/uploads/")
+    fname = body["url"].rsplit("/", 1)[-1]
+    g = TestClient(app).get(f"/api/v1/uploads/{fname}")
+    assert g.status_code == 200
+    assert g.content == _MP4_HEAD
+    assert g.headers["content-type"] == "video/mp4"  # 回填的 Content-Type
+
+
+def test_upload_webm_ok(db_session, admin_user):
+    client = _client(db_session, admin_user)
+    r = client.post("/api/v1/uploads/video",
+                    files={"file": ("c.webm", io.BytesIO(_WEBM_HEAD), "video/webm")})
+    app.dependency_overrides.clear()
+    assert r.status_code == 200, r.text
+
+
+def test_reject_fake_video_magic(db_session, admin_user):
+    """扩展名是 mp4 但文件头不符 → 拒绝（防改扩展名伪装）。"""
+    client = _client(db_session, admin_user)
+    r = client.post("/api/v1/uploads/video",
+                    files={"file": ("fake.mp4", io.BytesIO(b"not a real video"), "video/mp4")})
+    app.dependency_overrides.clear()
+    assert r.status_code == 400
+    assert "内容与格式" in r.json()["detail"]
+
+
+def test_reject_non_video_ext(db_session, admin_user):
+    client = _client(db_session, admin_user)
+    r = client.post("/api/v1/uploads/video",
+                    files={"file": ("a.png", io.BytesIO(_PNG_1x1), "image/png")})
+    app.dependency_overrides.clear()
+    assert r.status_code == 400
+
+
+def test_observer_cannot_upload_video(db_session, observer_user):
+    client = _client(db_session, observer_user)
+    r = client.post("/api/v1/uploads/video",
+                    files={"file": ("clip.mp4", io.BytesIO(_MP4_HEAD), "video/mp4")})
+    app.dependency_overrides.clear()
+    assert r.status_code == 403

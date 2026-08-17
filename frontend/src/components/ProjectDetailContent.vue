@@ -164,6 +164,16 @@
                     >
                       <el-button text type="primary" size="small" class="attach-btn" :icon="Picture">图片</el-button>
                     </el-upload>
+                    <!-- 视频上传：MP4/MOV/M4V/3GP/WEBM ≤100MB -->
+                    <el-upload
+                      :show-file-list="false"
+                      accept="video/mp4,video/quicktime,video/x-m4v,video/3gpp,video/webm"
+                      :before-upload="beforeVideoUpload"
+                      :http-request="makeVideoUploadRequest(draftIndex(vi))"
+                      class="img-upload"
+                    >
+                      <el-button text type="primary" size="small" class="attach-btn" :icon="VideoCamera">视频</el-button>
+                    </el-upload>
                   </div>
                   <!-- 附件列表（编辑态） -->
                   <div v-if="e.attachments && e.attachments.length" class="edit-attachments">
@@ -179,6 +189,13 @@
                       <el-image :src="img.url" fit="cover" class="edit-thumb"
                         :preview-src-list="e.images.map((x) => x.url)" :initial-index="ii" :preview-teleported="true" />
                       <el-icon class="img-remove" @click="removeImage(draftIndex(vi), ii)"><Close /></el-icon>
+                    </div>
+                  </div>
+                  <!-- 视频（编辑态）：可预览播放，可删除 -->
+                  <div v-if="e.videos && e.videos.length" class="edit-videos">
+                    <div v-for="(vid, ii) in e.videos" :key="ii" class="edit-video-item">
+                      <video :src="vid.url" class="edit-vid" controls preload="metadata" />
+                      <el-icon class="img-remove" @click="removeVideo(draftIndex(vi), ii)"><Close /></el-icon>
                     </div>
                   </div>
                 </td>
@@ -245,6 +262,11 @@
                   <el-image v-for="(img, ii) in e.images" :key="ii" :src="img.url" fit="contain"
                     class="tl-image" :preview-src-list="e.images.map((x) => x.url)" :initial-index="ii"
                     :preview-teleported="true" />
+                </div>
+                <!-- 配视频（展示态）：原生播放器 -->
+                <div v-if="e.videos && e.videos.length" class="tl-videos" @click.stop>
+                  <video v-for="(vid, ii) in e.videos" :key="ii" :src="vid.url"
+                    class="tl-video" controls preload="metadata" />
                 </div>
                 <!-- 批注列表 -->
                 <div v-if="e.annotations && e.annotations.length" class="annotations">
@@ -357,9 +379,9 @@ import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadRequestOptions } from 'element-plus'
-import { EditPen, Close, Delete, Plus, Check, Link, Document, Picture } from '@element-plus/icons-vue'
+import { EditPen, Close, Delete, Plus, Check, Link, Document, Picture, VideoCamera } from '@element-plus/icons-vue'
 import { projectApi, departmentApi, userApi, uploadApi } from '@/api/resources'
-import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, ImageItem, OperationLog } from '@/types'
+import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, ImageItem, VideoItem, OperationLog } from '@/types'
 import {
   projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, progressStatusColor, isOverdue,
@@ -924,6 +946,7 @@ function cleanDraft(): ProgressEntry[] {
       if (e.annotations) out.annotations = e.annotations
       if (e.attachments) out.attachments = e.attachments
       if (e.images) out.images = e.images
+      if (e.videos) out.videos = e.videos
       return out
     })
 }
@@ -1253,6 +1276,39 @@ function makeUploadRequest(entryIndex: number) {
 function removeImage(entryIndex: number, imageIndex: number) {
   progressDraft.value[entryIndex].images?.splice(imageIndex, 1)
 }
+
+/* ---------- 视频上传（进展配视频）---------- */
+/* 上传前校验：按扩展名（手机视频 MIME 不可靠）+ ≤100MB（后端另有文件头强校验） */
+function beforeVideoUpload(file: File): boolean {
+  const ext = (file.name.split('.').pop() || '').toLowerCase()
+  if (!['mp4', 'mov', 'm4v', '3gp', 'webm'].includes(ext)) {
+    ElMessage.error('仅支持 MP4/MOV/M4V/3GP/WEBM 视频')
+    return false
+  }
+  if (file.size > 100 * 1024 * 1024) {
+    ElMessage.error('视频不能超过 100MB')
+    return false
+  }
+  return true
+}
+async function doUploadVideo(entryIndex: number, file: File) {
+  try {
+    const vid: VideoItem = await uploadApi.video(file)
+    const entry = progressDraft.value[entryIndex]
+    if (!entry.videos) entry.videos = []
+    entry.videos.push(vid)
+    ElMessage.success('视频已上传')
+  } catch {
+    ElMessage.error('上传失败（需要管理员或项目经理权限）')
+  }
+}
+function makeVideoUploadRequest(entryIndex: number) {
+  return (opt: UploadRequestOptions) => doUploadVideo(entryIndex, opt.file)
+}
+/* 删除某条进展的某个视频（仅从草稿移除，保存后生效；不删后端文件） */
+function removeVideo(entryIndex: number, videoIndex: number) {
+  progressDraft.value[entryIndex].videos?.splice(videoIndex, 1)
+}
 </script>
 
 <style scoped>
@@ -1382,6 +1438,13 @@ function removeImage(entryIndex: number, imageIndex: number) {
 /* 展示态配图：自适应缩略，点击放大预览 */
 .tl-images { margin-top: var(--sp-2); display: flex; flex-wrap: wrap; gap: 8px; }
 .tl-image { max-width: 160px; max-height: 160px; border-radius: var(--r-sm); border: 1px solid var(--c-border); cursor: zoom-in; }
+/* 编辑态视频：小尺寸播放器 + 删除角标 */
+.edit-videos { margin-top: var(--sp-2); display: flex; flex-wrap: wrap; gap: 6px; }
+.edit-video-item { position: relative; }
+.edit-vid { width: 120px; max-height: 80px; border-radius: var(--r-sm); border: 1px solid var(--c-border); background: #000; }
+/* 展示态视频：原生播放器 */
+.tl-videos { margin-top: var(--sp-2); display: flex; flex-wrap: wrap; gap: 8px; }
+.tl-video { max-width: 260px; max-height: 200px; border-radius: var(--r-sm); border: 1px solid var(--c-border); background: #000; }
 .meeting-prefix { color: #1a73e8; font-weight: 700; }
 
 /* 文档附件样式 */

@@ -1,12 +1,19 @@
 import api from './client'
-import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, SalesCode, SalesCodePrefix, SmtpConfig, DiscussBoardInfo, DiscussAuthResult, DiscussThreadList, DiscussMessage, DiscussAttachment } from '@/types'
+import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, VideoItem, SalesCode, SalesCodePrefix, SmtpConfig, DiscussBoardInfo, DiscussAuthResult, DiscussThreadList, DiscussMessage, DiscussAttachment } from '@/types'
 
-/* 图片上传：进展配图（JPG/PNG ≤10MB）。返回 {url, name, size} */
+/* 图片/视频上传：进展配图（JPG/PNG ≤10MB）与配视频（MP4/MOV/M4V/3GP/WEBM ≤100MB）。返回 {url, name, size} */
 export const uploadApi = {
   image(file: File) {
     const form = new FormData()
     form.append('file', file)
     return api.post<ImageItem>('/uploads/image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data)
+  },
+  video(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<VideoItem>('/uploads/video', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then((r) => r.data)
   },
