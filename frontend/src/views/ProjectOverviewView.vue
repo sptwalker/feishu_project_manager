@@ -72,7 +72,7 @@
           <span v-if="row.parent_id != null" class="child-branch" :class="{ last: row._isLastChild }"></span>
           <span
             v-if="row.is_group && row.children && row.children.length"
-            class="tree-toggle" @click.stop="toggleRow(row)"
+            class="tree-toggle" @click.stop="toggleRow(row)" @dblclick.stop
           >{{ isExpanded(row) ? '−' : '+' }}</span>
           <span v-else-if="row.parent_id == null" class="tree-toggle-spacer"></span>
           <span v-if="row.is_group" class="group-tag">组</span>
@@ -87,7 +87,7 @@
           <el-button
             v-if="row.is_group"
             size="small" class="add-child-btn" :icon="Plus"
-            @click.stop="openCreateChild(row)"
+            @click.stop="openCreateChild(row)" @dblclick.stop
           >子项</el-button>
         </template>
       </el-table-column>
