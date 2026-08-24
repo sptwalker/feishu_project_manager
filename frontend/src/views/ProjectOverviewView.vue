@@ -27,7 +27,15 @@
         </el-autocomplete>
         <el-button text :icon="View" :disabled="!currentRow" @click="detailSelected">详情</el-button>
         <el-button text type="danger" :icon="Delete" :disabled="!currentRow" @click="removeSelected">删除</el-button>
-        <el-button text :icon="Plus" @click="openCreate">新增项目</el-button>
+        <el-dropdown trigger="click" @command="onAddCommand">
+          <el-button text :icon="Plus">新增<el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="project">新增项目</el-dropdown-item>
+              <el-dropdown-item command="group">新增项目组</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
 
@@ -38,6 +46,8 @@
       border
       size="default"
       row-key="id"
+      :tree-props="{ children: 'children' }"
+      :default-expand-all="!!keyword.trim()"
       height="100%"
       highlight-current-row
       :header-cell-style="headerCellStyle"
@@ -82,6 +92,7 @@
 
       <el-table-column prop="name" label="待办事项 / 项目名称" min-width="240">
         <template #default="{ row }">
+          <span v-if="row.is_group" class="group-tag">组</span>
           <el-tooltip
             v-if="row.content"
             :content="row.content"
@@ -90,6 +101,11 @@
             <span class="link" @click="openDetail(row)">{{ row.name }}</span>
           </el-tooltip>
           <span v-else class="link" @click="openDetail(row)">{{ row.name }}</span>
+          <el-button
+            v-if="row.is_group"
+            text size="small" class="add-child-btn" :icon="Plus"
+            @click.stop="openCreateChild(row)"
+          >子项目</el-button>
         </template>
       </el-table-column>
 
@@ -184,6 +200,8 @@
       v-model:visible="detailVisible"
       :project="detailProject"
       :create-mode="createMode"
+      :is-group="createIsGroup"
+      :parent="createParent"
       :departments="deptValues"
       :owners="ownerValues"
       @updated="load"
@@ -194,7 +212,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, View, Delete } from '@element-plus/icons-vue'
+import { Plus, Search, View, Delete, ArrowDown } from '@element-plus/icons-vue'
 import { projectApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types'
 import {
@@ -390,70 +408,90 @@ function stalledMetaOf(lastTime: string): { days: number; color: string; bold: b
 
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
-  const list = projects.value.filter((p) => projectMatchesKeyword(p, kw))
-  return [...list]
-    .sort((a, b) =>
-      cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
-      || cmpStr(a.owner_name, b.owner_name)
-      || (urgWeight(b.urgency) - urgWeight(a.urgency)),
-    )
-    .map((p) => {
-      const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-      const lastTime = log.length ? (log[log.length - 1].time || '') : ''
-      const stalled = lastTime ? stalledMetaOf(lastTime) : null
-      // 未闭合 pending：pending 状态、非反馈本身（无 reply_to）、且其 id 未被任何 reply_to 引用
-      const replied = new Set(log.filter((e) => e.reply_to).map((e) => e.reply_to))
-      const openSet = new Set(
-        log.filter((e) =>
-          (PENDING_STATUSES as readonly string[]).includes(e.status)
-          && !e.reply_to
-          && !(e.id && replied.has(e.id)),
-        ).map((e) => e.status),
-      )
-      const pendingMarks = (PENDING_STATUSES as readonly string[])
-        .filter((s) => openSet.has(s))
-        .map((s) => ({ status: s, color: progressColor(s) }))
-      // 最新进展状态显示：最后一条若本身是反馈条、或是已被反馈的待办，则显示"已反馈"；
-      // 颜色沿用其原待办状态色（与详情页时间线反馈节点配色一致），保留"原本是哪类待办"的信息
-      const last = log.length ? log[log.length - 1] : null
-      let lastDisplayStatus = last ? (last.status || '') : ''
-      let lastDisplayColor = lastDisplayStatus ? progressColor(lastDisplayStatus) : ''
-      if (last) {
-        if (last.reply_to) {
-          // 最后一条本身是反馈：取其指向的原事件状态色
-          const origin = log.find((e) => e.id === last.reply_to)
-          lastDisplayStatus = '已反馈'
-          lastDisplayColor = progressColor(origin?.status || last.status || '')
-        } else if (
-          (PENDING_STATUSES as readonly string[]).includes(last.status)
-          && last.id && replied.has(last.id)
-        ) {
-          // 最后一条是已被反馈的待办：显示已反馈，颜色用其自身（原待办）状态色
-          lastDisplayStatus = '已反馈'
-          lastDisplayColor = progressColor(last.status)
-        }
-      }
-      // 最近 3 天有更新：最后一条进展时间距今 ≤3 天
-      const hasRecentUpdate = lastTime ? (Date.now() - new Date(lastTime).getTime()) / 86400000 <= 3 : false
-      return {
-        ...p,
-        _deptShort: getDepartmentShortName(p.department),
-        _deptColor: getDepartmentColor(p.department),
-        _hasProgress: log.length > 0,
-        _hasRecentUpdate: hasRecentUpdate,
-        _stalledDays: stalled?.days ?? null,
-        _stalledColor: stalled?.color ?? '',
-        _stalledBold: stalled?.bold ?? false,
-        _stalledCritical: stalled?.critical ?? false,
-        _pendingMarks: pendingMarks,
-        _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
-        _lastStatus: lastDisplayStatus,
-        _lastStatusColor: lastDisplayColor,
-        _recentProgress: [...log].slice(-8),
-        _hasMore: log.length > 8,
-      }
-    })
+  const sortFn = (a: Project, b: Project) =>
+    cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
+    || cmpStr(a.owner_name, b.owner_name)
+    || (urgWeight(b.urgency) - urgWeight(a.urgency))
+  // 子项目按父组分桶
+  const childrenOf = new Map<number, Project[]>()
+  for (const p of projects.value) {
+    if (p.parent_id != null) {
+      const arr = childrenOf.get(p.parent_id) ?? []
+      arr.push(p)
+      childrenOf.set(p.parent_id, arr)
+    }
+  }
+  const tops = [...projects.value].filter((p) => p.parent_id == null).sort(sortFn)
+  type Row = ReturnType<typeof enrichRow> & { children?: ReturnType<typeof enrichRow>[] }
+  const out: Row[] = []
+  for (const top of tops) {
+    if (top.is_group) {
+      const kids = [...(childrenOf.get(top.id) ?? [])].sort(sortFn)
+      const groupMatch = projectMatchesKeyword(top, kw)
+      const matchedKids = kw ? kids.filter((k) => projectMatchesKeyword(k, kw)) : kids
+      // 关键词：组或任一子项目命中即保留（仿 MeetingReportTree）；组自身命中而子项目均未命中时仍展示全部子项目
+      if (kw && !groupMatch && !matchedKids.length) continue
+      const shownKids = kw ? (matchedKids.length ? matchedKids : kids) : kids
+      out.push({ ...enrichRow(top), children: shownKids.map(enrichRow) })
+    } else if (!kw || projectMatchesKeyword(top, kw)) {
+      out.push(enrichRow(top))
+    }
+  }
+  return out
 })
+
+/* 单行富化：进展/停滞/待办标记等（组与子项目、独立项目统一处理） */
+function enrichRow(p: Project) {
+  const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+  const lastTime = log.length ? (log[log.length - 1].time || '') : ''
+  const stalled = lastTime ? stalledMetaOf(lastTime) : null
+  // 未闭合 pending：pending 状态、非反馈本身（无 reply_to）、且其 id 未被任何 reply_to 引用
+  const replied = new Set(log.filter((e) => e.reply_to).map((e) => e.reply_to))
+  const openSet = new Set(
+    log.filter((e) =>
+      (PENDING_STATUSES as readonly string[]).includes(e.status)
+      && !e.reply_to
+      && !(e.id && replied.has(e.id)),
+    ).map((e) => e.status),
+  )
+  const pendingMarks = (PENDING_STATUSES as readonly string[])
+    .filter((s) => openSet.has(s))
+    .map((s) => ({ status: s, color: progressColor(s) }))
+  const last = log.length ? log[log.length - 1] : null
+  let lastDisplayStatus = last ? (last.status || '') : ''
+  let lastDisplayColor = lastDisplayStatus ? progressColor(lastDisplayStatus) : ''
+  if (last) {
+    if (last.reply_to) {
+      const origin = log.find((e) => e.id === last.reply_to)
+      lastDisplayStatus = '已反馈'
+      lastDisplayColor = progressColor(origin?.status || last.status || '')
+    } else if (
+      (PENDING_STATUSES as readonly string[]).includes(last.status)
+      && last.id && replied.has(last.id)
+    ) {
+      lastDisplayStatus = '已反馈'
+      lastDisplayColor = progressColor(last.status)
+    }
+  }
+  const hasRecentUpdate = lastTime ? (Date.now() - new Date(lastTime).getTime()) / 86400000 <= 3 : false
+  return {
+    ...p,
+    _deptShort: getDepartmentShortName(p.department),
+    _deptColor: getDepartmentColor(p.department),
+    _hasProgress: log.length > 0,
+    _hasRecentUpdate: hasRecentUpdate,
+    _stalledDays: stalled?.days ?? null,
+    _stalledColor: stalled?.color ?? '',
+    _stalledBold: stalled?.bold ?? false,
+    _stalledCritical: stalled?.critical ?? false,
+    _pendingMarks: pendingMarks,
+    _lastProgress: log.length ? (log[log.length - 1].content || '') : '',
+    _lastStatus: lastDisplayStatus,
+    _lastStatusColor: lastDisplayColor,
+    _recentProgress: [...log].slice(-8),
+    _hasMore: log.length > 8,
+  }
+}
 
 function rowClassName({ row }: { row: { _stalledCritical?: boolean } }): string {
   return row._stalledCritical ? 'row-critical' : ''
@@ -523,8 +561,12 @@ function onCurrentChange(row: Project | null) {
 const detailVisible = ref(false)
 const detailProject = ref<Project | null>(null)
 const createMode = ref(false)
+const createIsGroup = ref(false)
+const createParent = ref<Project | null>(null)
 function openDetail(row: Project) {
   createMode.value = false
+  createIsGroup.value = false
+  createParent.value = null
   detailProject.value = row
   detailVisible.value = true
 }
@@ -539,8 +581,11 @@ function removeSelected() {
 
 /* 删除 */
 async function remove(row: Project) {
+  const msg = row.is_group
+    ? `确定删除项目组「${row.name}」？将级联删除该组及其全部子项目（含各自的任务/风险），不可恢复。`
+    : `确定删除项目「${row.name}」？此操作不可恢复。`
   try {
-    await ElMessageBox.confirm(`确定删除项目「${row.name}」？此操作不可恢复。`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(msg, '删除确认', { type: 'warning' })
   } catch {
     return
   }
@@ -553,8 +598,19 @@ async function remove(row: Project) {
   }
 }
 
-/* 新增：复用详情抽屉的新建模式 */
-function openCreate() {
+/* 新增下拉：项目 / 项目组 */
+function onAddCommand(cmd: 'project' | 'group') {
+  createParent.value = null
+  createIsGroup.value = cmd === 'group'
+  createMode.value = true
+  detailProject.value = null
+  detailVisible.value = true
+}
+
+/* 组内新增子项目：预填父组属性（copy-on-create） */
+function openCreateChild(group: Project) {
+  createIsGroup.value = false
+  createParent.value = group
   createMode.value = true
   detailProject.value = null
   detailVisible.value = true
@@ -601,6 +657,11 @@ onMounted(() => {
 .urg { font-weight: 600; }
 .link { color: var(--c-accent); cursor: pointer; font-weight: 500; }
 .link:hover { text-decoration: underline; }
+.group-tag {
+  display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
+  background: var(--c-accent); border-radius: var(--r-sm); padding: 1px 6px; margin-right: 6px;
+}
+.add-child-btn { margin-left: 8px; padding: 0 4px; }
 .progress-cell { display: flex; align-items: center; gap: 6px; }
 .prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-status { font-weight: 600; }

@@ -70,6 +70,9 @@ class ProjectBase(BaseModel):
     is_long_term: bool = Field(default=False, description="长期项目（不显示完成度）")
     estimated_end_date: Optional[date] = Field(None, description="预计完成时间")
     progress_log: Optional[List[ProgressEntry]] = Field(default=None, description="项目进展记录")
+    # 项目组层级：is_group=组容器；parent_id=子项目指向组（顶层为空）。Create/Response 共用。
+    is_group: bool = Field(default=False, description="是否为项目组容器")
+    parent_id: Optional[int] = Field(default=None, description="所属项目组ID（顶层为空）")
 
 class ProjectCreate(ProjectBase):
     """创建项目 Schema（记录日期由后端自动记录为创建当天）"""

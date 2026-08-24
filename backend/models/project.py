@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, Date, Boolean, Enum as SQLEnum, CheckConstraint, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Text, Date, Boolean, Enum as SQLEnum, CheckConstraint, JSON, ForeignKey
+from sqlalchemy.orm import relationship, backref
 import enum
 from backend.models.base import BaseModel
 
@@ -36,6 +36,11 @@ class Project(BaseModel):
     actual_end_date = Column(Date, comment="实际完成时间")
     # 项目进展记录：[{time, content, status}] 列表
     progress_log = Column(JSON, default=list, comment="项目进展记录")
+    # 项目组层级：is_group=组容器；parent_id=子项目指向组（顶层为空）。组本身也是完整项目。
+    parent_id = Column(Integer, ForeignKey("projects.id"), index=True,
+                       comment="所属项目组ID（子项目指向组；顶层为空）")
+    is_group = Column(Boolean, default=False, nullable=False, server_default="0",
+                      comment="是否为项目组容器")
     # 乐观锁版本号：配合 version_id_col，每次 flush 自动 +1，
     # 并以 UPDATE ... WHERE version=旧值 做 CAS，并发提交命中 0 行时抛 StaleDataError
     version = Column(Integer, nullable=False, default=1, server_default="1",
@@ -51,6 +56,12 @@ class Project(BaseModel):
     # 关系（项目不再关联负责人用户账号，仅保留下属任务/风险）
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     risks = relationship("Risk", back_populates="project", cascade="all, delete-orphan")
+    # 项目组 → 子项目一对多；删组级联删子项目（ORM 级，delete-orphan；不依赖 DB 外键，SQLite 友好）
+    children = relationship(
+        "Project",
+        backref=backref("parent", remote_side="Project.id"),
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name={self.name}, status={self.status})>"

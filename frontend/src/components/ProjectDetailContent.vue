@@ -394,7 +394,9 @@ const props = withDefaults(defineProps<{
   owners?: string[]
   createMode?: boolean
   layout?: 'drawer' | 'meeting'
-}>(), { departments: () => [], owners: () => [], createMode: false, layout: 'drawer' })
+  isGroup?: boolean               // 新建的是项目组容器
+  parent?: Project | null         // 建子项目时的父组（用于 copy-on-create 预填）
+}>(), { departments: () => [], owners: () => [], createMode: false, layout: 'drawer', isGroup: false, parent: null })
 
 const emit = defineEmits<{
   (e: 'updated'): void
@@ -468,10 +470,20 @@ function resetForm() {
 function sync() {
   if (props.createMode) {
     local.value = blankProject()
+    // 建子项目时从父组属性预填（copy-on-create，一次性；不复制 name / progress_log）
+    const p = props.parent
     Object.assign(form, {
-      name: '', content: '', department: '', owner_name: '', related_name: '',
-      status: 'planned', urgency: 'medium', completion: 0, is_long_term: false,
-      record_date: todayStr(), estimated_end_date: null,
+      name: '',
+      content: p?.content ?? '',
+      department: p?.department ?? '',
+      owner_name: p?.owner_name ?? '',
+      related_name: p?.related_name ?? '',
+      status: 'planned',
+      urgency: p?.urgency ?? 'medium',
+      completion: p?.completion ?? 0,
+      is_long_term: !!p?.is_long_term,
+      record_date: todayStr(),
+      estimated_end_date: p?.estimated_end_date ?? null,
     })
     progressDraft.value = [{ time: nowStr(), content: '', status: '正常' }]
     editing.value = true
@@ -650,6 +662,8 @@ async function saveCreate() {
       is_long_term: form.is_long_term,
       estimated_end_date: form.estimated_end_date || null,
       progress_log,
+      is_group: !!props.isGroup,
+      parent_id: props.parent?.id ?? null,
     }
     await projectApi.create(payload as Partial<Project>)
     emit('updated')

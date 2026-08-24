@@ -12,6 +12,8 @@
       :departments="departments"
       :owners="owners"
       :create-mode="createMode"
+      :is-group="isGroup"
+      :parent="parent"
       @updated="emit('updated')"
       @request-close="requestClose"
     />
@@ -31,6 +33,8 @@ defineProps<{
   departments?: string[]
   owners?: string[]
   createMode?: boolean
+  isGroup?: boolean
+  parent?: Project | null
 }>()
 
 const emit = defineEmits<{
