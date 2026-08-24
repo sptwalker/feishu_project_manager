@@ -57,6 +57,26 @@
       @row-dblclick="openDetail"
       :row-class-name="rowClassName"
     >
+      <el-table-column prop="name" label="待办事项 / 项目名称" min-width="260">
+        <template #default="{ row }">
+          <span v-if="row.parent_id != null" class="child-branch" :class="{ last: row._isLastChild }"></span>
+          <span v-if="row.is_group" class="group-tag">组</span>
+          <el-tooltip
+            v-if="row.content"
+            :content="row.content"
+            placement="top" effect="light" popper-class="desc-tip"
+          >
+            <span class="link" :class="{ 'child-name': row.parent_id != null }" @click="openDetail(row)">{{ row.name }}</span>
+          </el-tooltip>
+          <span v-else class="link" :class="{ 'child-name': row.parent_id != null }" @click="openDetail(row)">{{ row.name }}</span>
+          <el-button
+            v-if="row.is_group"
+            text size="small" class="add-child-btn" :icon="Plus"
+            @click.stop="openCreateChild(row)"
+          >子项目</el-button>
+        </template>
+      </el-table-column>
+
       <el-table-column label="" width="38" align="center" class-name="signal-col">
         <template #default="{ row }">
           <el-tooltip v-if="row._hasRecentUpdate" :content="`近 3 天有更新：${row._lastStatus || '进展'}`" placement="top" effect="light">
@@ -71,7 +91,7 @@
         :filters="deptFilters" :filter-method="filterDept"
       >
         <template #default="{ row }">
-          <span :style="{ color: row._deptColor, fontWeight: row._deptShort ? 600 : 400 }">
+          <span v-if="row.parent_id == null" :style="{ color: row._deptColor, fontWeight: row._deptShort ? 600 : 400 }">
             {{ row._deptShort || '—' }}
           </span>
         </template>
@@ -87,25 +107,6 @@
           <span class="badge" :style="{ color: statusColor(row.status), background: 'var(--c-surface-2)' }">
             {{ statusLabel(row.status) }}
           </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="name" label="待办事项 / 项目名称" min-width="240">
-        <template #default="{ row }">
-          <span v-if="row.is_group" class="group-tag">组</span>
-          <el-tooltip
-            v-if="row.content"
-            :content="row.content"
-            placement="top" effect="light" popper-class="desc-tip"
-          >
-            <span class="link" @click="openDetail(row)">{{ row.name }}</span>
-          </el-tooltip>
-          <span v-else class="link" @click="openDetail(row)">{{ row.name }}</span>
-          <el-button
-            v-if="row.is_group"
-            text size="small" class="add-child-btn" :icon="Plus"
-            @click.stop="openCreateChild(row)"
-          >子项目</el-button>
         </template>
       </el-table-column>
 
@@ -432,7 +433,10 @@ const rows = computed(() => {
       // 关键词：组或任一子项目命中即保留（仿 MeetingReportTree）；组自身命中而子项目均未命中时仍展示全部子项目
       if (kw && !groupMatch && !matchedKids.length) continue
       const shownKids = kw ? (matchedKids.length ? matchedKids : kids) : kids
-      out.push({ ...enrichRow(top), children: shownKids.map(enrichRow) })
+      out.push({
+        ...enrichRow(top),
+        children: shownKids.map((k, i) => ({ ...enrichRow(k), _isLastChild: i === shownKids.length - 1 })),
+      })
     } else if (!kw || projectMatchesKeyword(top, kw)) {
       out.push(enrichRow(top))
     }
@@ -641,6 +645,24 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
 }
+/* 组行展开图标改造为方框 +/−（原生三角→加减号），更贴近文件树观感 */
+.overview-page :deep(.el-table__expand-icon) {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+.overview-page :deep(.el-table__expand-icon .el-icon) { display: none; }
+.overview-page :deep(.el-table__expand-icon)::after {
+  content: '+';
+  font-size: 15px; line-height: 1;
+  display: inline-block;
+  width: 15px; height: 15px;
+  border: 1px solid var(--c-accent); border-radius: 3px;
+  text-align: center; box-sizing: border-box;
+}
+.overview-page :deep(.el-table__expand-icon--expanded) { transform: none; }
+.overview-page :deep(.el-table__expand-icon--expanded)::after { content: '−'; }
+/* 无子项目的普通行/子项目行：占位对齐，不显示图标框 */
+.overview-page :deep(.el-table__placeholder) { width: 15px; }
 .head-toolbar {
   display: flex;
   align-items: center;
@@ -662,6 +684,21 @@ onMounted(() => {
   background: var(--c-accent); border-radius: var(--r-sm); padding: 1px 6px; margin-right: 6px;
 }
 .add-child-btn { margin-left: 8px; padding: 0 4px; }
+
+/* 子项目分支连线：├─ / └─（末位用 last），营造树状缩进层级 */
+.child-branch {
+  display: inline-block; width: 18px; height: 1em; margin-right: 4px; position: relative; vertical-align: middle;
+}
+.child-branch::before {
+  content: ''; position: absolute; left: 4px; top: -8px; bottom: 50%;
+  border-left: 1px solid var(--c-border-strong, #c0c4cc);
+}
+.child-branch::after {
+  content: ''; position: absolute; left: 4px; top: 50%; width: 10px;
+  border-top: 1px solid var(--c-border-strong, #c0c4cc);
+}
+.child-branch.last::before { bottom: 50%; }
+.child-name { color: var(--c-ink-2); font-weight: 400; }
 .progress-cell { display: flex; align-items: center; gap: 6px; }
 .prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-status { font-weight: 600; }

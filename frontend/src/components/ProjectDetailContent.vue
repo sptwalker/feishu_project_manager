@@ -104,7 +104,7 @@
 
       <div v-if="editing" class="edit-actions">
         <el-button v-if="!createMode && isAdmin" class="btn-delete-deep" :icon="Delete" :loading="deleting" @click="removeProject">删除</el-button>
-        <el-button class="btn-amber" :icon="Check" :loading="saving" @click="onSave">{{ createMode ? '创建项目' : '保存' }}</el-button>
+        <el-button :class="createMode && isGroup ? 'btn-purple' : 'btn-amber'" :icon="Check" :loading="saving" @click="onSave">{{ createMode ? (isGroup ? '创建项目组' : '创建项目') : '保存' }}</el-button>
       </div>
 
       <!-- 项目进展 / 历史修改记录（tab 切换） -->
@@ -1369,6 +1369,8 @@ function removeVideo(entryIndex: number, videoIndex: number) {
 .btn-blue:hover, .btn-blue:focus { background: #1763c8; border-color: #1763c8; color: #fff; }
 .btn-amber { background: #f59e0b; border-color: #f59e0b; color: #fff; }
 .btn-amber:hover, .btn-amber:focus { background: #d98c08; border-color: #d98c08; color: #fff; }
+.btn-purple { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
+.btn-purple:hover, .btn-purple:focus { background: #7c3aed; border-color: #7c3aed; color: #fff; }
 .btn-delete-deep { background: #c0392b; border-color: #c0392b; color: #fff; }
 .btn-delete-deep:hover, .btn-delete-deep:focus { background: #a5311f; border-color: #a5311f; color: #fff; }
 /* 进展「编辑/保存」按钮：在 baseline 对齐的标题行中居中 */
