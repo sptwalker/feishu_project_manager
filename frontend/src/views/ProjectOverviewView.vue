@@ -40,6 +40,7 @@
     </div>
 
     <el-table
+      ref="tableRef"
       v-loading="loading"
       :data="rows"
       stripe
@@ -55,11 +56,25 @@
       style="width: 100%"
       @current-change="onCurrentChange"
       @row-dblclick="openDetail"
+      @expand-change="onExpandChange"
       :row-class-name="rowClassName"
     >
+      <el-table-column label="" width="38" align="center" class-name="signal-col">
+        <template #default="{ row }">
+          <el-tooltip v-if="row._hasRecentUpdate" :content="`近 3 天有更新：${row._lastStatus || '进展'}`" placement="top" effect="light">
+            <span class="signal-dot" :style="{ background: row._lastStatusColor || '#52c41a' }" aria-label="近 3 天有更新"></span>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="name" label="待办事项 / 项目名称" min-width="260">
         <template #default="{ row }">
           <span v-if="row.parent_id != null" class="child-branch" :class="{ last: row._isLastChild }"></span>
+          <span
+            v-if="row.is_group && row.children && row.children.length"
+            class="tree-toggle" @click.stop="toggleRow(row)"
+          >{{ isExpanded(row) ? '−' : '+' }}</span>
+          <span v-else-if="row.parent_id == null" class="tree-toggle-spacer"></span>
           <span v-if="row.is_group" class="group-tag">组</span>
           <el-tooltip
             v-if="row.content"
@@ -71,17 +86,9 @@
           <span v-else class="link" :class="{ 'child-name': row.parent_id != null }" @click="openDetail(row)">{{ row.name }}</span>
           <el-button
             v-if="row.is_group"
-            text size="small" class="add-child-btn" :icon="Plus"
+            size="small" class="add-child-btn" :icon="Plus"
             @click.stop="openCreateChild(row)"
-          >子项目</el-button>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="" width="38" align="center" class-name="signal-col">
-        <template #default="{ row }">
-          <el-tooltip v-if="row._hasRecentUpdate" :content="`近 3 天有更新：${row._lastStatus || '进展'}`" placement="top" effect="light">
-            <span class="signal-dot" :style="{ background: row._lastStatusColor || '#52c41a' }" aria-label="近 3 天有更新"></span>
-          </el-tooltip>
+          >子项</el-button>
         </template>
       </el-table-column>
 
@@ -94,6 +101,7 @@
           <span v-if="row.parent_id == null" :style="{ color: row._deptColor, fontWeight: row._deptShort ? 600 : 400 }">
             {{ row._deptShort || '—' }}
           </span>
+          <span v-else class="child-dept">{{ row._deptShort || '—' }}</span>
         </template>
       </el-table-column>
 
@@ -211,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, View, Delete, ArrowDown } from '@element-plus/icons-vue'
 import { projectApi, departmentApi } from '@/api/resources'
@@ -227,6 +235,20 @@ const projects = ref<Project[]>([])
 const departments = ref<Department[]>([])
 const loading = ref(false)
 const keyword = ref('')
+
+/* 项目组展开：信号灯占据首列后，el-table 原生展开图标（锁在首列）被 CSS 隐藏，
+   改由名称列的自定义 +/− 触发 toggleRowExpansion，展开态用 expandedIds 反查渲染 ± 号 */
+const tableRef = ref()
+const expandedIds = ref(new Set<number>())
+function toggleRow(row: Project) { tableRef.value?.toggleRowExpansion(row) }
+function onExpandChange(row: Project, expanded: boolean) {
+  const s = new Set(expandedIds.value)
+  if (expanded) s.add(row.id); else s.delete(row.id)
+  expandedIds.value = s
+}
+const isExpanded = (row: Project) => (keyword.value.trim() ? true : expandedIds.value.has(row.id))
+// 关键词切换会让 el-table 重置树展开态（default-expand-all），同步清空本地展开集
+watch(keyword, () => { expandedIds.value = new Set() })
 
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
@@ -645,24 +667,10 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
 }
-/* 组行展开图标改造为方框 +/−（原生三角→加减号），更贴近文件树观感 */
-.overview-page :deep(.el-table__expand-icon) {
-  color: var(--c-accent);
-  font-weight: 700;
-}
-.overview-page :deep(.el-table__expand-icon .el-icon) { display: none; }
-.overview-page :deep(.el-table__expand-icon)::after {
-  content: '+';
-  font-size: 15px; line-height: 1;
-  display: inline-block;
-  width: 15px; height: 15px;
-  border: 1px solid var(--c-accent); border-radius: 3px;
-  text-align: center; box-sizing: border-box;
-}
-.overview-page :deep(.el-table__expand-icon--expanded) { transform: none; }
-.overview-page :deep(.el-table__expand-icon--expanded)::after { content: '−'; }
-/* 无子项目的普通行/子项目行：占位对齐，不显示图标框 */
-.overview-page :deep(.el-table__placeholder) { width: 15px; }
+/* 信号灯占据首列后，el-table 原生展开图标（锁死首列）一律隐藏，
+   展开/折叠改由名称列的 .tree-toggle 自定义 +/− 驱动 */
+.overview-page :deep(.el-table__expand-icon) { display: none; }
+.overview-page :deep(.el-table__placeholder) { display: none; }
 .head-toolbar {
   display: flex;
   align-items: center;
@@ -683,7 +691,20 @@ onMounted(() => {
   display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
   background: var(--c-accent); border-radius: var(--r-sm); padding: 1px 6px; margin-right: 6px;
 }
-.add-child-btn { margin-left: 8px; padding: 0 4px; }
+/* 名称列自定义展开开关：方框 +/− */
+.tree-toggle {
+  display: inline-block; width: 15px; height: 15px; line-height: 13px;
+  margin-right: 6px; text-align: center; cursor: pointer; user-select: none;
+  font-size: 14px; font-weight: 700; color: var(--c-accent);
+  border: 1px solid var(--c-accent); border-radius: 3px; box-sizing: border-box;
+  vertical-align: middle;
+}
+.tree-toggle-spacer { display: inline-block; width: 15px; margin-right: 6px; }
+.add-child-btn {
+  margin-left: 8px; padding: 1px 8px; height: auto; line-height: 18px;
+  border: none; border-radius: 9px; background: var(--c-ink-3, #909399); color: #fff;
+}
+.add-child-btn:hover, .add-child-btn:focus { background: var(--c-ink-2, #606266); color: #fff; }
 
 /* 子项目分支连线：├─ / └─（末位用 last），营造树状缩进层级 */
 .child-branch {
@@ -699,6 +720,17 @@ onMounted(() => {
 }
 .child-branch.last::before { bottom: 50%; }
 .child-name { color: var(--c-ink-2); font-weight: 400; }
+.child-dept { color: var(--c-ink-3, #909399); font-weight: 400; }
+
+/* 子项目行（展开后）：淡蓝底、行高略减、无中间分隔线 */
+.overview-page :deep(.el-table__row--level-1) td.el-table__cell {
+  background: #f0f6ff;
+  padding-top: 4px; padding-bottom: 4px;
+  border-bottom: none;
+}
+.overview-page :deep(.el-table__row--level-1:hover) td.el-table__cell {
+  background: #e6f0ff;
+}
 .progress-cell { display: flex; align-items: center; gap: 6px; }
 .prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-status { font-weight: 600; }
