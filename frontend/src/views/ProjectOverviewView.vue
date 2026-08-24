@@ -55,7 +55,7 @@
       :default-sort="{ prop: '', order: null }"
       style="width: 100%"
       @current-change="onCurrentChange"
-      @row-dblclick="openDetail"
+      @row-dblclick="onRowDblclick"
       @expand-change="onExpandChange"
       :row-class-name="rowClassName"
     >
@@ -595,6 +595,12 @@ function openDetail(row: Project) {
   createParent.value = null
   detailProject.value = row
   detailVisible.value = true
+}
+
+function onRowDblclick(row: Project, _column: unknown, event: MouseEvent) {
+  void _column
+  if ((event.target as HTMLElement)?.closest('.add-child-btn, .tree-toggle')) return
+  openDetail(row)
 }
 
 /* 右上角操作图标：作用于当前选中行 */
