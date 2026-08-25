@@ -84,11 +84,12 @@
             <span class="link" :class="{ 'child-name': row.parent_id != null }" @click="openDetail(row)">{{ row.name }}</span>
           </el-tooltip>
           <span v-else class="link" :class="{ 'child-name': row.parent_id != null }" @click="openDetail(row)">{{ row.name }}</span>
-          <el-button
+          <span
             v-if="row.is_group"
-            size="small" class="add-child-btn" :icon="Plus"
-            @click.stop="openCreateChild(row)" @dblclick.stop
-          >子项</el-button>
+            class="add-child-btn"
+            @click.stop.prevent="openCreateChild(row)"
+            @dblclick.stop.prevent
+          >子项</span>
         </template>
       </el-table-column>
 
@@ -710,8 +711,9 @@ onMounted(() => {
 }
 .tree-toggle-spacer { display: inline-block; width: 15px; margin-right: 6px; }
 .add-child-btn {
-  margin-left: 8px; padding: 1px 8px; height: auto; line-height: 18px;
+  display: inline-block; margin-left: 8px; padding: 1px 8px; line-height: 18px;
   border: none; border-radius: 9px; background: var(--c-ink-3, #909399); color: #fff;
+  font-size: 12px; vertical-align: middle; cursor: pointer; user-select: none;
 }
 .add-child-btn:hover, .add-child-btn:focus { background: var(--c-ink-2, #606266); color: #fff; }
 
@@ -731,14 +733,15 @@ onMounted(() => {
 .child-name { color: var(--c-ink-2); font-weight: 400; }
 .child-dept { color: var(--c-ink-3, #909399); font-weight: 400; }
 
-/* 子项目行（展开后）：淡蓝底、行高略减、中间去分隔线，末位子项保留底线收口 */
+/* 子项目行（展开后）：蓝灰底、行高略减、中间去分隔线，末位子项保留底线收口。
+   !important 用于压过 el-table stripe（.el-table__row--striped）同特异度但更晚的默认底色 */
 .overview-page :deep(.el-table__row--level-1) td.el-table__cell {
-  background: #dbe8fb;
+  background: #c3d2e6 !important;
   padding-top: 4px; padding-bottom: 4px;
   border-bottom: none;
 }
 .overview-page :deep(.el-table__row--level-1:hover) td.el-table__cell {
-  background: #cddffa;
+  background: #b3c5de !important;
 }
 .overview-page :deep(.el-table__row--level-1.child-last) td.el-table__cell {
   border-bottom: 1px solid var(--el-table-border-color, #ebeef5);
