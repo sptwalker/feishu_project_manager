@@ -3,6 +3,7 @@
     :model-value="visible"
     size="62%"
     :with-header="false"
+    destroy-on-close
     @update:model-value="onDrawerToggle"
   >
     <ProjectDetailContent

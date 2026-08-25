@@ -519,8 +519,11 @@ function enrichRow(p: Project) {
   }
 }
 
-function rowClassName({ row }: { row: { _stalledCritical?: boolean } }): string {
-  return row._stalledCritical ? 'row-critical' : ''
+function rowClassName({ row }: { row: { _stalledCritical?: boolean; _isLastChild?: boolean } }): string {
+  const cls = []
+  if (row._stalledCritical) cls.push('row-critical')
+  if (row._isLastChild) cls.push('child-last')
+  return cls.join(' ')
 }
 
 /* 表头筛选项 */
@@ -728,14 +731,17 @@ onMounted(() => {
 .child-name { color: var(--c-ink-2); font-weight: 400; }
 .child-dept { color: var(--c-ink-3, #909399); font-weight: 400; }
 
-/* 子项目行（展开后）：淡蓝底、行高略减、无中间分隔线 */
+/* 子项目行（展开后）：淡蓝底、行高略减、中间去分隔线，末位子项保留底线收口 */
 .overview-page :deep(.el-table__row--level-1) td.el-table__cell {
-  background: #f0f6ff;
+  background: #dbe8fb;
   padding-top: 4px; padding-bottom: 4px;
   border-bottom: none;
 }
 .overview-page :deep(.el-table__row--level-1:hover) td.el-table__cell {
-  background: #e6f0ff;
+  background: #cddffa;
+}
+.overview-page :deep(.el-table__row--level-1.child-last) td.el-table__cell {
+  border-bottom: 1px solid var(--el-table-border-color, #ebeef5);
 }
 .progress-cell { display: flex; align-items: center; gap: 6px; }
 .prog-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
