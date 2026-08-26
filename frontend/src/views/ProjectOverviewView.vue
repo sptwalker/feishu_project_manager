@@ -458,7 +458,7 @@ const rows = computed(() => {
       const shownKids = kw ? (matchedKids.length ? matchedKids : kids) : kids
       out.push({
         ...enrichRow(top),
-        children: shownKids.map((k, i) => ({ ...enrichRow(k), _isLastChild: i === shownKids.length - 1 })),
+        children: shownKids.map((k, i) => ({ ...enrichRow(k), _isLastChild: i === shownKids.length - 1, _childOdd: i % 2 === 1 })),
       })
     } else if (!kw || projectMatchesKeyword(top, kw)) {
       out.push(enrichRow(top))
@@ -520,10 +520,11 @@ function enrichRow(p: Project) {
   }
 }
 
-function rowClassName({ row }: { row: { _stalledCritical?: boolean; _isLastChild?: boolean } }): string {
+function rowClassName({ row }: { row: { _stalledCritical?: boolean; _isLastChild?: boolean; _childOdd?: boolean } }): string {
   const cls = []
   if (row._stalledCritical) cls.push('row-critical')
   if (row._isLastChild) cls.push('child-last')
+  if (row._childOdd) cls.push('child-odd')
   return cls.join(' ')
 }
 
@@ -733,15 +734,18 @@ onMounted(() => {
 .child-name { color: var(--c-ink-2); font-weight: 400; }
 .child-dept { color: var(--c-ink-3, #909399); font-weight: 400; }
 
-/* 子项目行（展开后）：蓝灰底、行高略减、中间去分隔线，末位子项保留底线收口。
+/* 子项目行（展开后）：淡绿交替、行高略减、中间去分隔线，末位子项保留底线收口。
    !important 用于压过 el-table stripe（.el-table__row--striped）同特异度但更晚的默认底色 */
 .overview-page :deep(.el-table__row--level-1) td.el-table__cell {
-  background: #c3d2e6 !important;
+  background: #eafaf0 !important;
   padding-top: 4px; padding-bottom: 4px;
   border-bottom: none;
 }
+.overview-page :deep(.el-table__row--level-1.child-odd) td.el-table__cell {
+  background: #d7f2e2 !important;
+}
 .overview-page :deep(.el-table__row--level-1:hover) td.el-table__cell {
-  background: #b3c5de !important;
+  background: #c4ecd4 !important;
 }
 .overview-page :deep(.el-table__row--level-1.child-last) td.el-table__cell {
   border-bottom: 1px solid var(--el-table-border-color, #ebeef5);
