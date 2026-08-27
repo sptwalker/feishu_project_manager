@@ -1,8 +1,5 @@
 <template>
   <div class="detail-content-root" :class="`layout-${props.layout}`">
-    <div style="position:fixed;top:6px;left:6px;z-index:99999;background:#000;color:#0f0;font:12px monospace;padding:2px 6px;border-radius:4px;pointer-events:none">
-      DBG createMode={{ String(createMode) }} isGroup={{ String(isGroup) }} parent={{ parent?.name ?? 'null' }} editing={{ String(editing) }}
-    </div>
     <div v-if="local" class="detail">
       <div v-if="!createMode" class="edit-btn-group">
         <el-button
