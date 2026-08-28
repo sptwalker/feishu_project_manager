@@ -89,7 +89,7 @@
             class="add-child-btn"
             @click.stop.prevent="openCreateChild(row)"
             @dblclick.stop.prevent
-          >子项</span>
+          >+子项</span>
         </template>
       </el-table-column>
 
@@ -718,12 +718,12 @@ onMounted(() => {
 }
 .add-child-btn:hover, .add-child-btn:focus { background: var(--c-ink-2, #606266); color: #fff; }
 
-/* 子项目分支连线：├─ / └─（末位用 last），营造树状缩进层级 */
+/* 子项目分支连线：非末位 ├（竖线贯穿整行），末位 └（竖线止于肘弯），营造树状缩进层级 */
 .child-branch {
   display: inline-block; width: 18px; height: 1em; margin-right: 4px; position: relative; vertical-align: middle;
 }
 .child-branch::before {
-  content: ''; position: absolute; left: 4px; top: -8px; bottom: 50%;
+  content: ''; position: absolute; left: 4px; top: -8px; bottom: -8px;
   border-left: 1px solid var(--c-border-strong, #c0c4cc);
 }
 .child-branch::after {
