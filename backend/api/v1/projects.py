@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy import func
 from backend.api.deps import get_db
 from backend.core.dependencies import get_current_user, get_current_admin
-from backend.models.user import User
+from backend.models.user import User, UserRole
 from backend.models.project import Project, ProjectStatus
 from backend.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectRevision
 from backend.services.project_service import ProjectService, ProjectVersionConflict
@@ -26,7 +26,11 @@ def create_project(
     """创建项目"""
     PermissionChecker.require_project_permission(current_user, action="modify")
     try:
-        project = ProjectService.create(db, project_data)
+        project = ProjectService.create(db, project_data, is_admin=(current_user.role == UserRole.ADMIN))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -113,13 +117,17 @@ def update_project(
     field_desc = build_field_change_desc(project, payload, old_name)
 
     try:
-        project = ProjectService.update(db, project_id, project_data)
+        project = ProjectService.update(db, project_id, project_data, is_admin=(current_user.role == UserRole.ADMIN))
     except (ProjectVersionConflict, StaleDataError):
         # 乐观锁冲突：应用层版本比对失败，或并发提交时 SQL 级 CAS 命中 0 行
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="项目已被他人修改，请刷新后重试"
         )
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

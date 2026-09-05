@@ -41,6 +41,9 @@ class Project(BaseModel):
                        comment="所属项目组ID（子项目指向组；顶层为空）")
     is_group = Column(Boolean, default=False, nullable=False, server_default="0",
                       comment="是否为项目组容器")
+    # CEO重点关注（置顶）：全局最多3个，仅管理员可设；列表/看板/会议自动置顶
+    ceo_focus = Column(Boolean, default=False, nullable=False, server_default="0",
+                       comment="CEO重点关注（置顶），全局最多3个，仅管理员可设")
     # 乐观锁版本号：配合 version_id_col，每次 flush 自动 +1，
     # 并以 UPDATE ... WHERE version=旧值 做 CAS，并发提交命中 0 行时抛 StaleDataError
     version = Column(Integer, nullable=False, default=1, server_default="1",

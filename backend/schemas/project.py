@@ -73,6 +73,7 @@ class ProjectBase(BaseModel):
     # 项目组层级：is_group=组容器；parent_id=子项目指向组（顶层为空）。Create/Response 共用。
     is_group: bool = Field(default=False, description="是否为项目组容器")
     parent_id: Optional[int] = Field(default=None, description="所属项目组ID（顶层为空）")
+    ceo_focus: bool = Field(default=False, description="CEO重点关注（置顶），全局最多3个，仅管理员可设")
 
 class ProjectCreate(ProjectBase):
     """创建项目 Schema（记录日期由后端自动记录为创建当天）"""
@@ -92,6 +93,7 @@ class ProjectUpdate(BaseModel):
     estimated_end_date: Optional[date] = None
     actual_end_date: Optional[date] = None
     progress_log: Optional[List[ProgressEntry]] = None
+    ceo_focus: Optional[bool] = Field(None, description="CEO重点关注（置顶）；仅管理员可改，全局最多3个")
     # 乐观锁：客户端打开时持有的版本号；带上则与 DB 当前值比对，不一致返回 409。
     # 过渡期可选（不带则跳过应用层比对，兼容旧客户端），后续可收紧为必填。
     version: Optional[int] = Field(None, description="乐观锁版本号（打开项目时获取的 version）")

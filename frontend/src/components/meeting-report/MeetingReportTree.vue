@@ -57,6 +57,7 @@
               >
                 <span v-if="node._kids.length" class="mr-gtoggle" @click.stop="toggleGroup(node.id)">{{ isGroupOpen(node.id) ? '▾' : '▸' }}</span>
                 <span v-if="node.is_group" class="mr-gtag">组</span>
+                <el-icon v-if="node.ceo_focus" color="#f59e0b" class="mr-focus"><StarFilled /></el-icon>
                 <span class="mr-pst" :style="{ color: statusColor(node.status) }">【{{ statusLabel(node.status) }}】</span>{{ node.name }}
               </div>
               <!-- 项目组子项：缩进 + 分支线（末项为肘弯 └，其余贯穿 ├） -->
@@ -69,6 +70,7 @@
                   @click="store.selectProject(kid.id)"
                 >
                   <span class="mr-branch" :class="{ last: ki === node._kids.length - 1 }"></span>
+                  <el-icon v-if="kid.ceo_focus" color="#f59e0b" class="mr-focus"><StarFilled /></el-icon>
                   <span class="mr-pst" :style="{ color: statusColor(kid.status) }">【{{ statusLabel(kid.status) }}】</span>{{ kid.name }}
                 </div>
               </template>
@@ -83,7 +85,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ElInput, ElCheckbox, ElCheckboxGroup } from 'element-plus'
+import { ElInput, ElCheckbox, ElCheckboxGroup, ElIcon } from 'element-plus'
+import { StarFilled } from '@element-plus/icons-vue'
 import { useMeetingReportStore } from '@/stores/meetingReport'
 import { projectStatusLabel, projectStatusColor } from '@/utils/labels'
 import type { MeetingReportOrder, ProjectStatus, Project } from '@/types'
@@ -263,5 +266,6 @@ async function persist(order: MeetingReportOrder) {
 /* 项目名前的状态标签：用状态色；选中行反白时仍可读（继承白字） */
 .mr-pst { font-weight: 700; margin-right: 2px; }
 .mr-proj.cur .mr-pst { color: #fff !important; }
+.mr-focus { vertical-align: -2px; margin-right: 2px; }
 .grip { color: var(--c-ink-3); cursor: grab; }
 </style>

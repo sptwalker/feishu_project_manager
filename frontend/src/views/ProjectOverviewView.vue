@@ -76,6 +76,7 @@
           >{{ isExpanded(row) ? '−' : '+' }}</span>
           <span v-else-if="row.parent_id == null" class="tree-toggle-spacer"></span>
           <span v-if="row.is_group" class="group-tag">组</span>
+          <el-icon v-if="row.ceo_focus" color="#f59e0b" class="focus-star"><StarFilled /></el-icon>
           <el-tooltip
             v-if="row.content"
             :content="row.content"
@@ -170,7 +171,7 @@
         :filters="urgencyFilters" :filter-method="filterUrgency"
       >
         <template #default="{ row }">
-          <span class="urg" :style="{ color: urgColor(row.urgency) }">{{ urgText(row.urgency) }}</span>
+          <span class="urg" :style="{ color: urgColor(row.urgency) }">{{ urgencyDisplay(row) }}</span>
         </template>
       </el-table-column>
 
@@ -222,11 +223,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, View, Delete, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Search, View, Delete, ArrowDown, StarFilled } from '@element-plus/icons-vue'
 import { projectApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, Department } from '@/types'
 import {
-  projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
+  projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor, urgencyDisplay,
   urgencyWeight, PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, isOverdue, progressStatusColor,
   completionGradient,
 } from '@/utils/labels'
@@ -433,7 +434,8 @@ function stalledMetaOf(lastTime: string): { days: number; color: string; bold: b
 const rows = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   const sortFn = (a: Project, b: Project) =>
-    cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
+    (Number(b.ceo_focus) - Number(a.ceo_focus))   // CEO重点关注置顶
+    || cmpStr(getDepartmentShortName(a.department), getDepartmentShortName(b.department))
     || cmpStr(a.owner_name, b.owner_name)
     || (urgWeight(b.urgency) - urgWeight(a.urgency))
   // 子项目按父组分桶
@@ -702,6 +704,7 @@ onMounted(() => {
   display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
   background: var(--c-accent); border-radius: var(--r-sm); padding: 1px 6px; margin-right: 6px;
 }
+.focus-star { vertical-align: -2px; margin-right: 3px; }
 /* 名称列自定义展开开关：方框 +/− */
 .tree-toggle {
   display: inline-block; width: 15px; height: 15px; line-height: 13px;

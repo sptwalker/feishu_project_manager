@@ -126,7 +126,7 @@
               @click="openDetail(p)"
             >
               <div class="pc-top">
-                <h3 class="pc-name">{{ p.name }}</h3>
+                <h3 class="pc-name"><el-icon v-if="p.ceo_focus" color="#f59e0b" class="pc-focus"><StarFilled /></el-icon>{{ p.name }}</h3>
                 <span class="pc-top-tags">
                   <span v-if="p._latest" class="pc-status" :style="{ color: progressColor(p._latest?.status) }">【{{ p._latest?.status }}】</span>
                   <span v-if="overdue(p)" class="overdue-tag">逾期</span>
@@ -136,7 +136,7 @@
                 <span class="badge" :style="{ color: statusColor(p.status), background: 'var(--c-surface-2)' }">
                   {{ statusLabel(p.status) }}
                 </span>
-                <span :style="{ color: urgColor(p.urgency), fontWeight: 600 }">· {{ urgencyText(p.urgency) }}</span>
+                <span :style="{ color: urgColor(p.urgency), fontWeight: 600 }">· {{ urgencyDisplay(p) }}</span>
                 <span v-if="p.department" class="muted">· {{ p.department }}</span>
                 <span v-if="p.owner_name" class="muted">· {{ p.owner_name }}</span>
               </div>
@@ -169,11 +169,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Grid, List, Bell } from '@element-plus/icons-vue'
+import { Grid, List, Bell, StarFilled } from '@element-plus/icons-vue'
 import { projectApi, userApi, departmentApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, User, Department } from '@/types'
 import {
-  projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor, isOverdue, progressStatusColor,
+  projectStatusLabel, projectStatusColor, urgencyColor, urgencyDisplay, isOverdue, progressStatusColor,
   PENDING_STATUSES, completionGradient,
 } from '@/utils/labels'
 import BaseChart from '@/components/BaseChart.vue'
@@ -241,7 +241,6 @@ function onDetailUpdated() {
 
 const statusLabel = (s: ProjectStatus) => projectStatusLabel[s]
 const statusColor = (s: ProjectStatus) => projectStatusColor[s]
-const urgencyText = (u: ProjectUrgency) => urgencyLabel[u]
 const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const overdue = (p: Project) => isOverdue(p.estimated_end_date, p.status)
 const progressColor = (s?: string | null) => (s && progressStatusColor[s]) || 'var(--c-ink-3)'
@@ -367,17 +366,15 @@ const timelinessGauge = computed(() => ({
    - 等待关注：按最新进展状态着色（待确认=粉、待讨论=橙、待执行=青）
    - 延迟关注：按最新进展状态着色（阻塞=红、延迟=黄），阻塞优先 */
 const zones = computed(() => {
+  const enrich = (p: Project) => {
+    const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    return { ...p, _latest: log.length ? log[log.length - 1] : null, _recent: log.slice(-8), _hasMore: log.length > 8 }
+  }
+  // CEO重点关注：不论状态一律置顶展示；其余区排除已钉项目避免重复
+  const focus = allProjects.value.filter((p) => p.ceo_focus).map(enrich)
   const active = allProjects.value
-    .filter((p) => p.status === 'in_progress')
-    .map((p) => {
-      const log = [...(p.progress_log ?? [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-      return {
-        ...p,
-        _latest: log.length ? log[log.length - 1] : null,
-        _recent: log.slice(-8),
-        _hasMore: log.length > 8,
-      }
-    })
+    .filter((p) => p.status === 'in_progress' && !p.ceo_focus)
+    .map(enrich)
   // 重点项目：重要(urgent) 在前，高(high) 在后
   const key = [
     ...active.filter((p) => p.urgency === 'urgent'),
@@ -390,6 +387,7 @@ const zones = computed(() => {
     ...active.filter((p) => (p._latest?.status || '') === '延迟'),
   ]
   return [
+    { key: 'ceo', title: 'CEO重点关注', desc: '全局置顶 · 最多3个', items: focus, barColor: () => '#f59e0b' },
     { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => urgencyColor[p.urgency] },
     { key: 'wait', title: '待处理事件', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
     { key: 'delay', title: '延迟关注', desc: '最新进展：阻塞 / 延迟', items: delay, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
@@ -648,6 +646,7 @@ onMounted(() => {
 
 .pc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
 .pc-name { font-size: 15px; flex: 1; min-width: 0; }
+.pc-focus { vertical-align: -2px; margin-right: 3px; }
 .pc-top-tags { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
 .pc-status { font-weight: 600; font-size: 12px; white-space: nowrap; }
 .overdue-tag {

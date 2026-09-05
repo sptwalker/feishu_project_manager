@@ -26,8 +26,9 @@
             {{ statusLabel(local.status) }}
           </span>
           <span class="badge" :style="{ color: urgColor(local.urgency), background: 'var(--c-surface-2)' }">
-            {{ urgText(local.urgency) }}
+            {{ urgencyDisplay(local) }}
           </span>
+          <span v-if="local.ceo_focus" class="badge focus"><el-icon><StarFilled /></el-icon>重点关注</span>
           <span v-if="overdue" class="badge overdue">逾期</span>
           <!-- 记录时间：移到状态/优先级徽章之后，与徽章等间隔排列 -->
           <span v-if="!createMode && local.record_date" class="record-time">记录于 {{ local.record_date }}</span>
@@ -48,6 +49,7 @@
           <div class="prog-head">
             <span class="mini-label">完成度</span>
             <el-checkbox v-if="editing" v-model="form.is_long_term" size="small">长期项目</el-checkbox>
+            <el-checkbox v-if="editing && isAdmin" v-model="form.ceo_focus" size="small">CEO重点关注</el-checkbox>
             <span v-if="isLong && !editing" class="long-term-text">长期项目</span>
             <span v-else-if="!isLong" class="num pct">{{ editing ? form.completion : local.completion }}%</span>
           </div>
@@ -90,7 +92,7 @@
         </div>
         <div class="f">
           <dt>优先级<span v-if="createMode" class="req">*</span></dt>
-          <dd v-if="!editing" :style="{ color: urgColor(local.urgency), fontWeight: 600 }">{{ urgText(local.urgency) }}</dd>
+          <dd v-if="!editing" :style="{ color: urgColor(local.urgency), fontWeight: 600 }">{{ urgencyDisplay(local) }}</dd>
           <el-select v-else v-model="form.urgency" size="small">
             <el-option v-for="u in urgencyOptions" :key="u.value" :label="u.label" :value="u.value" />
           </el-select>
@@ -379,11 +381,11 @@ import { useMeetingReportStore } from '@/stores/meetingReport'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadRequestOptions } from 'element-plus'
-import { EditPen, Close, Delete, Plus, Check, Link, Document, Picture, VideoCamera } from '@element-plus/icons-vue'
+import { EditPen, Close, Delete, Plus, Check, Link, Document, Picture, VideoCamera, StarFilled } from '@element-plus/icons-vue'
 import { projectApi, departmentApi, userApi, uploadApi } from '@/api/resources'
 import type { Project, ProjectStatus, ProjectUrgency, ProgressEntry, Department, Annotation, AnnotationReply, DocumentAttachment, ImageItem, VideoItem, OperationLog } from '@/types'
 import {
-  projectStatusLabel, projectStatusColor, urgencyLabel, urgencyColor,
+  projectStatusLabel, projectStatusColor, urgencyColor, urgencyDisplay,
   PROJECT_STATUS_ORDER, PROGRESS_STATUSES, PENDING_STATUSES, progressStatusColor, isOverdue,
 } from '@/utils/labels'
 
@@ -417,7 +419,6 @@ const statusColor = (s: ProjectStatus) => projectStatusColor[s]
 // 完成度进度条填充：在状态色上叠加一层从左到右渐隐的白雾，形成同色「左淡右浓」的渐变（兼容 css 变量颜色）
 const barFill = (s: ProjectStatus) =>
   `linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0)), ${statusColor(s)}`
-const urgText = (u: ProjectUrgency) => urgencyLabel[u]
 const urgColor = (u: ProjectUrgency) => urgencyColor[u]
 const progressColor = (s: string) => progressStatusColor[s] || 'var(--c-ink-3)'
 
@@ -444,7 +445,7 @@ const historyLoading = ref(false)
 
 const form = reactive<Record<string, unknown>>({
   name: '', content: '', department: '', owner_name: '', related_name: '',
-  status: 'planned', urgency: 'medium', completion: 0, is_long_term: false, record_date: '', estimated_end_date: null,
+  status: 'planned', urgency: 'medium', completion: 0, is_long_term: false, ceo_focus: false, record_date: '', estimated_end_date: null,
 })
 
 /* 是否长期项目（编辑态看草稿、展示态看本地） */
@@ -462,6 +463,7 @@ function resetForm() {
     urgency: local.value.urgency,
     completion: local.value.completion,
     is_long_term: !!local.value.is_long_term,
+    ceo_focus: !!local.value.ceo_focus,
     record_date: local.value.record_date,
     estimated_end_date: local.value.estimated_end_date ?? null,
   })
@@ -482,6 +484,7 @@ function sync() {
       urgency: p?.urgency ?? 'medium',
       completion: p?.completion ?? 0,
       is_long_term: !!p?.is_long_term,
+      ceo_focus: false,   // 建项目/子项不继承父组的置顶额度
       record_date: todayStr(),
       estimated_end_date: p?.estimated_end_date ?? null,
     })
@@ -590,6 +593,11 @@ function isConflict(err: unknown): boolean {
   return (err as { response?: { status?: number } })?.response?.status === 409
 }
 
+/* 后端错误详情（如 403 非管理员 / 400 超过3个）；无则返回空 */
+function errDetail(err: unknown): string {
+  return (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || ''
+}
+
 /* 拉取项目最新数据刷新 local（含最新 version）；网络失败时静默保持现状 */
 async function refreshLocal() {
   if (!local.value?.id) return
@@ -616,6 +624,7 @@ async function saveFields() {
       urgency: form.urgency,
       completion: form.completion,
       is_long_term: form.is_long_term,
+      ceo_focus: form.ceo_focus,
       estimated_end_date: form.estimated_end_date || null,
       version: local.value.version,   // 乐观锁：带上打开时持有的版本号
     }
@@ -631,7 +640,8 @@ async function saveFields() {
       await refreshLocal()
       ElMessage.warning('项目已被他人修改，已加载最新值，请核对后重新保存')
     } else {
-      ElMessage.error('保存失败（需要管理员或项目经理权限）')
+      // CEO重点关注 403(非管理员)/400(超3个) 等后端拒绝：优先弹后端详情
+      ElMessage.error(errDetail(err) || '保存失败（需要管理员或项目经理权限）')
     }
   } finally {
     saving.value = false
@@ -660,6 +670,7 @@ async function saveCreate() {
       urgency: form.urgency,
       completion: form.completion,
       is_long_term: form.is_long_term,
+      ceo_focus: form.ceo_focus,
       estimated_end_date: form.estimated_end_date || null,
       progress_log,
       is_group: !!props.isGroup,
@@ -669,8 +680,8 @@ async function saveCreate() {
     emit('updated')
     emit('request-close')
     ElMessage.success('项目已创建')
-  } catch {
-    ElMessage.error('创建失败（需要管理员或项目经理权限）')
+  } catch (err) {
+    ElMessage.error(errDetail(err) || '创建失败（需要管理员或项目经理权限）')
   } finally {
     saving.value = false
   }
@@ -898,7 +909,7 @@ function blankProject(): Project {
   return {
     id: 0, name: '', record_date: todayStr(), content: null,
     status: 'planned' as ProjectStatus, urgency: 'medium' as ProjectUrgency,
-    department: null, owner_name: null, related_name: null, completion: 0, is_long_term: false,
+    department: null, owner_name: null, related_name: null, completion: 0, is_long_term: false, ceo_focus: false,
     estimated_end_date: null, actual_end_date: null, progress_log: null,
     version: 1, created_at: '', updated_at: '',
   }
@@ -1344,6 +1355,7 @@ function removeVideo(entryIndex: number, videoIndex: number) {
 .d-badges { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 .badge { font-weight: 600; font-size: 12px; padding: 2px 10px; border-radius: var(--r-sm); }
 .badge.overdue { color: var(--c-status-overdue); background: var(--c-status-overdue-soft); }
+.badge.focus { color: #f59e0b; background: color-mix(in srgb, #f59e0b 16%, #fff); display: inline-flex; align-items: center; gap: 3px; }
 
 .brief { color: var(--c-ink-2); line-height: 1.6; font-size: 14px; }
 /* head-row 默认透明（抽屉：简要说明与完成度仍各占一行）；会议页改为一排 */

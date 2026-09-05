@@ -22,6 +22,10 @@ export const urgencyLabel: Record<ProjectUrgency, string> = {
   low: '低', medium: '中', high: '高', urgent: '重要',
 }
 
+/* 优先级显示：CEO重点关注的项目一律显示「置顶」，否则按紧急程度文案 */
+export const urgencyDisplay = (p: { ceo_focus?: boolean; urgency: ProjectUrgency }) =>
+  p.ceo_focus ? '置顶' : urgencyLabel[p.urgency]
+
 // 项目状态排序顺序（用于默认/下拉）
 export const PROJECT_STATUS_ORDER: ProjectStatus[] = [
   'planned', 'in_progress', 'paused', 'completed', 'cancelled',

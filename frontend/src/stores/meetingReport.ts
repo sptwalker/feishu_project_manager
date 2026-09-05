@@ -119,7 +119,11 @@ export const useMeetingReportStore = defineStore('meetingReport', () => {
       return {
         dept,
         color: findDepartment(dept)?.color || undefined,
-        members: sortedMembers.map((name) => ({ name, projects: memberMap.get(name)! })),
+        members: sortedMembers.map((name) => ({
+          name,
+          // CEO重点关注置顶：钉住项目排该人最前，其余保持原序
+          projects: memberMap.get(name)!.slice().sort((a, b) => Number(b.ceo_focus) - Number(a.ceo_focus)),
+        })),
       }
     })
   })

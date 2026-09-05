@@ -171,6 +171,7 @@ export interface Project {
   progress_log?: ProgressEntry[] | null
   is_group?: boolean          // 项目组容器
   parent_id?: number | null   // 所属项目组ID（顶层为空）
+  ceo_focus?: boolean         // CEO重点关注（置顶），全局最多3个，仅管理员可设
   version: number   // 乐观锁版本号：更新请求带回，后端不一致返回 409
   created_at: string
   updated_at: string
