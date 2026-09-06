@@ -104,7 +104,7 @@
             <el-radio-button value="list"><el-icon><List /></el-icon></el-radio-button>
           </el-radio-group>
         </div>
-        <div v-if="z.items.length" :class="viewMode === 'grid' ? 'grid' : 'list'">
+        <div v-if="z.items.length" :class="z.key === 'ceo' ? 'grid-ceo' : (viewMode === 'grid' ? 'grid' : 'list')">
           <el-tooltip
             v-for="p in z.items"
             :key="p.id"
@@ -140,7 +140,13 @@
                 <span v-if="p.department" class="muted">· {{ p.department }}</span>
                 <span v-if="p.owner_name" class="muted">· {{ p.owner_name }}</span>
               </div>
-              <div class="pc-progress">
+              <div v-if="z.key === 'ceo'" class="pc-latest">
+                <template v-if="p._latest">
+                  <span class="pc-latest-status" :style="{ color: progressColor(p._latest?.status) }">【{{ p._latest?.status }}】</span>{{ p._latest?.content || '（无进展内容）' }}
+                </template>
+                <span v-else class="muted">暂无进展记录</span>
+              </div>
+              <div v-else class="pc-progress">
                 <span v-if="p.is_long_term" class="pc-longterm">长期项目</span>
                 <template v-else>
                   <div class="bar"><div class="bar-fill" :style="{ width: p.completion + '%', background: completionGradient(p.completion) }" /></div>
@@ -625,6 +631,9 @@ onMounted(() => {
   gap: var(--sp-3);
 }
 .list { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* CEO重点关注：三卡等宽占满整行宽度 */
+.grid-ceo { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+@media (max-width: 720px) { .grid-ceo { grid-template-columns: 1fr; } }
 
 .project-card {
   position: relative;
