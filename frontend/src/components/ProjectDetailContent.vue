@@ -1215,8 +1215,9 @@ function openAttachDialog(index: number) {
 }
 
 function validateFeishuUrl(url: string): boolean {
-  // 飞书文档链接格式：https://*.feishu.cn/docx/... 或 https://*.feishu.cn/docs/...
-  const pattern = /^https:\/\/[a-zA-Z0-9-]+\.feishu\.cn\/(docx|docs|wiki|base|mindnote|file|drive)\/[a-zA-Z0-9_-]+/
+  // 飞书 / Lark 任意页面链接：https://<子域>.feishu.cn|feishu.com|larksuite.com/<任意路径>
+  // 不再白名单文档类型（docx/wiki/page/...），避免每出新类型就要改
+  const pattern = /^https:\/\/[a-zA-Z0-9-]+\.(feishu\.cn|feishu\.com|larksuite\.com)\/\S+/
   return pattern.test(url)
 }
 
