@@ -393,7 +393,7 @@ const zones = computed(() => {
     ...active.filter((p) => (p._latest?.status || '') === '延迟'),
   ]
   return [
-    { key: 'ceo', title: 'CEO重点关注', desc: '全局置顶 · 最多3个', items: focus, barColor: () => '#f59e0b' },
+    { key: 'ceo', title: 'CEO重点关注', desc: '全局置顶关注项目', items: focus, barColor: () => '#f59e0b' },
     { key: 'key', title: '重点项目', desc: '优先级：重要 / 高', items: key, barColor: (p: Project) => urgencyColor[p.urgency] },
     { key: 'wait', title: '待处理事件', desc: '最新进展：待讨论 / 待确认 / 待执行', items: wait, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
     { key: 'delay', title: '延迟关注', desc: '最新进展：阻塞 / 延迟', items: delay, barColor: (p: Project & { _latest?: { status?: string } | null }) => progressColor(p._latest?.status) },
@@ -633,6 +633,7 @@ onMounted(() => {
 .list { display: flex; flex-direction: column; gap: var(--sp-2); }
 /* CEO重点关注：三卡等宽占满整行宽度 */
 .grid-ceo { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+.zone-ceo .project-card { background: #FDECEC; }   /* 淡红 */
 @media (max-width: 720px) { .grid-ceo { grid-template-columns: 1fr; } }
 
 .project-card {
