@@ -957,8 +957,11 @@ function removeRow(i: number) {
 
 /* 清洗草稿为可保存的 progress_log：补 id、保留 meeting_session/reply_to/annotations/attachments */
 function cleanDraft(): ProgressEntry[] {
+  // 保留条件：有文本，或带图/视频/文档附件——否则"只传图不打字"的条目会被整条丢弃，图片白传
+  const hasMedia = (e: ProgressEntry) =>
+    !!(e.images?.length || e.videos?.length || e.attachments?.length)
   return progressDraft.value
-    .filter((e) => (e.content || '').trim())
+    .filter((e) => (e.content || '').trim() || hasMedia(e))
     .map((e) => {
       const out: ProgressEntry = {
         id: e.id || genId(),
