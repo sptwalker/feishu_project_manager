@@ -1290,8 +1290,8 @@ async function doUploadImage(entryIndex: number, file: File) {
     if (!entry.images) entry.images = []
     entry.images.push(img)
     ElMessage.success('图片已上传')
-  } catch {
-    ElMessage.error('上传失败（需要管理员或项目经理权限）')
+  } catch (err) {
+    ElMessage.error(errDetail(err) || '上传失败（需要管理员或项目经理权限）')
   }
 }
 /* el-upload :http-request 工厂：闭包绑定条目下标，opt 类型在此声明（模板不支持类型注解） */
@@ -1324,8 +1324,8 @@ async function doUploadVideo(entryIndex: number, file: File) {
     if (!entry.videos) entry.videos = []
     entry.videos.push(vid)
     ElMessage.success('视频已上传')
-  } catch {
-    ElMessage.error('上传失败（需要管理员或项目经理权限）')
+  } catch (err) {
+    ElMessage.error(errDetail(err) || '上传失败（需要管理员或项目经理权限）')
   }
 }
 function makeVideoUploadRequest(entryIndex: number) {
