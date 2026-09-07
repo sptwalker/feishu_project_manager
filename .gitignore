@@ -72,3 +72,6 @@ diag_*.py
 
 # codegraph 本地代码索引（工具产物，不提交）
 .codegraph/
+
+# 运维文档含生产 IP + root SSH，绝不入库（公开仓库）
+docs/运维_登录生产服务器.md
