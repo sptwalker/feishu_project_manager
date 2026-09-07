@@ -76,6 +76,10 @@ services:
       # 各实例品牌图片（logo/favicon）：放服务器对应目录，Nginx 按子域名 /branding/ 提供
       - ./branding/pms:/srv/branding/pms:ro
       - ./branding/sales:/srv/branding/sales:ro
+      # 上传图片/视频卷只读挂进 Nginx：由 Nginx 直接 sendfile 提供，不再穿透后端单进程
+      # （卷内 /data 根，图片在 uploads/ 子目录 → Nginx alias 指到 .../uploads/）
+      - backend_data:/srv/uploads/pms:ro
+      - sales_data:/srv/uploads/sales:ro
     depends_on:
       backend:
         condition: service_healthy
