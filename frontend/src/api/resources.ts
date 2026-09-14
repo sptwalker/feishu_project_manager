@@ -1,20 +1,27 @@
 import api from './client'
 import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, VideoItem, SalesCode, SalesCodePrefix, SmtpConfig, DiscussBoardInfo, DiscussAuthResult, DiscussThreadList, DiscussMessage, DiscussAttachment } from '@/types'
 
-/* 图片/视频上传：进展配图（JPG/PNG ≤10MB）与配视频（MP4/MOV/M4V/3GP/WEBM ≤100MB）。返回 {url, name, size} */
+/* 图片/视频上传：进展配图（JPG/PNG ≤20MB）与配视频（MP4/MOV/M4V/3GP/WEBM ≤150MB）。返回 {url, name, size}。
+   onProgress：上传请求体的百分比（0-100），用于前端上传状态板/进度条。 */
 export const uploadApi = {
-  image(file: File) {
+  image(file: File, onProgress?: (pct: number) => void) {
     const form = new FormData()
     form.append('file', file)
     return api.post<ImageItem>('/uploads/image', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
     }).then((r) => r.data)
   },
-  video(file: File) {
+  video(file: File, onProgress?: (pct: number) => void) {
     const form = new FormData()
     form.append('file', file)
     return api.post<VideoItem>('/uploads/video', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
     }).then((r) => r.data)
   },
 }

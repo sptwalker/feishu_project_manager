@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     # 图片上传（进展详情配图）。本地默认 backend/data/uploads；
     # Docker 通过 env 设 /data/uploads（在 backend_data 卷内，自动持久化）
     UPLOAD_DIR: str = "backend/data/uploads"
-    UPLOAD_MAX_BYTES: int = 10 * 1024 * 1024  # 单图上限 10MB
-    UPLOAD_VIDEO_MAX_BYTES: int = 100 * 1024 * 1024  # 单视频上限 100MB（与留言区一致）
+    UPLOAD_MAX_BYTES: int = 20 * 1024 * 1024  # 单图上限 20MB
+    UPLOAD_VIDEO_MAX_BYTES: int = 150 * 1024 * 1024  # 单视频上限 150MB
 
     @property
     def async_database_url(self) -> str:

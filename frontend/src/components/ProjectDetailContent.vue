@@ -1,5 +1,31 @@
 <template>
   <div class="detail-content-root" :class="`layout-${props.layout}`">
+    <!-- 上传状态板：正在上传/成功/失败 + 进度条，浮于右下角 -->
+    <Teleport to="body">
+      <div v-if="uploadTasks.length" class="upload-board">
+        <div v-for="t in uploadTasks" :key="t.id" class="upload-item" :class="t.status">
+          <el-icon class="up-ico">
+            <VideoCamera v-if="t.kind === 'video'" /><Picture v-else />
+          </el-icon>
+          <div class="up-body">
+            <div class="up-row">
+              <span class="up-name" :title="t.name">{{ t.name }}</span>
+              <span class="up-state">
+                <template v-if="t.status === 'uploading'">{{ t.percent < 100 ? t.percent + '%' : '处理中…' }}</template>
+                <template v-else-if="t.status === 'success'">已上传</template>
+                <template v-else>失败</template>
+              </span>
+            </div>
+            <div v-if="t.status === 'uploading'" class="up-bar">
+              <div class="up-bar-fill" :style="{ width: t.percent + '%' }" />
+            </div>
+            <div v-else-if="t.status === 'error'" class="up-err">{{ t.error }}</div>
+          </div>
+          <el-icon v-if="t.status !== 'uploading'" class="up-close" @click="dismissUpload(t.id)"><Close /></el-icon>
+        </div>
+      </div>
+    </Teleport>
+
     <div v-if="local" class="detail">
       <div v-if="!createMode" class="edit-btn-group">
         <el-button
@@ -1273,28 +1299,68 @@ function removeAttachment(entryIndex: number, attachIndex: number) {
 }
 
 /* ---------- 图片上传（进展配图）---------- */
+/* 上传状态板：正在上传/成功/失败 + 进度条。所有进行中的上传共用一个浮层。 */
+interface UploadTask {
+  id: number
+  kind: 'image' | 'video'
+  name: string
+  status: 'uploading' | 'success' | 'error'
+  percent: number
+  error?: string
+}
+const uploadTasks = ref<UploadTask[]>([])
+let uploadSeq = 0
+function startUpload(kind: 'image' | 'video', name: string): UploadTask {
+  const task = reactive<UploadTask>({ id: ++uploadSeq, kind, name, status: 'uploading', percent: 0 })
+  uploadTasks.value.push(task)
+  return task
+}
+function finishUpload(task: UploadTask, ok: boolean, error?: string) {
+  task.status = ok ? 'success' : 'error'
+  if (ok) task.percent = 100
+  else task.error = error
+  // 成功 2.5s 后自动消失；失败保留，由用户手动关闭
+  if (ok) setTimeout(() => dismissUpload(task.id), 2500)
+}
+function dismissUpload(id: number) {
+  uploadTasks.value = uploadTasks.value.filter((t) => t.id !== id)
+}
+/* 上传错误文案：优先后端 JSON detail（大小/格式/权限）；否则按状态码判真实原因。
+   413 是 nginx 请求体上限拦截（返回 HTML 非 JSON，errDetail 拿不到），不是权限问题。 */
+function uploadErrMsg(err: unknown): string {
+  const e = err as { response?: { status?: number; data?: { detail?: string } } }
+  const detail = e?.response?.data?.detail
+  if (detail) return detail
+  const st = e?.response?.status
+  if (st === 413) return '文件过大，被服务器（Nginx）拦截，超过请求体上限'
+  if (st === 403) return '无上传权限（需要管理员或项目经理）'
+  if (st === 401) return '登录已过期，请重新登录后再试'
+  return '上传失败，请检查网络后重试'
+}
+
 /* 上传前校验：仅 JPG/PNG，≤10MB（即时反馈；后端另有强校验防绕过） */
 function beforeImageUpload(file: File): boolean {
   if (!['image/jpeg', 'image/png'].includes(file.type)) {
     ElMessage.error('仅支持 JPG / PNG 格式图片')
     return false
   }
-  if (file.size > 10 * 1024 * 1024) {
-    ElMessage.error('图片不能超过 10MB')
+  if (file.size > 20 * 1024 * 1024) {
+    ElMessage.error('图片不能超过 20MB')
     return false
   }
   return true
 }
 /* 自定义上传：调后端拿 URL，存入该进展条目的 images */
 async function doUploadImage(entryIndex: number, file: File) {
+  const task = startUpload('image', file.name)
   try {
-    const img: ImageItem = await uploadApi.image(file)
+    const img: ImageItem = await uploadApi.image(file, (pct) => { task.percent = pct })
     const entry = progressDraft.value[entryIndex]
     if (!entry.images) entry.images = []
     entry.images.push(img)
-    ElMessage.success('图片已上传')
+    finishUpload(task, true)
   } catch (err) {
-    ElMessage.error(errDetail(err) || '上传失败（需要管理员或项目经理权限）')
+    finishUpload(task, false, uploadErrMsg(err))
   }
 }
 /* el-upload :http-request 工厂：闭包绑定条目下标，opt 类型在此声明（模板不支持类型注解） */
@@ -1314,21 +1380,22 @@ function beforeVideoUpload(file: File): boolean {
     ElMessage.error('仅支持 MP4/MOV/M4V/3GP/WEBM 视频')
     return false
   }
-  if (file.size > 100 * 1024 * 1024) {
-    ElMessage.error('视频不能超过 100MB')
+  if (file.size > 150 * 1024 * 1024) {
+    ElMessage.error('视频不能超过 150MB')
     return false
   }
   return true
 }
 async function doUploadVideo(entryIndex: number, file: File) {
+  const task = startUpload('video', file.name)
   try {
-    const vid: VideoItem = await uploadApi.video(file)
+    const vid: VideoItem = await uploadApi.video(file, (pct) => { task.percent = pct })
     const entry = progressDraft.value[entryIndex]
     if (!entry.videos) entry.videos = []
     entry.videos.push(vid)
-    ElMessage.success('视频已上传')
+    finishUpload(task, true)
   } catch (err) {
-    ElMessage.error(errDetail(err) || '上传失败（需要管理员或项目经理权限）')
+    finishUpload(task, false, uploadErrMsg(err))
   }
 }
 function makeVideoUploadRequest(entryIndex: number) {
@@ -1608,4 +1675,31 @@ function removeVideo(entryIndex: number, videoIndex: number) {
 /* 项目编辑按钮：缩小并上移，与项目名称高度对齐 */
 .layout-meeting .edit-btn-group { top: 0; }
 .layout-meeting .edit-btn { height: 34px; padding: 0 14px; font-size: 14px; }
+
+/* 上传状态板：右下角浮层（Teleport 到 body，保留 scoped 属性） */
+.upload-board {
+  position: fixed; right: 20px; bottom: 20px; z-index: 3000;
+  display: flex; flex-direction: column; gap: 8px; width: 320px; max-width: calc(100vw - 40px);
+}
+.upload-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-accent);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.upload-item.success { border-left-color: #22c55e; }
+.upload-item.error { border-left-color: var(--c-status-overdue); }
+.up-ico { font-size: 18px; color: var(--c-ink-3); flex-shrink: 0; }
+.up-body { flex: 1; min-width: 0; }
+.up-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.up-name { font-size: 13px; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-state { font-size: 12px; color: var(--c-ink-2); flex-shrink: 0; }
+.upload-item.success .up-state { color: #16a34a; }
+.upload-item.error .up-state { color: var(--c-status-overdue); }
+.up-bar { height: 6px; margin-top: 6px; background: var(--c-canvas); border-radius: 999px; overflow: hidden; }
+.up-bar-fill { height: 100%; background: var(--c-accent); border-radius: 999px; transition: width 0.2s; }
+.up-err { margin-top: 4px; font-size: 12px; color: var(--c-status-overdue); }
+.up-close { font-size: 15px; color: var(--c-ink-3); cursor: pointer; flex-shrink: 0; }
+.up-close:hover { color: var(--c-ink); }
 </style>

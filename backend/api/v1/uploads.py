@@ -1,8 +1,8 @@
 """图片 / 视频上传 / 访问（进展详情配图、配视频）
 
-- POST /uploads/image：上传 JPG/PNG（≤10MB），存到 UPLOAD_DIR，返回 {url, name, size}。
+- POST /uploads/image：上传 JPG/PNG（≤20MB），存到 UPLOAD_DIR，返回 {url, name, size}。
   鉴权：管理员 / 项目经理。
-- POST /uploads/video：上传 MP4/MOV/M4V/3GP/WEBM（≤100MB），同上目录，返回 {url, name, size}。
+- POST /uploads/video：上传 MP4/MOV/M4V/3GP/WEBM（≤150MB），同上目录，返回 {url, name, size}。
 - GET /uploads/{filename}：返回文件（FileResponse）。不鉴权——<img>/<video> 标签无法携带
   登录 token，用 uuid 文件名作防猜测保护（同类系统常见做法）。
 """
