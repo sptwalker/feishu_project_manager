@@ -2,27 +2,29 @@ import api from './client'
 import type { Project, Task, Risk, User, Department, DashboardStats, MeetingState, MeetingRecordDetail, MeetingSessions, MeetingSendResult, OperationLog, MeetingReportOrder, MeetingTimerSettings, TimerState, AtRiskOwner, FollowupAuto, ImageItem, VideoItem, SalesCode, SalesCodePrefix, SmtpConfig, DiscussBoardInfo, DiscussAuthResult, DiscussThreadList, DiscussMessage, DiscussAttachment } from '@/types'
 
 /* 图片/视频上传：进展配图（JPG/PNG ≤20MB）与配视频（MP4/MOV/M4V/3GP/WEBM ≤150MB）。返回 {url, name, size}。
-   onProgress：上传请求体的百分比（0-100），用于前端上传状态板/进度条。 */
+   onProgress：上传请求体的百分比（0-100），用于前端上传状态板/进度条。
+   超时：共享实例默认 20s，大文件上行必超（25MB @0.9MB/s 约 20s，正好卡在 70%）。
+   上传单独放宽到 600s，与 nginx/后端的 300s 读超时留出余量。 */
+const UPLOAD_TIMEOUT = 600000
+
+function postFile<T>(path: string, file: File, onProgress?: (pct: number) => void) {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post<T>(path, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: UPLOAD_TIMEOUT,
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+    },
+  }).then((r) => r.data)
+}
+
 export const uploadApi = {
   image(file: File, onProgress?: (pct: number) => void) {
-    const form = new FormData()
-    form.append('file', file)
-    return api.post<ImageItem>('/uploads/image', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) => {
-        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
-      },
-    }).then((r) => r.data)
+    return postFile<ImageItem>('/uploads/image', file, onProgress)
   },
   video(file: File, onProgress?: (pct: number) => void) {
-    const form = new FormData()
-    form.append('file', file)
-    return api.post<VideoItem>('/uploads/video', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) => {
-        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
-      },
-    }).then((r) => r.data)
+    return postFile<VideoItem>('/uploads/video', file, onProgress)
   },
 }
 

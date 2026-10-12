@@ -1328,13 +1328,15 @@ function dismissUpload(id: number) {
 /* 上传错误文案：优先后端 JSON detail（大小/格式/权限）；否则按状态码判真实原因。
    413 是 nginx 请求体上限拦截（返回 HTML 非 JSON，errDetail 拿不到），不是权限问题。 */
 function uploadErrMsg(err: unknown): string {
-  const e = err as { response?: { status?: number; data?: { detail?: string } } }
+  const e = err as { code?: string; response?: { status?: number; data?: { detail?: string } } }
   const detail = e?.response?.data?.detail
   if (detail) return detail
   const st = e?.response?.status
   if (st === 413) return '文件过大，被服务器（Nginx）拦截，超过请求体上限'
   if (st === 403) return '无上传权限（需要管理员或项目经理）'
   if (st === 401) return '登录已过期，请重新登录后再试'
+  // 无响应：超时（ECONNABORTED）或断网
+  if (e?.code === 'ECONNABORTED') return '上传超时，请检查网络后重试（大文件建议用有线网/WiFi）'
   return '上传失败，请检查网络后重试'
 }
 
